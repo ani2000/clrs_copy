@@ -1,0 +1,85 @@
+{
+  "algo": "mst_prim",
+  "target": "key[15][6]",
+  "baseline_logit": 0.16781169248899208,
+  "panels": [
+    {
+      "supernode": "tree-interior",
+      "predicted": "increase",
+      "actual": "decrease",
+      "verdict": "NOT_CONFIRMED",
+      "clamp_step": 13,
+      "trivial": false,
+      "features": [
+        140,
+        136,
+        7
+      ],
+      "step": 13,
+      "node": 6,
+      "factor": -2.0,
+      "base_logit": 0.16781169248899208,
+      "new_logit": 0.11037214047215678,
+      "delta": -0.0574395520168353,
+      "mask_changed": true
+    },
+    {
+      "supernode": "tree-interior",
+      "predicted": "increase",
+      "actual": "increase",
+      "verdict": "TRIVIAL",
+      "clamp_step": 14,
+      "trivial": true,
+      "features": [
+        63,
+        35,
+        34,
+        173,
+        7
+      ],
+      "step": 14,
+      "node": 6,
+      "factor": -2.0,
+      "base_logit": 0.16781169248899208,
+      "new_logit": 0.33689076281987707,
+      "delta": 0.16907907033088498,
+      "mask_changed": true
+    },
+    {
+      "supernode": "frontier-edge",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 13,
+      "trivial": false,
+      "features": [
+        165
+      ],
+      "step": 13,
+      "node": 6,
+      "factor": -2.0,
+      "base_logit": 0.16781169248899208,
+      "new_logit": 0.09545441258450052,
+      "delta": -0.07235727990449156,
+      "mask_changed": true
+    },
+    {
+      "supernode": "frontier-edge",
+      "predicted": "decrease",
+      "actual": "increase",
+      "verdict": "TRIVIAL",
+      "clamp_step": 14,
+      "trivial": true,
+      "features": [
+        165
+      ],
+      "step": 14,
+      "node": 6,
+      "factor": -2.0,
+      "base_logit": 0.16781169248899208,
+      "new_logit": 0.18401419018497217,
+      "delta": 0.01620249769598009,
+      "mask_changed": true
+    }
+  ]
+}

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLRS-30 Circuit Tracer (128-hidden)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='4' cy='4' r='3' fill='%236366f1'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23f59e0b'/%3E%3Cpath d='M4 4L12 12' stroke='%231f2328' stroke-width='1.5'/%3E%3C/svg%3E">
+<style>
+  :root { --bg:#faf9f7; --panel:#fff; --line:#e5e0d8; --ink:#1f2328; --muted:#6b7280;
+          --pos:#2a78d6; --neg:#e34948; --accent:#f59e0b;
+          --surface:#fcfcfb; --surface-2:#f0efea; --ink-2:#4a4944; --ink-3:#8a887f; --leaf:#6b6963; --err:#8a887f; --logit:#141412;
+          --g-state:#1baf7a; --g-class:#eb6834; --g-source:#eda100; --g-neg:#e87ba4; --g-none:#9c9a92;
+          --mono: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  header { max-width:100vw; }
+  #inAlgo { max-width:100%; }
+  header { padding:12px 20px; border-bottom:1px solid var(--line); background:var(--panel); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:16px; white-space:nowrap; }
+  .ctrl { display:flex; align-items:center; gap:6px; font-size:12px; }
+  .ctrl input, .ctrl select { padding:3px 5px; border:1px solid var(--line); border-radius:4px; }
+  .ctrl input { width:56px; }
+  button { padding:5px 12px; border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer; font-size:12px; }
+  button.primary { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .layout { display:grid; grid-template-columns: 300px 1fr 320px; gap:14px; padding:14px; align-items:start; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 10px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th, td { text-align:left; padding:3px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; background:#eef2ff; color:#3730a3; font-size:11px; margin-right:4px;}
+  .pill.good { background:#ecfdf5; color:#065f46; } .pill.bad { background:#fef2f2; color:#991b1b; }
+  .edge-pos { stroke: var(--pos); } .edge-neg { stroke: var(--neg); }
+  .node-box.feat { fill:#eef2ff; stroke:#6366f1; cursor:pointer; }
+  .node-box.leaf { fill:#f3f4f6; stroke:#9ca3af; }
+  .node-box.target { fill:#fef3c7; stroke:var(--accent); }
+  .node-box:hover { stroke-width:2.5; }
+  .stepLabel { fill:var(--muted); font-size:10px; }
+  .small { font-size:11px; color:var(--muted); }
+  .kv { display:flex; justify-content:space-between; font-size:12px; padding:3px 0; border-bottom:1px solid var(--line); }
+  #featDetail h3 { margin:4px 0; font-size:14px; }
+  .divergeNote { background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:8px 10px; font-size:12px; margin-top:8px; }
+  #stepBar { display:flex; align-items:center; gap:8px; margin:10px 0; }
+  #stepBar input[type=range] { flex:1; }
+  #status { font-size:11px; color:var(--muted); margin-left:auto; }
+  .pill.p { background:#f3f4f6; color:#374151; font-family: ui-monospace, monospace; }
+  #nodeTable { margin-top:10px; font-size:11px; }
+  #nodeTable td, #nodeTable th { padding:2px 4px; }
+  .toolbar { display:flex; gap:10px; align-items:center; margin-bottom:8px; font-size:11px; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { border:none; border-radius:0; padding:4px 10px; }
+  .seg button.active { background:var(--ink); color:#fff; }
+  .bar-row { display:flex; align-items:center; gap:6px; font-size:11px; padding:2px 0; }
+  .bar-track { flex:1; height:8px; background:#eee; border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; background:var(--pos); }
+  .bar-fill.neg { background:var(--neg); }
+  .ctxThumb { display:inline-block; text-align:center; margin:4px 6px 4px 0; }
+  .ctxThumb svg { border:1px solid var(--line); border-radius:6px; }
+  /* ---------- attribution graph (grid of graph nodes x steps) ---------- */
+  .question { font-size:14px; line-height:1.45; margin-bottom:6px; }
+  .question b { font-weight:600; } .qtruth { color:var(--muted); font-size:12px; margin-left:6px; }
+  .outprobs { display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 10px; }
+  .outprobs .p { display:inline-flex; align-items:center; gap:6px; padding:2px 9px; border:1px solid var(--line); border-radius:999px; font-family:var(--mono); font-size:12px; background:var(--surface); }
+  .outprobs .p i { display:inline-block; height:8px; border-radius:2px; background:var(--pos); min-width:2px; }
+  .outprobs .p.true { border-color:var(--ink); border-width:1.5px; }
+  #attribScroll { overflow:auto; max-height:74vh; border-top:1px solid var(--line); -webkit-overflow-scrolling:touch; }
+  #attribSvg { display:block; font-family:var(--mono); font-size:10.5px; transition:opacity .15s; }
+  #attribSvg .nd { cursor:pointer; } #attribSvg .nd.dim { opacity:.16; } #attribSvg .nd:focus { outline:none; } #attribSvg .nd:focus-visible circle, #attribSvg .nd:focus-visible rect { stroke:var(--ink); stroke-width:2; }
+  #attribSvg .edge { fill:none; stroke-linecap:round; } #attribSvg .edge.dim { opacity:.04 !important; } #attribSvg .edge.hi { opacity:1 !important; }
+  #attribSvg .rowlab { fill:var(--ink-3); font-size:10px; letter-spacing:.06em; } #attribSvg .collab { fill:var(--ink-2); font-size:11px; }
+  #attribSvg text.nlab { fill:var(--ink-2); font-size:9.5px; pointer-events:none; }
+  @media (prefers-reduced-motion: no-preference) { #attribSvg .nd, #attribSvg .edge { transition:opacity .12s; } }
+  .avlegend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:8px 2px 2px; font-size:12px; color:var(--ink-2); border-top:1px solid var(--line); }
+  .avlegend span { display:inline-flex; align-items:center; gap:6px; cursor:help; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:50%; } .sw.sq { border-radius:2px; } .sw.dia { border-radius:1px; transform:rotate(45deg); width:8px; height:8px; } .sw.ln { width:14px; height:2.5px; border-radius:1px; }
+  #gstat { font-size:11.5px; color:var(--ink-3); padding:6px 2px 0; line-height:1.45; }
+  .ititle { font-size:14px; font-weight:600; margin:2px 0 6px; font-family:var(--mono); }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+  .chip { font-family:var(--mono); font-size:11.5px; padding:2px 7px; border-radius:4px; background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line); }
+  .chip.grp { color:#fff; border-color:transparent; }
+  .ikv { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:12px; margin:0 0 6px; } .ikv dt { color:var(--ink-3); } .ikv dd { margin:0; font-family:var(--mono); }
+  .isec { border-top:1px solid var(--line); margin-top:10px; padding-top:8px; } .isec h3 { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0 0 6px; font-weight:600; }
+  .bars { display:grid; grid-template-columns:minmax(0,auto) minmax(40px,1fr) auto; gap:4px 8px; align-items:center; font-family:var(--mono); font-size:11.5px; }
+  .bars > span:first-child, .bars > span:nth-child(3n+1) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
+  .bars .bar { height:8px; background:var(--surface-2); border-radius:2px; position:relative; overflow:hidden; }
+  .bars .bar i { position:absolute; left:0; top:0; bottom:0; } .bars .bar i.pos { background:var(--pos); } .bars .bar i.neg { background:var(--neg); }
+  .note { font-size:12px; color:var(--ink-2); line-height:1.45; } .empty { color:var(--muted); font-size:12px; }
+  .ivbtns { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .ivtab { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11.5px; margin-top:6px; }
+  .ivtab th, .ivtab td { text-align:right; padding:2px 4px; border-bottom:1px solid var(--surface-2); } .ivtab th:first-child, .ivtab td:first-child { text-align:left; }
+  .mono { font-family:var(--mono); }
+  /* ---------- responsive layout ---------- */
+  html { -webkit-text-size-adjust:100%; }
+  body { overflow-x:hidden; }
+  .layout > .panel { min-width:0; }
+  #graphSvg { display:block; width:100%; max-width:380px; height:auto; margin:0 auto; touch-action:manipulation; }
+  .gscroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:6px; }
+  .tscroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .toolbar { flex-wrap:wrap; }
+  #featDetail, #ivPanel { overflow-wrap:anywhere; }
+  .ctxThumb svg { max-width:100%; height:auto; }
+  @media (max-width: 1180px) {
+    .layout { grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); }
+    .layout > .panel:nth-child(3) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 760px) {
+    header { padding:10px 12px; gap:8px 10px; }
+    header h1 { width:100%; font-size:15px; }
+    .ctrl { flex:1 1 auto; }
+    .ctrl { min-width:0; }
+    .ctrl:has(#inAlgo) { flex:1 1 100%; }
+    .ctrl select { flex:1 1 auto; width:100%; min-width:0; max-width:100%; }
+    .ctrl input, .ctrl select, button { font-size:16px; min-height:36px; }   /* 16px stops iOS zoom-on-focus; 36px+ touch targets */
+    .ctrl input { width:72px; }
+    #btnNew { flex:1 1 100%; }
+    #status { width:100%; margin-left:0; }
+    .intro { padding:8px 12px; }
+    .layout { grid-template-columns: minmax(0, 1fr); padding:10px; gap:10px; }
+    .layout > .panel:nth-child(3) { grid-column:auto; }
+    .panel { padding:12px; }
+    .seg button { padding:8px 12px; }
+    #stepBar input[type=range], #minW { min-height:28px; }
+    .kv { gap:10px; } .kv span:last-child { text-align:right; }
+  }
+  @media (hover: none) { .tt { border-bottom-style:dashed; } }
+  /* hover preview cards (explain.js) */
+  .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
+  [data-tip].hc-active.tt { border-bottom-color: var(--ink); }
+  .hc { position:fixed; z-index:50; pointer-events:none; max-width:min(340px, calc(100vw - 12px)); background:#fff; color:var(--ink);
+        border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px rgba(15,23,42,.14), 0 1px 3px rgba(15,23,42,.08);
+        padding:10px 12px; font-size:12px; line-height:1.45; animation: hcIn .12s ease-out; }
+  .hc[hidden] { display:none; }
+  .hc::after { content:''; position:absolute; left:var(--arrow-x,50%); bottom:-6px; width:10px; height:10px; background:#fff;
+               border-right:1px solid var(--line); border-bottom:1px solid var(--line); transform:translateX(-50%) rotate(45deg); }
+  .hc.below::after { bottom:auto; top:-6px; transform:translateX(-50%) rotate(225deg); }
+  .hc-title { font-weight:600; font-size:12.5px; margin-bottom:4px; }
+  .hc-body { margin-bottom:6px; }
+  .hc-why { color:#374151; background:#f8fafc; border-left:3px solid #6366f1; padding:4px 7px; margin:6px 0 4px; border-radius:0 4px 4px 0; }
+  .hc-how { color:var(--muted); font-size:11px; margin-top:4px; }
+  .hc-muted { color:var(--muted); }
+  .hc-kv { margin:6px 0 2px; font-size:11.5px; }
+  .hc-kv td { padding:2px 4px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  .hc-kv td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  .hc-kv td:last-child { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align:right; }
+  @keyframes hcIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+  #attribSvg line.hc-dim { opacity:.08 !important; }
+  #attribSvg line.hc-hi { opacity:1 !important; }
+  #graphSvg circle[data-tip]:hover, #attribSvg rect[data-tip]:hover { stroke-width:2.5; }
+  .intro { padding:8px 20px; font-size:12px; color:var(--muted); background:var(--panel); border-bottom:1px solid var(--line); }
+  @media (prefers-reduced-motion: reduce) { .hc { animation:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>CLRS-30 Circuit Tracer</h1>
+  <div class="ctrl"><span class="tt" data-tip="g:algo">algo</span> <select id="inAlgo" data-tip="g:algo"></select></div>
+  <div class="ctrl"><span class="tt" data-tip="g:n">n</span> <input data-tip="g:n" id="inN" type="number" value="16" min="4" max="32"></div>
+  <div class="ctrl"><span class="tt" data-tip="g:p">p</span> <input data-tip="g:p" id="inP" type="number" value="0.4" min="0.1" max="0.95" step="0.05"></div>
+  <div class="ctrl"><span class="tt" data-tip="g:seed">seed</span> <input data-tip="g:seed" id="inSeed" type="number" value="42"></div>
+  <button class="primary" id="btnNew" data-tip="g:new">New random graph</button>
+  <span id="status" class="tt" data-tip="dyn:status">loading…</span>
+</header>
+<div class="intro">The trained 128-hidden MPNN executes a CLRS-30 algorithm on a random graph, one message-passing step at a time. Click a node to trace the circuit behind its prediction. Hover any <span class="tt" data-tip="g:howItWorks">dotted term</span>, number or box for an explanation of what it is and why it is there.</div>
+<div class="layout">
+  <div class="panel">
+    <h2><span class="tt" data-tip="g:transcoder">Model &amp; transcoder</span></h2>
+    <div class="kv"><span class="tt" data-tip="g:hidden">hidden_dim</span><span data-tip="g:hidden">128</span></div>
+    <div class="kv"><span class="tt" data-tip="dyn:target">target</span><span id="targetName" data-tip="dyn:target">-</span></div>
+    <div class="kv"><span class="tt" data-tip="dyn:fvu">transcoder FVU</span><span id="fvu" data-tip="dyn:fvu">-</span></div>
+    <div class="kv"><span class="tt" data-tip="dyn:f1">val / test score (OOD)</span><span id="f1s" data-tip="dyn:f1">-</span></div>
+    <h2 style="margin-top:16px"><span class="tt" data-tip="g:simulation">Simulation</span></h2>
+    <svg id="graphSvg" viewBox="0 0 260 230" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="stepBar">
+      <button id="btnPlay" data-tip="g:play">▶ Play</button>
+      <input data-tip="dyn:step" id="stepRange" type="range" min="0" max="0" value="0">
+      <span class="small tt" data-tip="dyn:step" id="stepLbl">step 0</span>
+    </div>
+    <div class="small" id="clickHint">Click a node to explain the model's prediction for it at the current step.</div>
+    <div class="small" id="graphLegend" style="margin-top:6px;"></div>
+    <div class="tscroll"><table id="nodeTable"><thead><tr id="nodeTableHead"></tr></thead><tbody id="nodeTableBody"></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tt" data-tip="g:attrgraph">Attribution graph</span></h2>
+    <div id="question" class="question">Click a node in the simulation to trace the model's prediction for it.</div>
+    <div id="outprobs" class="outprobs"></div>
+    <div class="toolbar">
+      <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
+      <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button></div>
+      <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
+    </div>
+    <div id="attribScroll" class="gscroll"><svg id="attribSvg" role="img" aria-label="Attribution graph"></svg></div>
+    <div id="avLegend" class="avlegend"></div>
+    <div id="gstat"></div>
+    <h2 style="margin-top:18px"><span class="tt" data-tip="g:featlabels">Feature labels (top 15 by F1)</span></h2>
+    <div class="tscroll"><table id="featTable"><thead><tr><th>feature</th><th><span class="tt" data-tip="g:featlabels">label</span></th><th><span class="tt" data-tip="g:precision">P</span></th><th><span class="tt" data-tip="g:recall">R</span></th><th><span class="tt" data-tip="g:f1">F1</span></th><th><span class="tt" data-tip="g:firesOn">fires on</span></th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tt" data-tip="g:featdetail">Inspector</span></h2>
+    <div id="featDetail" class="small">Hover a node in the attribution graph to see its edges; click to pin it here.</div>
+    <h2 style="margin-top:18px"><span class="tt" data-tip="g:intervention">Intervention</span></h2>
+    <div id="ivPanel" class="small">Click a feature, then try clamping it.</div>
+  </div>
+</div>
+
+<script src="explain.js"></script>
+<script src="attrview.js"></script>
+<script>
+const svgNS = 'http://www.w3.org/2000/svg';
+const fmt = (x, d=3) => (x===null||x===undefined||Number.isNaN(x)) ? '-' : Number(x).toFixed(d);
+// Ground truth from summary_v3.json (the original training run's own output --
+// authoritative; cross-checked to agree with the per-algo checkpoints to 4
+// decimal places). gap<0.10=CLEAN, gap>0.40=SEVERE (bimodal split, confirmed:
+// max clean gap 0.074 mst_prim, min severe gap 0.460 mst_kruskal).
+const SUMMARY_V3 = {
+  bfs: {val:1.0000, test:0.9980, gap:0.0020, cls:'CLEAN'},
+  dag_shortest_paths: {val:1.0000, test:0.9844, gap:0.0156, cls:'CLEAN'},
+  dijkstra: {val:1.0000, test:0.9771, gap:0.0229, cls:'CLEAN'},
+  bridges: {val:0.9940, test:0.9676, gap:0.0263, cls:'CLEAN'},
+  articulation_points: {val:0.9852, test:0.9487, gap:0.0364, cls:'CLEAN'},
+  bellman_ford: {val:0.9980, test:0.9478, gap:0.0503, cls:'CLEAN'},
+  mst_prim: {val:1.0000, test:0.9263, gap:0.0737, cls:'CLEAN'},
+  mst_kruskal: {val:0.9055, test:0.4454, gap:0.4600, cls:'SEVERE'},
+  topological_sort: {val:1.0000, test:0.5168, gap:0.4832, cls:'SEVERE'},
+  dfs: {val:1.0000, test:0.4814, gap:0.5186, cls:'SEVERE'},
+  floyd_warshall: {val:0.9310, test:0.3852, gap:0.5458, cls:'SEVERE'},
+  strongly_connected_components: {val:1.0000, test:0.2734, gap:0.7266, cls:'SEVERE'},
+};
+let W = null, FL = null, G = null, ALGOS = null, curAlgo = 'bfs', curStep = 0, playTimer = null, selected = null, CUR_ATTR = null;
+let pruneMode = 'pruned', minW = 0, viewMode = 'bynode';
+let NODE_PRED = {}, SHOWN_EDGES = [], LAST_IV = null;   // read by explain.js hover cards
+// Race-condition guards: every async load takes a generation number; a response is applied only
+// if it is still the newest request, and superseded fetches are aborted.
+let graphGen = 0, algoGen = 0, ctxGen = 0, graphAbort = null, algoAbort = null, ctxAbort = null;
+const GRAPH_CACHE = new Map();  // key -> {promise, ctl, spec, done}: every graph fetched, shared by user requests and prefetch
+const GRAPH_CACHE_MAX = 30;
+let NEXTQ = { algo: null, n: null, p: null, seeds: [] };   // seeds of the next random graphs, already prefetched
+let specGen = 0, paramTimer = null;
+const ALGO_CACHE = {};          // algo -> {W, FL}: switching back to a visited algorithm is instant
+function stopPlay() {
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  const b = document.getElementById('btnPlay'); if (b) b.textContent = '\u25B6 Play';
+}
+async function getJSON(url, signal) { const r = await fetch(url, { signal }); return r.json(); }
+// ---------- in-browser model execution (Web Workers running mpnn.js on the real 128-hidden weights) ----------
+// The server only samples the graph (a few KB); the model forward pass runs here, so once an algorithm's
+// weight bundle (1-2 MB, cached forever) is loaded, a new graph needs no heavy download.
+const LOCAL = { workers: [], models: {}, queue: [], seq: 0 };
+function initWorkers() {
+  if (typeof Worker === 'undefined' || LOCAL.workers.length) return;
+  const hc = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2;
+  const count = Math.max(1, Math.min(2, hc - 2));
+  for (let i = 0; i < count; i++) {
+    try {
+      const st = { w: new Worker('mpnn_worker.js'), busy: null, loaded: new Set(), waiters: {} };
+      st.w.onmessage = ev => onWorkerMsg(st, ev.data);
+      st.w.onerror = () => { st.dead = true; };
+      LOCAL.workers.push(st);
+    } catch (e) { /* workers unavailable: server path is used */ }
+  }
+}
+function onWorkerMsg(st, m) {
+  if (m.type === 'loaded') { st.loaded.add(m.algo); const cb = st.waiters[m.algo]; if (cb) cb(); return; }
+  const job = st.busy; if (!job || job.id !== m.id) return;
+  st.busy = null;
+  if (m.type === 'result') job.resolve(m); else job.reject(new Error(m.error));
+  pumpLocal();
+}
+function pumpLocal() {
+  for (const st of LOCAL.workers) {
+    if (st.busy || st.dead) continue;
+    let best = -1;
+    for (let i = 0; i < LOCAL.queue.length; i++) {
+      const j = LOCAL.queue[i];
+      if (!st.loaded.has(j.algo)) continue;
+      if (best < 0 || j.meta.prio < LOCAL.queue[best].meta.prio) best = i;   // user requests (prio 0) before prefetch (1), FIFO within
+    }
+    if (best < 0) continue;
+    const job = LOCAL.queue.splice(best, 1)[0];
+    st.busy = job;
+    st.w.postMessage({ type: 'run', id: job.id, algo: job.algo, inst: job.inst });
+  }
+}
+function runLocal(algo, inst, meta, signal) {
+  return new Promise((resolve, reject) => {
+    const job = { id: ++LOCAL.seq, algo, inst, meta, resolve, reject };
+    const abort = () => {
+      const i = LOCAL.queue.indexOf(job);
+      if (i >= 0) LOCAL.queue.splice(i, 1);
+      reject(new DOMException('aborted', 'AbortError'));
+    };
+    if (signal.aborted) return abort();
+    signal.addEventListener('abort', abort, { once: true });
+    LOCAL.queue.push(job); pumpLocal();
+  });
+}
+function localReady(algo) { const m = LOCAL.models[algo]; return !!(m && m.state === 'ready'); }
+function ensureLocalModel(algo) {
+  initWorkers();
+  if (!LOCAL.workers.length || LOCAL.models[algo]) return;
+  const entry = LOCAL.models[algo] = { state: 'loading' };
+  entry.promise = (async () => {
+    try {
+      const [man, buf] = await Promise.all([fetch('/models/' + algo + '.json').then(r => r.json()),
+                                            fetch('/models/' + algo + '.bin').then(r => r.arrayBuffer())]);
+      entry.man = man; entry.buf = buf;
+      await Promise.all(LOCAL.workers.map(st => new Promise(res => {
+        st.waiters[algo] = res;
+        st.w.postMessage({ type: 'load', algo, manifest: man, buffer: buf.slice(0) });
+      })));
+      entry.state = 'ready';
+      pumpLocal();
+      if (algo === curAlgo && G) {                    // re-fill the ready-queue with fast in-browser runs
+        for (const [k, e] of [...GRAPH_CACHE]) if (e.spec && k.startsWith(algo + '|')) { if (!e.done) e.ctl.abort(); GRAPH_CACHE.delete(k); }
+        NEXTQ = { algo: null, n: null, p: null, seeds: [] };
+        const P = readParams(); if (P) speculate(algo, P.n, P.p, P.seed);
+      }
+    } catch (e) { entry.state = 'failed'; }
+  })();
+}
+function rowsOf(flat, T, N, dim) {
+  const out = new Array(T);
+  for (let t = 0; t < T; t++) { const r = new Array(N); for (let i = 0; i < N; i++) { const o = (t * N + i) * dim; r[i] = flat.subarray(o, o + dim); } out[t] = r; }
+  return out;
+}
+async function fetchGraphLocal(algo, n, p, seed, signal, meta) {
+  const inst = await getJSON(`/api/instance?algo=${algo}&n=${n}&p=${p}&seed=${seed}`, signal);
+  if (inst.error) return { error: inst.error, trace: inst.trace };
+  const r = await runLocal(algo, inst, meta, signal);
+  const z = rowsOf(r.z, r.T, r.N, 256), msgs = rowsOf(r.msgs, r.T, r.N, 128);
+  const g = { n: inst.n, length: inst.length, adj: inst.adj, source: inst.source, target_true: inst.target_true,
+              seed: inst.seed, z, msgs, node_fts: z.map(st => st.map(row => row.subarray(0, 128))), _local: true, _inst: inst };
+  return { g, seed: inst.seed };
+}
+async function fetchGraph(algo, n, p, seed, signal, meta) {
+  if (localReady(algo)) {
+    try { return await fetchGraphLocal(algo, n, p, seed, signal, meta || { prio: 0 }); }
+    catch (e) { if (e && e.name === 'AbortError') throw e; /* local path failed: fall back to the server model */ }
+  }
+  return fetchGraphServer(algo, n, p, seed, signal);
+}
+async function fetchGraphServer(algo, n, p, seed, signal) {
+  let g = null;
+  for (let tries = 0; tries < 8; tries++) {
+    g = await getJSON(`/api/graph?algo=${algo}&n=${n}&p=${p}&seed=${seed}`, signal);
+    if (g.error) return { error: g.error, trace: g.trace };
+    if (g.seed !== undefined) seed = g.seed;          // server may have resampled a degenerate graph
+    if (g.length >= 3) break;
+    seed = seed + 1000 + tries;
+  }
+  g.node_fts = g.z.map(st => st.map(row => row.slice(0, 128)));   // node_fts is the first 128 dims of z (not sent over the wire)
+  return { g, seed };
+}
+const gkey = (a, n, p, sd) => `${a}|${+n}|${+p}|${+sd}`;
+function graphFor(algo, n, p, seed, spec) {
+  const k = gkey(algo, n, p, seed);
+  let e = GRAPH_CACHE.get(k);
+  if (e) { if (!spec) { e.spec = false; e.meta.prio = 0; } GRAPH_CACHE.delete(k); GRAPH_CACHE.set(k, e); return e.promise; }
+  const ctl = new AbortController();
+  e = { promise: null, ctl, spec: !!spec, done: false, meta: { prio: spec ? 1 : 0 } };
+  e.promise = fetchGraph(algo, +n, +p, +seed, ctl.signal, e.meta);
+  e.promise.then(r => { if (r.error) GRAPH_CACHE.delete(k); else e.done = true; }, () => { GRAPH_CACHE.delete(k); });
+  GRAPH_CACHE.set(k, e);
+  while (GRAPH_CACHE.size > GRAPH_CACHE_MAX) {
+    const [ok, oe] = GRAPH_CACHE.entries().next().value;
+    if (!oe.done) oe.ctl.abort();
+    GRAPH_CACHE.delete(ok);
+  }
+  return e.promise;
+}
+function isCached(algo, n, p, seed) { const e = GRAPH_CACHE.get(gkey(algo, n, p, seed)); return !!(e && e.done); }
+function dropStale(exceptKey) {        // abort user-level requests that the user has already moved past
+  for (const [k, e] of [...GRAPH_CACHE]) if (k !== exceptKey && !e.done && !e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+function cancelSpec() {                // stop background prefetching (e.g. algorithm changed)
+  ++specGen;
+  for (const [k, e] of [...GRAPH_CACHE]) if (!e.done && e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+function speculate(algo, n, p, seed) {
+  // Background-fetch, one at a time, what the user is most likely to ask for next: the next random graphs,
+  // the neighbouring seeds (spinner arrows), and neighbouring n / p values.
+  const gen = ++specGen;
+  for (const [k, e] of [...GRAPH_CACHE]) if (!e.done && e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+  n = +n; p = +p; seed = +seed;
+  if (NEXTQ.algo !== algo || NEXTQ.n !== n || NEXTQ.p !== p) NEXTQ = { algo, n, p, seeds: [] };
+  const rnd = () => { let s = Math.floor(Math.random() * 1e6); NEXTQ.seeds.push(s); return s; };
+  const nm = [4, 32], pm = [0.1, 0.95], r2 = x => +x.toFixed(2);
+  const seedAt = i => () => { while (NEXTQ.seeds.length <= i) rnd(); return [n, p, NEXTQ.seeds[i]]; };
+  const plan = [seedAt(0), () => [n, p, seed + 1], seedAt(1), () => [n, p, seed - 1]];
+  if (n + 1 <= nm[1]) plan.push(() => [n + 1, p, seed]);
+  if (n - 1 >= nm[0]) plan.push(() => [n - 1, p, seed]);
+  if (p + 0.05 <= pm[1]) plan.push(() => [n, r2(p + 0.05), seed]);
+  if (p - 0.05 >= pm[0]) plan.push(() => [n, r2(p - 0.05), seed]);
+  plan.push(seedAt(2));
+  let next = 0;
+  const worker = async () => {                      // two lanes: the server runs two model evaluations at once
+    while (gen === specGen && next < plan.length) {
+      const [nn, pp, sd] = plan[next++]();
+      try { await graphFor(algo, nn, pp, sd, true); } catch (e) { /* aborted/failed: skip */ }
+    }
+  };
+  worker(); worker();
+}
+function readParams() {
+  const n = parseInt(document.getElementById('inN').value), p = parseFloat(document.getElementById('inP').value),
+        seed = parseInt(document.getElementById('inSeed').value);
+  if (!(n >= 4 && n <= 32) || !(p >= 0.1 && p <= 0.95) || !Number.isFinite(seed)) return null;   // mid-typing / invalid: ignore
+  return { n, p, seed };
+}
+function onParamChange(force) {
+  clearTimeout(paramTimer);
+  if (!W) return;
+  const P = readParams(); if (!P) return;
+  const go = () => loadGraph(P.seed);
+  // apply immediately when it is already in hand or forced (spinner click / Enter / blur); debounce only free typing
+  if (force || isCached(curAlgo, P.n, P.p, P.seed)) go(); else { setPending(true); paramTimer = setTimeout(go, 150); }
+}
+function setPending(on) {
+  const svg = document.getElementById('graphSvg'); if (svg) svg.style.opacity = on ? '0.45' : '';
+  if (on) document.getElementById('status').textContent = 'updating\u2026';
+}
+
+async function boot() {
+  ALGOS = await (await fetch('/api/algos')).json();
+  const sel = document.getElementById('inAlgo');
+  Object.keys(ALGOS).forEach(a => {
+    const o = document.createElement('option'); o.value = a;
+    const gt = SUMMARY_V3[a];
+    o.textContent = `${a} (${ALGOS[a].target_type})` + (gt ? ` [${gt.cls}]` : '');
+    sel.appendChild(o);
+  });
+  sel.value = 'bfs';
+  sel.addEventListener('change', () => { curAlgo = sel.value; loadAlgo(); });
+  document.getElementById('btnNew').addEventListener('click', () => {
+    const P = readParams() || { n: +document.getElementById('inN').value, p: +document.getElementById('inP').value };
+    let seed;
+    if (NEXTQ.algo === curAlgo && NEXTQ.n === P.n && NEXTQ.p === P.p && NEXTQ.seeds.length) seed = NEXTQ.seeds.shift();
+    else seed = Math.floor(Math.random() * 1e6);
+    document.getElementById('inSeed').value = seed;
+    loadGraph(seed);
+  });
+  ['inN', 'inP', 'inSeed'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => onParamChange(false));
+    el.addEventListener('change', () => onParamChange(true));
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') onParamChange(true); });
+  });
+  document.getElementById('stepRange').addEventListener('input', e => {
+    if (!G) return;
+    curStep = +e.target.value;
+    if (selected) selected = { node: selected.node, step: Math.min(curStep, G.length - 2) };
+    drawGraph(); drawAttribution();
+  });
+  document.querySelectorAll('#pruneSeg button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#pruneSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); pruneMode = b.dataset.v;
+    if (pruneMode === 'all' && minW === 0) { minW = 0.5; document.getElementById('minW').value = '0.5'; document.getElementById('minWVal').textContent = '0.50'; }
+    if (G) { drawAttribution(); drawGraph(); }
+  }));
+  document.querySelectorAll('#viewSeg button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#viewSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); viewMode = b.dataset.v; if (G) drawAttribution();
+  }));
+  document.getElementById('minW').addEventListener('input', e => {
+    minW = +e.target.value; document.getElementById('minWVal').textContent = minW.toFixed(2); if (G) drawAttribution();
+  });
+  document.getElementById('btnPlay').addEventListener('click', () => {
+    if (playTimer) { stopPlay(); return; }
+    if (!G) return;
+    if (!selected) selected = { node: G.source !== null ? G.source : 0, step: 0 };
+    document.getElementById('btnPlay').textContent = '\u23F8 Pause';
+    const gen = graphGen;
+    const tick = () => {
+      if (gen !== graphGen || !G) { stopPlay(); return; }   // graph was replaced: stop instantly
+      curStep = (curStep + 1) % G.length;
+      document.getElementById('stepRange').value = curStep;
+      selected = { node: selected ? selected.node : 0, step: Math.min(curStep, G.length - 2) };
+      drawGraph(); drawAttribution();
+      if (curStep === G.length - 1) { stopPlay(); return; }
+      playTimer = setTimeout(tick, 1600);  // next tick only after this frame finished (no overlap)
+    };
+    playTimer = setTimeout(tick, 1600);
+  });
+  initWorkers();
+  await loadAlgo();
+}
+
+async function loadAlgo() {
+  const gen = ++algoGen, algo = curAlgo;
+  ++graphGen; ++ctxGen;
+  if (algoAbort) algoAbort.abort(); if (graphAbort) graphAbort.abort(); if (ctxAbort) ctxAbort.abort();
+  cancelSpec(); stopPlay();
+  G = null; selected = null;                       // never show old-graph data with new-algo weights
+  if (typeof drawAttribution === 'function') drawAttribution();
+  document.getElementById('status').textContent = 'loading ' + algo + '\u2026';
+  let w, fl;
+  if (ALGO_CACHE[algo]) { w = ALGO_CACHE[algo].W; fl = ALGO_CACHE[algo].FL; }
+  else {
+    algoAbort = new AbortController();
+    try {
+      [w, fl] = await Promise.all([getJSON('/api/weights?algo=' + algo, algoAbort.signal),
+                                   getJSON('/api/feature_labels?algo=' + algo, algoAbort.signal)]);
+    } catch (e) { if (e.name !== 'AbortError') document.getElementById('status').textContent = 'error: ' + e.message; return; }
+    if (w.error || fl.error) { document.getElementById('status').textContent = 'error: ' + (w.error || fl.error); return; }
+    ALGO_CACHE[algo] = { W: w, FL: fl };
+  }
+  if (gen !== algoGen) return;                     // user already switched again
+  W = w; FL = fl;
+  ensureLocalModel(algo);                           // fetch the in-browser weight bundle in the background
+  document.getElementById('targetName').textContent = `${W.target} (${W.target_type})`;
+  document.getElementById('fvu').textContent = fmt(W.fvu, 4);
+  const gt = SUMMARY_V3[algo];
+  document.getElementById('f1s').textContent = gt
+    ? `${fmt(gt.val)} / ${fmt(gt.test)}  [${gt.cls}, gap=${fmt(gt.gap)}] (summary_v3.json)`
+    : `${fmt(W.val_f1)} / ${fmt(W.test_f1)}`;
+  const tbody = document.querySelector('#featTable tbody'); tbody.innerHTML = '';
+  FL.rows.slice(0, 15).forEach(r => {
+    const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'fl:' + r.feature);
+    tr.innerHTML = `<td>f${r.feature}</td><td>${r.label}</td><td>${fmt(r.precision)}</td><td>${fmt(r.recall)}</td><td>${fmt(r.f1)}</td><td>${r.n_fire}/${FL.total_sites}</td>`;
+    tbody.appendChild(tr);
+  });
+  labelByFeat = {}; FL.rows.forEach(r => labelByFeat[r.feature] = r);
+  await loadGraph();
+}
+
+async function loadGraph(seedOverride) {
+  const gen = ++graphGen, algo = curAlgo;
+  ++ctxGen; if (ctxAbort) ctxAbort.abort();
+  if (graphAbort) graphAbort.abort();
+  clearTimeout(paramTimer);
+  stopPlay();                                       // a running simulation ends the instant new parameters are requested
+  const P = readParams();
+  if (!P) return;                                   // invalid/incomplete input: keep what is on screen
+  const seed0 = seedOverride !== undefined ? seedOverride : P.seed;
+  dropStale(gkey(algo, P.n, P.p, seed0));
+  const wasCached = isCached(algo, P.n, P.p, seed0);
+  const pr = graphFor(algo, P.n, P.p, seed0, false);   // marks an in-flight prefetch of this graph as user-requested
+  if (!wasCached) cancelSpec();                        // user request outranks background prefetch (frees the server queue)
+  setPending(!wasCached);
+  document.getElementById('status').textContent = isCached(algo, P.n, P.p, seed0) ? 'loading\u2026' : 'running model\u2026';
+  let res;
+  try { res = await pr; }
+  catch (e) { if (e.name !== 'AbortError') document.getElementById('status').textContent = 'error: ' + e.message; return; }
+  if (gen !== graphGen || algo !== curAlgo) return; // a newer request superseded this one
+  if (res.error) { document.getElementById('status').textContent = 'error: ' + res.error; console.error(res.trace); setPending(false); return; }
+  G = res.g;
+  const seed = res.seed;
+  document.getElementById('inSeed').value = seed;
+  document.getElementById('status').textContent = `${curAlgo}: n=${G.n}, length=${G.length}, seed=${seed}` + (G._local ? ' \u00b7 in-browser model' : ' \u00b7 server model');
+  curStep = 0;
+  document.getElementById('stepRange').max = Math.max(0, G.length - 1);
+  document.getElementById('stepRange').value = 0;
+  selected = null;
+  setPending(false);
+  drawGraph(); drawAttribution();
+  speculate(algo, P.n, P.p, seed);                  // warm the likely next changes in the background
+}
+
+function nodePositions(n) {
+  const cx=126, cy=105, R=85, pos=[];
+  for (let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; pos.push([cx+R*Math.cos(a), cy+R*Math.sin(a)]); }
+  return pos;
+}
+const CAT_PALETTE = ['#e5e7eb', '#f59e0b', '#111827', '#60a5fa', '#34d399', '#a78bfa'];
+
+function colorForNode(i, step) {
+  if (!G.target_true) return '#e5e7eb';
+  const row = step < G.target_true.length ? G.target_true[step] : G.target_true[G.target_true.length-1];
+  const v = row[i];
+  if (W.target_type === 'categorical') return CAT_PALETTE[(v|0) % CAT_PALETTE.length];
+  if (W.target_type === 'mask' || W.target_type === 'mask_one') return v ? '#34d399' : '#e5e7eb';
+  // scalar: heat by magnitude relative to the row's own range
+  const finite = row.filter(x => Number.isFinite(x));
+  const mx = Math.max(...finite.map(Math.abs), 1e-6);
+  const t = Math.min(1, Math.abs(v) / mx);
+  return `rgba(96,165,250,${0.15 + 0.75*t})`;
+}
+
+function drawGraph() {
+  if (!G || !W) return;
+  const svg = document.getElementById('graphSvg'); svg.innerHTML = '';
+  const n = G.n, pos = nodePositions(n);
+  for (let i=0;i<n;i++) for (let j=i+1;j<n;j++) if (G.adj[i][j] > 0) {
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1',pos[i][0]); l.setAttribute('y1',pos[i][1]);
+    l.setAttribute('x2',pos[j][0]); l.setAttribute('y2',pos[j][1]);
+    l.setAttribute('stroke','#d1d5db'); svg.appendChild(l);
+  }
+  for (let i=0;i<n;i++) {
+    const c = document.createElementNS(svgNS,'circle');
+    c.setAttribute('cx',pos[i][0]); c.setAttribute('cy',pos[i][1]); c.setAttribute('r', i===G.source?13:11);
+    c.setAttribute('fill', i===G.source ? '#f59e0b' : colorForNode(i, curStep));
+    c.setAttribute('stroke', selected && selected.node===i ? '#111827' : '#374151');
+    c.setAttribute('stroke-width', selected && selected.node===i ? 3 : 1);
+    c.style.cursor = 'pointer'; c.setAttribute('data-tip', 'node:' + i);
+    c.addEventListener('click', () => selectTarget(i));
+    svg.appendChild(c);
+    const t = document.createElementNS(svgNS,'text');
+    t.setAttribute('x',pos[i][0]); t.setAttribute('y',pos[i][1]+4); t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size','9'); t.style.pointerEvents = 'none'; t.textContent = i;
+    svg.appendChild(t);
+  }
+  const dots = typeof avDotsFor === 'function' ? avDotsFor(Math.min(curStep, G.length - 2)) : null;
+  if (dots) for (const [i, list] of Object.entries(dots)) {
+    const fs = list.slice(0, 5), w = fs.length * 7.5;
+    fs.forEach((nd, q) => { const d = document.createElementNS(svgNS, 'circle');
+      d.setAttribute('cx', pos[i][0] - w / 2 + 3.75 + q * 7.5); d.setAttribute('cy', pos[i][1] + 17); d.setAttribute('r', 2.9);
+      d.setAttribute('fill', `var(${AV_GROUP[nd.group][0]})`); d.setAttribute('stroke', AV.pinned === nd.id ? '#111827' : 'none'); d.setAttribute('stroke-width', 1.2);
+      d.setAttribute('data-tip', 'an:' + nd.id); d.style.cursor = 'pointer';
+      d.addEventListener('click', ev => { ev.stopPropagation(); AV.pinned = nd.id; avHighlight(); avInspect(AV.data.nodesById[nd.id]); drawGraph(); });
+      svg.appendChild(d); });
+  }
+  document.getElementById('stepLbl').textContent = `step ${curStep} of ${G.length-1}`;
+  let legend = G.source !== null ? `<span style="color:#f59e0b">&#9679;</span> source &nbsp;` : '';
+  legend += W.target_type === 'categorical' ? 'colors = classes' :
+            (W.target_type === 'scalar' ? 'blue intensity = magnitude' : '<span style="color:#34d399">&#9679;</span> true &nbsp; <span style="color:#9ca3af">&#9679;</span> false');
+  document.getElementById('graphLegend').innerHTML = legend;
+  if (window.HoverCard) HoverCard.refresh();
+  document.getElementById('clickHint').textContent = `Click a node to explain the model's ${W.target} prediction for it at the current step.`;
+  renderNodeTable();
+}
+
+function renderNodeTable() {
+  const step = Math.min(curStep, G.length - 2);
+  const head = document.getElementById('nodeTableHead'), body = document.getElementById('nodeTableBody');
+  const catCols = W.target_type === 'categorical';
+  head.innerHTML = `<th><span class="tt" data-tip="cell:0:node">node</span></th><th><span class="tt" data-tip="cell:0:prev">${W.target}(${step})</span></th>${step>=0?`<th><span class="tt" data-tip="cell:0:pred">pred ${W.target}(${step+1})</span></th>`:''}<th><span class="tt" data-tip="cell:0:true">true(${step+1})</span></th>`;
+  NODE_PRED = {};
+  body.innerHTML = '';
+  if (step < 0) return;
+  const prevRow = G.target_true ? G.target_true[step] : null;
+  const trueRow = G.target_true ? G.target_true[step+1] : null;
+  for (let node = 0; node < G.n; node++) {
+    const featsCur = encode([...G.z[step][node], ...G.msgs[step][node]]);
+    const featsPrev = step > 0 ? encode([...G.z[step-1][node], ...G.msgs[step-1][node]]) : new Array(W.F).fill(0);
+    const H = W.hidden;
+    const hiddenIn = step > 0 ? reconstruct(featsPrev) : new Array(H).fill(0);
+    const nxt = reconstruct(featsCur);
+    const h_t = [...G.node_fts[step][node], ...hiddenIn, ...nxt];
+    const logits = decodeAllClasses(h_t);
+    let predStr;
+    if (catCols) { const c = logits.indexOf(Math.max(...logits)); predStr = 'class ' + c; }
+    else if (W.target_type === 'scalar') predStr = fmt(logits[0], 2);
+    else predStr = fmt(1/(1+Math.exp(-logits[0])), 2);
+    const realP = typeof avRealPred === 'function' ? avRealPred(step, node) : null;
+    const approx = realP === null; if (!approx) predStr = realP;
+    const trueVal = trueRow ? trueRow[node] : null;
+    const prevVal = prevRow ? prevRow[node] : null;
+    NODE_PRED[node] = predStr;
+    const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'node:' + node);
+    if (node === selected?.node) tr.style.background = '#f3f4f6';
+    tr.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(prevVal,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="color:var(--pos)${approx ? ';font-style:italic;opacity:.55' : ''}">${predStr}</td><td data-tip="cell:${node}:true">${fmt(trueVal,catCols?0:2)}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+function selectTarget(node) {
+  if (!G) return;
+  const step = Math.min(curStep, G.length - 2);
+  if (step < 0) {
+    document.getElementById('question').textContent = 'This graph has no explainable step (length=' + G.length + '). Click "New random graph".';
+    return;
+  }
+  selected = { node, step };
+  drawGraph(); drawAttribution();
+}
+
+// ---------------- linear-algebra engine (generic over target type) ----------------
+function dot(a, b) { let s=0; for (let i=0;i<a.length;i++) s+=a[i]*b[i]; return s; }
+function matvec(Wm, x) { const out = new Array(Wm[0].length).fill(0); for (let i=0;i<x.length;i++) for (let j=0;j<Wm[i].length;j++) out[j]+=Wm[i][j]*x[i]; return out; }
+function encode(x) {
+  const xn = x.map((v,i)=>(v-W.mu_x[i])/W.sd_x[i]);
+  const pre = matvec(W.w_enc, xn).map((v,i)=>v+W.b_enc[i]);
+  const act = pre.map(v=>Math.max(0,v));
+  const idx = act.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).slice(0, W.K).map(p=>p[1]);
+  const feats = new Array(W.F).fill(0);
+  idx.forEach(i => feats[i] = act[i]);
+  return feats;
+}
+function reconstruct(feats) { const h = matvec(W.w_dec, feats); return h.map((v,i)=>v+W.b_dec[i]); }
+function decodeAllClasses(hT) { return matvec(W.W_dec, hT).map((v,i)=>v+W.b_dec_target[i]); } // C logits
+function featureInputGrad(f) { return W.w_enc.map((row,i)=>row[f]/W.sd_x[i]); }
+
+async function loadContexts(f) {
+  const gen = ++ctxGen, algo = curAlgo;
+  if (ctxAbort) ctxAbort.abort();
+  ctxAbort = new AbortController();
+  const n = document.getElementById('inN').value, p = document.getElementById('inP').value;
+  const box = document.getElementById('ctxBox');
+  try {
+    const ctxs = await getJSON(`/api/contexts?algo=${algo}&feature=${f}&n=${n}&p=${p}`, ctxAbort.signal);
+    if (gen !== ctxGen || algo !== curAlgo) return;   // stale: user moved to another feature/graph/algo
+    if (ctxs.error) { box.textContent = 'context lookup failed: ' + ctxs.error; return; }
+    if (!ctxs.length) { box.textContent = 'no firing examples found in a fresh 200-episode sample.'; return; }
+    box.innerHTML = ctxs.map(c => renderCtxThumb(c)).join('') +
+      '<div class="small" style="margin-top:4px;">Filled = true; ring = source; dashed = the node the feature fired on. Sampled live from 200 fresh episodes (not the fixed labeling set).</div>';
+  } catch (e) { if (e.name !== 'AbortError') box.textContent = 'context lookup failed: ' + e.message; }
+}
+
+function renderCtxThumb(c) {
+  const N = c.adj.length, pos = nodePositions(N);
+  let svg = `<svg width="110" height="110" viewBox="-10 -10 272 240">`;
+  for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) if (c.adj[i][j]>0)
+    svg += `<line x1="${pos[i][0]}" y1="${pos[i][1]}" x2="${pos[j][0]}" y2="${pos[j][1]}" stroke="#d1d5db"/>`;
+  const row = c.target_true ? c.target_true[Math.min(c.step, c.target_true.length-1)] : null;
+  for (let i=0;i<N;i++) {
+    let fill = '#e5e7eb';
+    if (row) {
+      const v = row[i];
+      fill = W.target_type==='categorical' ? CAT_PALETTE[(v|0)%CAT_PALETTE.length] : (W.target_type==='scalar' ? '#93c5fd' : (v?'#34d399':'#e5e7eb'));
+    }
+    svg += `<circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="10" fill="${fill}" stroke="${i===c.source?'#f59e0b':'#374151'}" stroke-width="${i===c.source?3:1}"/>`;
+    if (i===c.node) svg += `<circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="15" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="3,2"/>`;
+  }
+  svg += '</svg>';
+  return `<div class="ctxThumb">${svg}<div>step ${c.step} &middot; node ${c.node}<br>act ${fmt(c.activation,2)}</div></div>`;
+}
+
+boot();
+</script>
+</body>
+</html>

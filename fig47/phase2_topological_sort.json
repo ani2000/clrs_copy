@@ -1,0 +1,106 @@
+{
+  "algo": "topological_sort",
+  "target": "topo_head_h[35][12]",
+  "baseline_logit": 17.636711917012974,
+  "panels": [
+    {
+      "supernode": "ready-to-emit",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 33,
+      "trivial": false,
+      "features": [
+        174,
+        2
+      ],
+      "step": 33,
+      "node": 12,
+      "factor": -2.0,
+      "base_logit": 17.636711917012974,
+      "new_logit": 15.211543742032152,
+      "delta": -2.425168174980822,
+      "mask_changed": true
+    },
+    {
+      "supernode": "ready-to-emit",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "TRIVIAL",
+      "clamp_step": 34,
+      "trivial": true,
+      "features": [
+        144,
+        177,
+        152,
+        141,
+        2
+      ],
+      "step": 34,
+      "node": 12,
+      "factor": -2.0,
+      "base_logit": 17.636711917012974,
+      "new_logit": -26.954407832211665,
+      "delta": -44.59111974922464,
+      "mask_changed": true
+    },
+    {
+      "supernode": "blocked",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 33,
+      "trivial": false,
+      "features": [
+        27,
+        25
+      ],
+      "step": 33,
+      "node": 12,
+      "factor": -2.0,
+      "base_logit": 17.636711917012974,
+      "new_logit": 15.105181255041913,
+      "delta": -2.531530661971061,
+      "mask_changed": true
+    },
+    {
+      "supernode": "blocked",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "TRIVIAL",
+      "clamp_step": 34,
+      "trivial": true,
+      "features": [
+        27,
+        25
+      ],
+      "step": 34,
+      "node": 12,
+      "factor": -2.0,
+      "base_logit": 17.636711917012974,
+      "new_logit": 14.222679630705994,
+      "delta": -3.4140322863069805,
+      "mask_changed": true
+    },
+    {
+      "supernode": "emitted",
+      "predicted": "decrease",
+      "actual": "increase",
+      "verdict": "NOT_CONFIRMED",
+      "clamp_step": 33,
+      "trivial": false,
+      "features": [
+        176,
+        114,
+        5
+      ],
+      "step": 33,
+      "node": 12,
+      "factor": -2.0,
+      "base_logit": 17.636711917012974,
+      "new_logit": 21.388619675451757,
+      "delta": 3.751907758438783,
+      "mask_changed": true
+    }
+  ]
+}

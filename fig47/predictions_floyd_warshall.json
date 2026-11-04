@@ -1,0 +1,7 @@
+{
+  "predictions": {
+    "(unlabeled feature)": "decrease",
+    "node_fts (all steps)": "increase"
+  },
+  "frozen_at": "2026-09-24T08:07:16"
+}

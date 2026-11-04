@@ -1,0 +1,38 @@
+name: Update running container (pull latest image)
+
+# Manual trigger only; does nothing unless you type "confirmed". Uses SSM Run
+# Command on the single instance tagged Name=clrs-circuit-tracer to pull the
+# newest ECR image and restart the "tracer" container. Creates no resources.
+# Run "Build and push image to ECR" first.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "confirmed" to restart the container with the latest image'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    if: ${{ inputs.confirm == 'confirmed' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Pull latest image and restart container
+        run: |
+          id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=clrs-circuit-tracer" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          [ "$id" != "None" ] || { echo "no running clrs-circuit-tracer instance"; exit 1; }
+          acct=$(aws sts get-caller-identity --query Account --output text)
+          reg="$acct.dkr.ecr.us-east-1.amazonaws.com"
+          cmd=$(aws ssm send-command --instance-ids "$id" --document-name AWS-RunShellScript --parameters "commands=[\"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $reg\",\"docker pull $reg/clrs-circuit-tracer:latest\",\"docker rm -f tracer\",\"docker run -d --restart always --name tracer -p 80:8766 -p 8080:8767 $reg/clrs-circuit-tracer:latest\",\"docker image prune -f\",\"docker ps\"]" \
+            --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$cmd" --instance-id "$id" || true
+          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text

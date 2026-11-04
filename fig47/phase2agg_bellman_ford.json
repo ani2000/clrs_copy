@@ -1,0 +1,11 @@
+{
+  "algo": "bellman_ford",
+  "n_examples": 15,
+  "n_downstream_tests": 26,
+  "n_downstream_confirmed": 19,
+  "downstream_confirmed_frac": 0.7307692307692307,
+  "n_trivial_tests": 30,
+  "n_examples_majority_confirmed": 12,
+  "n_examples_with_tests": 15,
+  "example_confirmed_frac": 0.8
+}

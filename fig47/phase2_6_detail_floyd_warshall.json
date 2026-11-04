@@ -1,0 +1,276 @@
+{
+  "algo": "floyd_warshall",
+  "noise_floor": 0.05,
+  "examples": [
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          14.818427604089681
+        ],
+        [
+          "node_fts (all steps)",
+          -2.6704347133636475
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          16.15495548721774
+        ],
+        [
+          "node_fts (all steps)",
+          -2.4272208213806152
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          15.748704456658906
+        ],
+        [
+          "node_fts (all steps)",
+          -1.9432477951049805
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          15.688087412530496
+        ],
+        [
+          "node_fts (all steps)",
+          -2.6319503784179688
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          15.571575407298752
+        ],
+        [
+          "node_fts (all steps)",
+          -2.4027788639068604
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          16.87557097260809
+        ],
+        [
+          "node_fts (all steps)",
+          -2.7366251945495605
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          17.014175358299774
+        ],
+        [
+          "node_fts (all steps)",
+          -2.497999668121338
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          17.178678175464608
+        ],
+        [
+          "node_fts (all steps)",
+          -2.811156749725342
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          16.214422457263467
+        ],
+        [
+          "node_fts (all steps)",
+          -2.320754051208496
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          15.018243243541164
+        ],
+        [
+          "node_fts (all steps)",
+          -2.1665515899658203
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          15.76470650286772
+        ],
+        [
+          "node_fts (all steps)",
+          -2.0542335510253906
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          14.314160170324454
+        ],
+        [
+          "node_fts (all steps)",
+          -1.7854338884353638
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          17.668743162690724
+        ],
+        [
+          "node_fts (all steps)",
+          -2.8657593727111816
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          16.644785617416613
+        ],
+        [
+          "node_fts (all steps)",
+          -2.7514357566833496
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "step": 14,
+      "node": 15,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "(unlabeled feature)",
+          15.54221041166513
+        ],
+        [
+          "node_fts (all steps)",
+          -2.6585021018981934
+        ]
+      ],
+      "n_total_supernodes_into_target": 2,
+      "panels": []
+    }
+  ]
+}

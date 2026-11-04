@@ -1,0 +1,47 @@
+name: EC2 diagnose (read-only)
+
+# Manual trigger only. Read-only inspection of the clrs-circuit-tracer
+# instance: status, ECR image age, and (via SSM Run Command) docker logs,
+# container state and memory. Creates/modifies nothing.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: ECR image info
+        run: aws ecr describe-images --repository-name clrs-circuit-tracer --query 'imageDetails[].[imageTags,imagePushedAt,imageSizeInBytes]' --output text
+      - name: Instance status
+        run: |
+          aws ec2 describe-instances --filters "Name=tag:Name,Values=clrs-circuit-tracer" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].[InstanceId,LaunchTime,PublicIpAddress]' --output text
+      - name: CPU credits and credit mode (CloudWatch, read-only)
+        run: |
+          id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=clrs-circuit-tracer" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          aws ec2 describe-instance-credit-specifications --instance-ids "$id" --query 'InstanceCreditSpecifications[].CpuCredits' --output text || true
+          for m in CPUCreditBalance CPUUtilization; do
+            echo "== $m (5-min avg, last hour) =="
+            aws cloudwatch get-metric-statistics --namespace AWS/EC2 --metric-name $m \
+              --dimensions Name=InstanceId,Value=$id \
+              --start-time "$(date -u -d '1 hour ago' +%FT%TZ)" --end-time "$(date -u +%FT%TZ)" \
+              --period 300 --statistics Average --query 'sort_by(Datapoints,&Timestamp)[].[Timestamp,Average]' --output text || true
+          done
+      - name: Container logs via SSM
+        run: |
+          id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=clrs-circuit-tracer" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          cmd=$(aws ssm send-command --instance-ids "$id" --document-name AWS-RunShellScript \
+            --parameters 'commands=["docker ps -a","echo ---LOGS---","docker logs --tail 60 tracer 2>&1","echo ---IMAGE---","docker run --rm --entrypoint sh $(docker images -q | head -1) -c \"ls -l /app/checkpoints_v3/bfs/best.pkl\"","echo ---MEM---","free -m","swapon -s","vmstat 1 5","top -b -n1 | head -15","dmesg | grep -i -E \"out of memory|killed process\" | tail -5"]' \
+            --query Command.CommandId --output text)
+          sleep 20
+          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text

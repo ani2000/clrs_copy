@@ -1,0 +1,11 @@
+{
+  "algo": "articulation_points",
+  "n_examples": 15,
+  "n_downstream_tests": 44,
+  "n_downstream_confirmed": 41,
+  "downstream_confirmed_frac": 0.9318181818181818,
+  "n_trivial_tests": 38,
+  "n_examples_majority_confirmed": 15,
+  "n_examples_with_tests": 15,
+  "example_confirmed_frac": 1.0
+}

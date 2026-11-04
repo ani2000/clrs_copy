@@ -1,0 +1,9 @@
+{
+  "predictions": {
+    "relax-candidate": "decrease",
+    "source": "increase",
+    "node_fts (all steps)": "decrease",
+    "settled": "decrease"
+  },
+  "frozen_at": "2026-09-24T08:06:59"
+}

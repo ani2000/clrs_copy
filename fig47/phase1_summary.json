@@ -1,0 +1,36 @@
+{
+  "bfs": {
+    "algo": "bfs",
+    "target": "reach_h[2][15]",
+    "baseline_logit": 5.685800551820453,
+    "step": 1,
+    "node": 15,
+    "source": 1,
+    "supernode_edges_into_target": [
+      [
+        "node_fts (all steps)",
+        0.3943
+      ],
+      [
+        "unreached",
+        0.1651
+      ],
+      [
+        "frontier",
+        0.1345
+      ],
+      [
+        "bias",
+        0.0022
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "frontier": 0.29384210526315796,
+      "interior": 0.21918604651162787,
+      "unreached": 0.3196315789473684,
+      "source": 0.5868333333333333
+    },
+    "n_edges_all": 114,
+    "n_edges_supernode": 9
+  }
+}

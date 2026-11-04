@@ -1,0 +1,2644 @@
+{
+  "algo": "topological_sort",
+  "examples": [
+    {
+      "target": "topo_head_h[35][9]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.9459879806645866,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            43,
+            104,
+            120,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -45.985910939745374,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            100
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.4848618337045387,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            43,
+            61,
+            94,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -3.671598669233685,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27,
+            100
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 3.4689528832816237,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            155,
+            175
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[39][14]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.052024932928145,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            6,
+            25,
+            43,
+            104,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 38,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -46.76832858481394,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.50046177839873,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            101,
+            112,
+            141,
+            144,
+            152,
+            177,
+            180
+          ],
+          "clamped_features": [
+            27,
+            51
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 38,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -3.9476130280537003,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -7.946368565427987,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            137,
+            175
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[36][12]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.4114701958765927,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            43,
+            101,
+            112,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -3.993453548034001,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.336020695217101,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            6,
+            25,
+            43,
+            104,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -48.42574940569394,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            142
+          ],
+          "clamped_features": [
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 1.880024127197153,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            155,
+            175
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[37][12]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 35,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.4086241518274267,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            43,
+            85,
+            104,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 36,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -45.2620882565649,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 35,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.113271509461157,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            61,
+            101,
+            112,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 36,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -3.678036485251285,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 35,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 3.012740665529506,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            155,
+            175
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[39][15]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.586492513230647,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            24,
+            25,
+            141,
+            144,
+            152,
+            177,
+            178,
+            180
+          ],
+          "clamped_features": [
+            25,
+            27,
+            28
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 38,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -4.943357093424332,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 1.1682504436506989,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            85,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            174,
+            178
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 38,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -50.36530810480999,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            142
+          ],
+          "clamped_features": [
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 3.6302098011405306,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            45,
+            87,
+            99,
+            104,
+            110,
+            155,
+            172
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[35][9]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.613141570658801,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "active_after_target_step": [
+            6,
+            25,
+            104,
+            120,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -44.04645960155855,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            176
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.44037201978041,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            61,
+            94,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -3.336697933713836,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.216639346764291,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            137,
+            155
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.022243132739809823,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            176,
+            177
+          ],
+          "active_after_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[43][15]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 41,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -4.28513000864557,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            24,
+            25,
+            101,
+            141,
+            144,
+            152,
+            178,
+            180
+          ],
+          "clamped_features": [
+            25,
+            27,
+            28
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 42,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.105107949570261,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 41,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.7225070916976399,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            85,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            174,
+            178
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 42,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -51.51775642732461,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            142
+          ],
+          "clamped_features": [
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 41,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 4.051004209667742,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            45,
+            87,
+            99,
+            104,
+            110,
+            155,
+            172
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[36][12]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.4753392289986778,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            8,
+            21,
+            27,
+            46,
+            61,
+            74,
+            76,
+            174
+          ],
+          "clamped_features": [
+            25,
+            47,
+            100
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -21.500538081210728,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            74,
+            76,
+            174
+          ],
+          "clamped_features": [
+            25,
+            27,
+            46,
+            47,
+            125
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.3552790650760276,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            46,
+            47,
+            76,
+            125,
+            174
+          ],
+          "clamped_features": [
+            74
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -4.156096946808151,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            12,
+            14,
+            21,
+            24,
+            38,
+            118,
+            119,
+            187
+          ],
+          "clamped_features": [
+            144,
+            152,
+            155,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.37518699037948267,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125
+          ],
+          "clamped_features": [
+            174
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[34][14]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 32,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.3116167614967207,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            8,
+            21,
+            27,
+            46,
+            61,
+            74,
+            76,
+            174
+          ],
+          "clamped_features": [
+            25,
+            47,
+            100
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 33,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -20.71145382688441,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            74,
+            76,
+            174
+          ],
+          "clamped_features": [
+            25,
+            27,
+            46,
+            47,
+            125
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 33,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.370933621116297,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            46,
+            47,
+            76,
+            125,
+            174
+          ],
+          "clamped_features": [
+            74
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 32,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -4.364467307362471,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            12,
+            14,
+            21,
+            24,
+            38,
+            118,
+            119,
+            187
+          ],
+          "clamped_features": [
+            144,
+            152,
+            155,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 33,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.44747855917737667,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125,
+            174
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            46,
+            47,
+            74,
+            76,
+            125
+          ],
+          "clamped_features": [
+            174
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[34][11]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 32,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.6449146376745976,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            178
+          ],
+          "active_after_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            176
+          ],
+          "clamped_features": [
+            47,
+            100
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 33,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -22.38247208329863,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            178
+          ],
+          "active_after_target_step": [
+            74,
+            76,
+            174,
+            178
+          ],
+          "clamped_features": [
+            27,
+            46,
+            125
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 32,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.18035020269862123,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            178
+          ],
+          "active_after_target_step": [
+            27,
+            34,
+            46,
+            74,
+            76,
+            125,
+            174
+          ],
+          "clamped_features": [
+            114
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 33,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.5491153380564171,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            178
+          ],
+          "active_after_target_step": [
+            27,
+            46,
+            76,
+            125,
+            174,
+            178
+          ],
+          "clamped_features": [
+            74
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 32,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.9075033809256183,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            178
+          ],
+          "active_after_target_step": [
+            12,
+            21,
+            24,
+            73,
+            92,
+            104,
+            118,
+            119
+          ],
+          "clamped_features": [
+            29,
+            144,
+            150,
+            152,
+            177
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 33,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.11653378627147326,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125,
+            174,
+            178
+          ],
+          "active_after_target_step": [
+            27,
+            46,
+            74,
+            76,
+            125
+          ],
+          "clamped_features": [
+            174,
+            178
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[38][12]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 36,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.019092218689032,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            6,
+            25,
+            43,
+            104,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 37,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -46.840444864437316,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 36,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.728830066607671,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            43,
+            61,
+            112,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 37,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -4.16883067416207,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 36,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 2.5865749833582043,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            155,
+            175
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[35][10]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.7370315833532377,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            43,
+            104,
+            120,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -45.23321823712645,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            100
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.4812807304573266,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            61,
+            94,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27,
+            51
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 34,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -3.029642577904003,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27,
+            100
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 33,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 3.613540167810381,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            155,
+            175
+          ],
+          "clamped_features": [
+            5,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[39][15]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -3.5401263063241153,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            24,
+            25,
+            141,
+            144,
+            152,
+            177,
+            178,
+            180
+          ],
+          "clamped_features": [
+            25,
+            27,
+            28
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 38,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.145504493126406,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 1.06505669792098,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            85,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            174,
+            178
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 38,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -50.72373821539195,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            142
+          ],
+          "clamped_features": [
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 37,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 3.6416633500417426,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            45,
+            87,
+            99,
+            104,
+            110,
+            155,
+            172
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[43][15]",
+      "panels": [
+        {
+          "supernode": "blocked",
+          "clamp_step": 41,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -4.282539321943624,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            17,
+            24,
+            25,
+            141,
+            144,
+            152,
+            178,
+            180
+          ],
+          "clamped_features": [
+            25,
+            27,
+            28
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 42,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.301657510294504,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 41,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 1.3107284057108899,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            85,
+            141,
+            144,
+            152,
+            177,
+            178
+          ],
+          "clamped_features": [
+            174,
+            178
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 42,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -50.6878332353666,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            142
+          ],
+          "clamped_features": [
+            141,
+            144,
+            152,
+            177,
+            178
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 41,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 3.491247588834405,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            27,
+            141,
+            142,
+            144,
+            152,
+            177,
+            178
+          ],
+          "active_after_target_step": [
+            38,
+            45,
+            87,
+            99,
+            104,
+            110,
+            155,
+            172
+          ],
+          "clamped_features": [
+            5,
+            114,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "target": "topo_head_h[36][9]",
+      "panels": [
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.2923651477451585,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            6,
+            25,
+            104,
+            120,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            2,
+            174
+          ]
+        },
+        {
+          "supernode": "ready-to-emit",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -45.76693260444541,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            27,
+            100
+          ],
+          "clamped_features": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.724748389392321,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            25,
+            61,
+            94,
+            101,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27
+          ]
+        },
+        {
+          "supernode": "blocked",
+          "clamp_step": 35,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -4.067156479077411,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            2,
+            141,
+            144,
+            152,
+            177
+          ],
+          "clamped_features": [
+            25,
+            27,
+            100
+          ]
+        },
+        {
+          "supernode": "emitted",
+          "clamp_step": 34,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -5.989213029300279,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            25,
+            27,
+            100,
+            141,
+            144,
+            152,
+            177
+          ],
+          "active_after_target_step": [
+            38,
+            87,
+            99,
+            104,
+            110,
+            114,
+            137,
+            175
+          ],
+          "clamped_features": [
+            5,
+            176
+          ]
+        }
+      ]
+    }
+  ]
+}

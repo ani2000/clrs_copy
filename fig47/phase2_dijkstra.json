@@ -1,0 +1,43 @@
+{
+  "algo": "dijkstra",
+  "target": "d[8][4]",
+  "baseline_logit": 0.9741173993980039,
+  "panels": [
+    {
+      "supernode": "relax-candidate",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 6,
+      "trivial": false,
+      "features": [
+        57
+      ],
+      "step": 6,
+      "node": 4,
+      "factor": -2.0,
+      "base_logit": 0.9741173993980039,
+      "new_logit": 0.78050558442365,
+      "delta": -0.19361181497435387,
+      "mask_changed": false
+    },
+    {
+      "supernode": "relax-candidate",
+      "predicted": "decrease",
+      "actual": "increase",
+      "verdict": "TRIVIAL",
+      "clamp_step": 7,
+      "trivial": true,
+      "features": [
+        57
+      ],
+      "step": 7,
+      "node": 4,
+      "factor": -2.0,
+      "base_logit": 0.9741173993980039,
+      "new_logit": 1.0095664066058165,
+      "delta": 0.03544900720781263,
+      "mask_changed": true
+    }
+  ]
+}

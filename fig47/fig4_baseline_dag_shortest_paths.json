@@ -1,0 +1,33 @@
+{
+  "algo": "dag_shortest_paths",
+  "target": "d[36][10]",
+  "baseline_logit": 0.9630418505123056,
+  "step": 35,
+  "node": 10,
+  "source": 7,
+  "supernode_edges_into_target": [
+    [
+      "node_fts (all steps)",
+      0.6478
+    ],
+    [
+      "relax-candidate",
+      0.222
+    ],
+    [
+      "settled",
+      0.1468
+    ],
+    [
+      "bias",
+      0.0078
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "source": 0.11440495867768594,
+    "relax-candidate": 0.2929230769230769,
+    "settled": 0.16340625000000003
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 10
+}

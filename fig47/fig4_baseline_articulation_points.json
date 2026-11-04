@@ -1,0 +1,41 @@
+{
+  "algo": "articulation_points",
+  "target": "is_cut_h[64][9]",
+  "baseline_logit": -0.7874615992357193,
+  "step": 63,
+  "node": 9,
+  "source": null,
+  "supernode_edges_into_target": [
+    [
+      "newly-flagged-cut",
+      6.0116
+    ],
+    [
+      "not-cut",
+      2.8802
+    ],
+    [
+      "node_fts (all steps)",
+      -1.1385
+    ],
+    [
+      "confirmed-cut",
+      -1.0982
+    ],
+    [
+      "(unlabeled feature)",
+      0.7005
+    ],
+    [
+      "bias",
+      -0.2096
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "confirmed-cut": 0.18384848484848484,
+    "newly-flagged-cut": 0.19493749999999999,
+    "not-cut": 0.08877142857142856
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 26
+}

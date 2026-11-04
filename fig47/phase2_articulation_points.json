@@ -1,0 +1,106 @@
+{
+  "algo": "articulation_points",
+  "target": "is_cut_h[64][9]",
+  "baseline_logit": -0.7874615992357193,
+  "panels": [
+    {
+      "supernode": "newly-flagged-cut",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 62,
+      "trivial": false,
+      "features": [
+        62
+      ],
+      "step": 62,
+      "node": 9,
+      "factor": -2.0,
+      "base_logit": -0.7874615992357193,
+      "new_logit": -0.934823642199536,
+      "delta": -0.1473620429638166,
+      "mask_changed": false
+    },
+    {
+      "supernode": "newly-flagged-cut",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "TRIVIAL",
+      "clamp_step": 63,
+      "trivial": true,
+      "features": [
+        87,
+        92,
+        179,
+        166
+      ],
+      "step": 63,
+      "node": 9,
+      "factor": -2.0,
+      "base_logit": -0.7874615992357193,
+      "new_logit": -18.367291559596012,
+      "delta": -17.579829960360293,
+      "mask_changed": true
+    },
+    {
+      "supernode": "not-cut",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 62,
+      "trivial": false,
+      "features": [
+        147,
+        153,
+        19,
+        117
+      ],
+      "step": 62,
+      "node": 9,
+      "factor": -2.0,
+      "base_logit": -0.7874615992357193,
+      "new_logit": -11.146114862914818,
+      "delta": -10.358653263679098,
+      "mask_changed": true
+    },
+    {
+      "supernode": "confirmed-cut",
+      "predicted": "increase",
+      "actual": "increase",
+      "verdict": "CONFIRMED",
+      "clamp_step": 62,
+      "trivial": false,
+      "features": [
+        29,
+        143
+      ],
+      "step": 62,
+      "node": 9,
+      "factor": -2.0,
+      "base_logit": -0.7874615992357193,
+      "new_logit": 1.7754477409464173,
+      "delta": 2.5629093401821366,
+      "mask_changed": true
+    },
+    {
+      "supernode": "confirmed-cut",
+      "predicted": "increase",
+      "actual": "increase",
+      "verdict": "TRIVIAL",
+      "clamp_step": 63,
+      "trivial": true,
+      "features": [
+        29,
+        143,
+        126
+      ],
+      "step": 63,
+      "node": 9,
+      "factor": -2.0,
+      "base_logit": -0.7874615992357193,
+      "new_logit": -0.09164955863874391,
+      "delta": 0.6958120405969754,
+      "mask_changed": true
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "algo": "bellman_ford",
+  "target": "d[3][13]",
+  "baseline_logit": 0.6737551378559034,
+  "panels": [
+    {
+      "supernode": "relax-candidate",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 1,
+      "trivial": false,
+      "features": [
+        177,
+        165,
+        162,
+        140,
+        149,
+        163
+      ],
+      "step": 1,
+      "node": 13,
+      "factor": -2.0,
+      "base_logit": 0.6737551378559034,
+      "new_logit": -0.12944934082664272,
+      "delta": -0.8032044786825461,
+      "mask_changed": true
+    },
+    {
+      "supernode": "relax-candidate",
+      "predicted": "decrease",
+      "actual": "increase",
+      "verdict": "TRIVIAL",
+      "clamp_step": 2,
+      "trivial": true,
+      "features": [
+        37,
+        105,
+        162,
+        32,
+        134,
+        141,
+        4
+      ],
+      "step": 2,
+      "node": 13,
+      "factor": -2.0,
+      "base_logit": 0.6737551378559034,
+      "new_logit": 0.6890760128019506,
+      "delta": 0.01532087494604728,
+      "mask_changed": true
+    },
+    {
+      "supernode": "settled",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 1,
+      "trivial": false,
+      "features": [
+        138,
+        24
+      ],
+      "step": 1,
+      "node": 13,
+      "factor": -2.0,
+      "base_logit": 0.6737551378559034,
+      "new_logit": 0.6306935662857298,
+      "delta": -0.04306157157017354,
+      "mask_changed": true
+    }
+  ]
+}

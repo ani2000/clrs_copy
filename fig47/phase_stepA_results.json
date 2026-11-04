@@ -1,0 +1,203 @@
+{
+  "dag_shortest_paths": {
+    "n_qualifying": 4,
+    "median_delta": 0.19818429635938212,
+    "top_features": [
+      {
+        "id": 161,
+        "count": 2,
+        "frac": 0.5,
+        "label": "is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 0.218,
+        "recall": 0.334,
+        "f1": 0.264
+      },
+      {
+        "id": 45,
+        "count": 2,
+        "frac": 0.5,
+        "label": "not is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 0.996,
+        "recall": 0.055,
+        "f1": 0.105
+      },
+      {
+        "id": 31,
+        "count": 2,
+        "frac": 0.5,
+        "label": "not is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 0.978,
+        "recall": 0.074,
+        "f1": 0.138
+      },
+      {
+        "id": 71,
+        "count": 2,
+        "frac": 0.5,
+        "label": "is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 0.224,
+        "recall": 0.333,
+        "f1": 0.268
+      },
+      {
+        "id": 108,
+        "count": 1,
+        "frac": 0.25,
+        "label": "stays same",
+        "mapped_supernode": "settled",
+        "same_category": true,
+        "precision": 1.0,
+        "recall": 0.107,
+        "f1": 0.193
+      },
+      {
+        "id": 179,
+        "count": 1,
+        "frac": 0.25,
+        "label": "not is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 0.999,
+        "recall": 0.003,
+        "f1": 0.007
+      },
+      {
+        "id": 21,
+        "count": 1,
+        "frac": 0.25,
+        "label": "not is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 1.0,
+        "recall": 0.037,
+        "f1": 0.072
+      },
+      {
+        "id": 54,
+        "count": 1,
+        "frac": 0.25,
+        "label": "not is_source",
+        "mapped_supernode": "source",
+        "same_category": true,
+        "precision": 1.0,
+        "recall": 0.034,
+        "f1": 0.066
+      }
+    ],
+    "clamped_supernodes": [
+      "source",
+      "relax-candidate",
+      "settled"
+    ],
+    "generalizes": false,
+    "reason": "top-1 frequency 50% < 80% threshold"
+  },
+  "mst_prim": {
+    "n_qualifying": 3,
+    "median_delta": 0.13751891218737644,
+    "top_features": [
+      {
+        "id": 68,
+        "count": 2,
+        "frac": 0.6666666666666666,
+        "label": "stays same",
+        "mapped_supernode": "tree-interior",
+        "same_category": true,
+        "precision": 0.999,
+        "recall": 0.22,
+        "f1": 0.361
+      },
+      {
+        "id": 146,
+        "count": 2,
+        "frac": 0.6666666666666666,
+        "label": "not is_source",
+        "mapped_supernode": "source",
+        "same_category": false,
+        "precision": 1.0,
+        "recall": 0.056,
+        "f1": 0.106
+      },
+      {
+        "id": 133,
+        "count": 1,
+        "frac": 0.3333333333333333,
+        "label": "stays same",
+        "mapped_supernode": "tree-interior",
+        "same_category": true,
+        "precision": 0.992,
+        "recall": 0.011,
+        "f1": 0.023
+      },
+      {
+        "id": 46,
+        "count": 1,
+        "frac": 0.3333333333333333,
+        "label": "is_source",
+        "mapped_supernode": "source",
+        "same_category": false,
+        "precision": 0.303,
+        "recall": 0.44,
+        "f1": 0.359
+      },
+      {
+        "id": 16,
+        "count": 1,
+        "frac": 0.3333333333333333,
+        "label": "stays same",
+        "mapped_supernode": "tree-interior",
+        "same_category": true,
+        "precision": 0.973,
+        "recall": 0.037,
+        "f1": 0.072
+      },
+      {
+        "id": 178,
+        "count": 1,
+        "frac": 0.3333333333333333,
+        "label": "decreases",
+        "mapped_supernode": "frontier-edge",
+        "same_category": true,
+        "precision": 0.309,
+        "recall": 0.495,
+        "f1": 0.381
+      },
+      {
+        "id": 89,
+        "count": 1,
+        "frac": 0.3333333333333333,
+        "label": "increases",
+        "mapped_supernode": "frontier-edge",
+        "same_category": true,
+        "precision": 0.231,
+        "recall": 0.327,
+        "f1": 0.271
+      },
+      {
+        "id": 136,
+        "count": 1,
+        "frac": 0.3333333333333333,
+        "label": "stays same",
+        "mapped_supernode": "tree-interior",
+        "same_category": true,
+        "precision": 0.953,
+        "recall": 0.037,
+        "f1": 0.07
+      }
+    ],
+    "clamped_supernodes": [
+      "tree-interior",
+      "frontier-edge"
+    ],
+    "generalizes": false,
+    "reason": "top-1 frequency 67% < 80% threshold"
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "bfs": {
+    "algo": "bfs",
+    "table": {
+      "CONFIRMED_maskchg": 9,
+      "CONFIRMED_same": 2,
+      "NOT_CONFIRMED_maskchg": 8,
+      "NOT_CONFIRMED_same": 1
+    },
+    "n": 20
+  },
+  "dfs": {
+    "algo": "dfs",
+    "table": {
+      "CONFIRMED_maskchg": 19,
+      "CONFIRMED_same": 5,
+      "NOT_CONFIRMED_maskchg": 7,
+      "NOT_CONFIRMED_same": 0
+    },
+    "n": 31
+  },
+  "bellman_ford": {
+    "algo": "bellman_ford",
+    "table": {
+      "CONFIRMED_maskchg": 18,
+      "CONFIRMED_same": 1,
+      "NOT_CONFIRMED_maskchg": 6,
+      "NOT_CONFIRMED_same": 1
+    },
+    "n": 26
+  },
+  "dijkstra": {
+    "algo": "dijkstra",
+    "table": {
+      "CONFIRMED_maskchg": 29,
+      "CONFIRMED_same": 2,
+      "NOT_CONFIRMED_maskchg": 1,
+      "NOT_CONFIRMED_same": 1
+    },
+    "n": 33
+  },
+  "dag_shortest_paths": {
+    "algo": "dag_shortest_paths",
+    "table": {
+      "CONFIRMED_maskchg": 24,
+      "CONFIRMED_same": 2,
+      "NOT_CONFIRMED_maskchg": 8,
+      "NOT_CONFIRMED_same": 0
+    },
+    "n": 34
+  },
+  "mst_prim": {
+    "algo": "mst_prim",
+    "table": {
+      "CONFIRMED_maskchg": 23,
+      "CONFIRMED_same": 3,
+      "NOT_CONFIRMED_maskchg": 4,
+      "NOT_CONFIRMED_same": 2
+    },
+    "n": 32
+  },
+  "mst_kruskal": {
+    "algo": "mst_kruskal",
+    "table": {
+      "CONFIRMED_maskchg": 23,
+      "CONFIRMED_same": 1,
+      "NOT_CONFIRMED_maskchg": 9,
+      "NOT_CONFIRMED_same": 1
+    },
+    "n": 34
+  },
+  "topological_sort": {
+    "algo": "topological_sort",
+    "table": {
+      "CONFIRMED_maskchg": 30,
+      "CONFIRMED_same": 0,
+      "NOT_CONFIRMED_maskchg": 13,
+      "NOT_CONFIRMED_same": 0
+    },
+    "n": 43
+  },
+  "articulation_points": {
+    "algo": "articulation_points",
+    "table": {
+      "CONFIRMED_maskchg": 35,
+      "CONFIRMED_same": 6,
+      "NOT_CONFIRMED_maskchg": 3,
+      "NOT_CONFIRMED_same": 0
+    },
+    "n": 44
+  },
+  "bridges": {
+    "algo": "bridges",
+    "table": {
+      "CONFIRMED_maskchg": 28,
+      "CONFIRMED_same": 0,
+      "NOT_CONFIRMED_maskchg": 6,
+      "NOT_CONFIRMED_same": 4
+    },
+    "n": 38
+  },
+  "strongly_connected_components": {
+    "algo": "strongly_connected_components",
+    "table": {
+      "CONFIRMED_maskchg": 26,
+      "CONFIRMED_same": 2,
+      "NOT_CONFIRMED_maskchg": 10,
+      "NOT_CONFIRMED_same": 2
+    },
+    "n": 40
+  },
+  "floyd_warshall": {
+    "algo": "floyd_warshall",
+    "table": {
+      "CONFIRMED_maskchg": 0,
+      "CONFIRMED_same": 0,
+      "NOT_CONFIRMED_maskchg": 0,
+      "NOT_CONFIRMED_same": 0
+    },
+    "n": 0
+  }
+}

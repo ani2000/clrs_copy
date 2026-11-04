@@ -1,0 +1,25 @@
+{
+  "algo": "floyd_warshall",
+  "target": "k[15][15]",
+  "baseline_logit": 4.7143565757987185,
+  "step": 14,
+  "node": 15,
+  "source": null,
+  "supernode_edges_into_target": [
+    [
+      "(unlabeled feature)",
+      12.5074
+    ],
+    [
+      "node_fts (all steps)",
+      -2.7033
+    ],
+    [
+      "bias",
+      -0.0105
+    ]
+  ],
+  "mean_f1_per_supernode": {},
+  "n_edges_all": 178,
+  "n_edges_supernode": 5
+}

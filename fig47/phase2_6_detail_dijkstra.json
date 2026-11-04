@@ -1,0 +1,1630 @@
+{
+  "algo": "dijkstra",
+  "noise_floor": 0.05,
+  "examples": [
+    {
+      "target": "d[13][13]",
+      "step": 12,
+      "node": 13,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          0.4633046263125414
+        ],
+        [
+          "relax-candidate",
+          1.562263660401987
+        ],
+        [
+          "settled",
+          -0.14564613764298517
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.3407824906364993,
+          "net_signed_weight": 0.4347710851793436,
+          "mean_abs_member_weight": 0.14637109544838914,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.0021711005829119223,
+            0.1159509344894083,
+            0.3209912512728472
+          ],
+          "cancellation_ratio": 0.9901114329699179
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.08560063240267635,
+          "net_signed_weight": 0.028533541133197782,
+          "mean_abs_member_weight": 0.03186170620535613,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.0335257887414353,
+            0.005711815560173028,
+            0.05634751431446006
+          ],
+          "cancellation_ratio": 0.2985144711469881
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.9883211795920279,
+          "net_signed_weight": 0.6679620105268071,
+          "mean_abs_member_weight": 0.6679620105268071,
+          "n_active_members": 1,
+          "member_weights": [
+            0.6679620105268071
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -2.68290511756528,
+          "net_signed_weight": 0.8943016498751799,
+          "mean_abs_member_weight": 0.2604357621536604,
+          "n_active_members": 5,
+          "member_weights": [
+            0.31475460082766915,
+            -0.203938580446561,
+            0.23571940183401807,
+            0.07695549089098641,
+            0.47081073676906726
+          ],
+          "cancellation_ratio": 0.686773308304357
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.5417581733220964,
+          "net_signed_weight": -0.14564613764298517,
+          "mean_abs_member_weight": 0.06402421330432273,
+          "n_active_members": 4,
+          "member_weights": [
+            -0.11027163095025383,
+            -0.061555769207332744,
+            -0.029044095272551473,
+            0.05522535778715287
+          ],
+          "cancellation_ratio": 0.5687150615607469
+        }
+      ]
+    },
+    {
+      "target": "d[6][12]",
+      "step": 5,
+      "node": 12,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          0.08306721191667629
+        ],
+        [
+          "settled",
+          -0.027439344974104385
+        ],
+        [
+          "node_fts (all steps)",
+          0.05664108321070671
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.24491122363687168,
+          "net_signed_weight": 0.10403521161392723,
+          "mean_abs_member_weight": 0.06179291466676891,
+          "n_active_members": 5,
+          "member_weights": [
+            0.2064998924738859,
+            -0.0015826945982070628,
+            -0.04626004935902017,
+            -0.020979603165382166,
+            -0.03364233373734926
+          ],
+          "cancellation_ratio": 0.33672213772390786
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.06290402008246188,
+          "net_signed_weight": -0.02096799969725094,
+          "mean_abs_member_weight": 0.027639181563146133,
+          "n_active_members": 5,
+          "member_weights": [
+            -0.05257332471567677,
+            -0.022856218237641723,
+            -0.004152410803172302,
+            0.050943219207109536,
+            0.007670734852130323
+          ],
+          "cancellation_ratio": 0.15172663234869085
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "NOT_CONFIRMED",
+          "delta": -0.020277198297343757,
+          "net_signed_weight": 0.0019406989519028528,
+          "mean_abs_member_weight": 0.029059358513824574,
+          "n_active_members": 2,
+          "member_weights": [
+            0.030029707989776,
+            -0.028089009037873147
+          ],
+          "cancellation_ratio": 0.03339197854246495
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.006938465986437159,
+          "net_signed_weight": -0.002312818488880264,
+          "mean_abs_member_weight": 0.004063577989701722,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.005219987234141854,
+            0.00290716874526159
+          ],
+          "cancellation_ratio": 0.28457906981748754
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.08756540958571907,
+          "net_signed_weight": -0.03678226242522831,
+          "mean_abs_member_weight": 0.03678226242522831,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.03678226242522831
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.028028767002906463,
+          "net_signed_weight": 0.009342917451123922,
+          "mean_abs_member_weight": 0.009342917451123922,
+          "n_active_members": 1,
+          "member_weights": [
+            0.009342917451123922
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[1][6]",
+      "step": 0,
+      "node": 6,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          -0.07918089773035858
+        ],
+        [
+          "relax-candidate",
+          0.007189092286748799
+        ],
+        [
+          "node_fts (all steps)",
+          0.04855574667453766
+        ]
+      ],
+      "n_total_supernodes_into_target": 3,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 0,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.23754270638700462,
+          "net_signed_weight": -0.07918089773035858,
+          "mean_abs_member_weight": 0.028984865782504088,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.02005452350783976,
+            -0.06301322403109566,
+            0.003886849808576842
+          ],
+          "cancellation_ratio": 0.9106004759462429
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 0,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.021567300125133387,
+          "net_signed_weight": 0.007189092286748799,
+          "mean_abs_member_weight": 0.04732511446813037,
+          "n_active_members": 5,
+          "member_weights": [
+            0.11513933962066503,
+            -0.004163169183104554,
+            -0.0893934680050279,
+            -0.02116160283881907,
+            0.006767992693035296
+          ],
+          "cancellation_ratio": 0.030381721703346628
+        }
+      ]
+    },
+    {
+      "target": "d[11][13]",
+      "step": 10,
+      "node": 13,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          0.7847004954130447
+        ],
+        [
+          "relax-candidate",
+          0.2399235098432051
+        ],
+        [
+          "node_fts (all steps)",
+          0.07633980363607407
+        ]
+      ],
+      "n_total_supernodes_into_target": 3,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 9,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.7155169420546816,
+          "net_signed_weight": 0.7915746527643014,
+          "mean_abs_member_weight": 0.1342016013425805,
+          "n_active_members": 6,
+          "member_weights": [
+            0.30522321617226567,
+            -0.006817477645590819,
+            0.04990093082497693,
+            0.09023476085626037,
+            0.2097758688436553,
+            0.14325735371273396
+          ],
+          "cancellation_ratio": 0.9830665765102967
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 10,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.02062250391312448,
+          "net_signed_weight": -0.006874157351256738,
+          "mean_abs_member_weight": 0.05285835350457598,
+          "n_active_members": 6,
+          "member_weights": [
+            -0.10867428270817658,
+            -0.044301422728718176,
+            0.010146652617234908,
+            0.01776535263765644,
+            0.12722597658320822,
+            -0.009036433752461548
+          ],
+          "cancellation_ratio": 0.021674774485303246
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 9,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.46709842849271466,
+          "net_signed_weight": 0.11189750953938926,
+          "mean_abs_member_weight": 0.05594875476969463,
+          "n_active_members": 2,
+          "member_weights": [
+            0.04952844040211346,
+            0.0623690691372758
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 10,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.3840780252623439,
+          "net_signed_weight": 0.12802600030381583,
+          "mean_abs_member_weight": 0.07180453227305428,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.007791532121146361,
+            0.1358175324249622
+          ],
+          "cancellation_ratio": 0.8914896890976581
+        }
+      ]
+    },
+    {
+      "target": "d[12][10]",
+      "step": 11,
+      "node": 10,
+      "n_live_supernodes": 4,
+      "live_supernodes": [
+        [
+          "relax-candidate",
+          0.5925381502210263
+        ],
+        [
+          "source",
+          -0.3357518286857139
+        ],
+        [
+          "settled",
+          -0.15996320816587595
+        ],
+        [
+          "node_fts (all steps)",
+          0.05609334260225296
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 10,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.37506612880768875,
+          "net_signed_weight": 0.7037841353860892,
+          "mean_abs_member_weight": 0.3956901407059792,
+          "n_active_members": 2,
+          "member_weights": [
+            0.7475822083990238,
+            -0.04379807301293459
+          ],
+          "cancellation_ratio": 0.8893121953081993
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 11,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.3337379231936224,
+          "net_signed_weight": -0.1112459851650629,
+          "mean_abs_member_weight": 0.1417654783568334,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.26202980347420635,
+            0.15702522495271864,
+            -0.006241406643575198
+          ],
+          "cancellation_ratio": 0.2615728136696513
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 10,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.4401220633056301,
+          "net_signed_weight": -0.0008834217545050649,
+          "mean_abs_member_weight": 0.10499314202850367,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.0840247321011578,
+            -0.07390669181885023,
+            0.15704800216550296
+          ],
+          "cancellation_ratio": 0.0028046966923650197
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 11,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.0046051766025617,
+          "net_signed_weight": -0.33486840693120884,
+          "mean_abs_member_weight": 0.13093482880926244,
+          "n_active_members": 4,
+          "member_weights": [
+            0.005096459037972123,
+            0.034188255850091664,
+            0.055150739264856696,
+            -0.4293038610841293
+          ],
+          "cancellation_ratio": 0.6393799304137479
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 10,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.12309220448493796,
+          "net_signed_weight": -0.090548220721689,
+          "mean_abs_member_weight": 0.090548220721689,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.090548220721689
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 11,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.20824497960498412,
+          "net_signed_weight": -0.06941498744418695,
+          "mean_abs_member_weight": 0.06941498744418695,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.06941498744418695
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[9][5]",
+      "step": 8,
+      "node": 5,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "relax-candidate",
+          1.1075846655595716
+        ],
+        [
+          "settled",
+          -0.10081691329408216
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 7,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.012918994142819162,
+          "net_signed_weight": 0.13284504207872327,
+          "mean_abs_member_weight": 0.08707244836903771,
+          "n_active_members": 4,
+          "member_weights": [
+            -0.05226172312612576,
+            -0.05546065257258803,
+            0.17968707497379555,
+            0.06088034280364152
+          ],
+          "cancellation_ratio": 0.3814210021856981
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 8,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.245315095521065,
+          "net_signed_weight": -0.08177170524859778,
+          "mean_abs_member_weight": 0.06183816204362258,
+          "n_active_members": 3,
+          "member_weights": [
+            0.014235639513018539,
+            -0.13364309568973276,
+            0.03763575092811644
+          ],
+          "cancellation_ratio": 0.44078339624062274
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 7,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.5536733322629672,
+          "net_signed_weight": 0.7077608506681523,
+          "mean_abs_member_weight": 0.3745755797802057,
+          "n_active_members": 2,
+          "member_weights": [
+            0.7284560051142819,
+            -0.02069515444612957
+          ],
+          "cancellation_ratio": 0.9447503906734307
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 8,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.1994714957284802,
+          "net_signed_weight": 0.39982381489141927,
+          "mean_abs_member_weight": 0.1749462158976443,
+          "n_active_members": 5,
+          "member_weights": [
+            0.272119694152277,
+            -0.2362117649767015,
+            0.3127941040517186,
+            -0.001241867321699619,
+            0.052363648985824796
+          ],
+          "cancellation_ratio": 0.4570819812705683
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 7,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.4252523649433504,
+          "net_signed_weight": -0.10081691329408216,
+          "mean_abs_member_weight": 0.05040845664704108,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.09757103418674529,
+            -0.0032458791073368687
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[8][10]",
+      "step": 7,
+      "node": 10,
+      "n_live_supernodes": 4,
+      "live_supernodes": [
+        [
+          "source",
+          0.13628650708879736
+        ],
+        [
+          "relax-candidate",
+          -0.020385596206672518
+        ],
+        [
+          "settled",
+          -0.031056261353520576
+        ],
+        [
+          "node_fts (all steps)",
+          0.054688725620508194
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 6,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.8376825074396006,
+          "net_signed_weight": 0.3956855745510519,
+          "mean_abs_member_weight": 0.08087305275625294,
+          "n_active_members": 5,
+          "member_weights": [
+            0.34472243077473763,
+            -0.0038316063433698755,
+            -0.0005082382717365164,
+            0.03273350368688077,
+            0.0225694847045399
+          ],
+          "cancellation_ratio": 0.978535027591025
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 7,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.7781972697617373,
+          "net_signed_weight": -0.25939906746225455,
+          "mean_abs_member_weight": 0.059378077836817776,
+          "n_active_members": 5,
+          "member_weights": [
+            -0.1927889852176179,
+            -0.08535574310555383,
+            0.006970040719258996,
+            0.005852435988234872,
+            0.0059231841534233
+          ],
+          "cancellation_ratio": 0.8737199886299196
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 6,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.11717440398513557,
+          "net_signed_weight": -0.053900173931784146,
+          "mean_abs_member_weight": 0.026950086965892073,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.053242583801915266,
+            -0.0006575901298688791
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 7,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.10054372491812275,
+          "net_signed_weight": 0.03351457772511163,
+          "mean_abs_member_weight": 0.016757288862555814,
+          "n_active_members": 2,
+          "member_weights": [
+            0.033064069060191326,
+            0.0004505086649203016
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 6,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.03315069251103464,
+          "net_signed_weight": -0.012568739849620592,
+          "mean_abs_member_weight": 0.012568739849620592,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.012568739849620592
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 7,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.055462562470465215,
+          "net_signed_weight": -0.018487521503899984,
+          "mean_abs_member_weight": 0.018487521503899984,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.018487521503899984
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[14][7]",
+      "step": 13,
+      "node": 7,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          0.876773629779874
+        ],
+        [
+          "relax-candidate",
+          0.28983547228442497
+        ],
+        [
+          "node_fts (all steps)",
+          0.053321342915296555
+        ]
+      ],
+      "n_total_supernodes_into_target": 3,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 12,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.9067651904411143,
+          "net_signed_weight": 0.8520527352824636,
+          "mean_abs_member_weight": 0.14622363667039354,
+          "n_active_members": 6,
+          "member_weights": [
+            0.2632346280189779,
+            -0.01264454236994883,
+            0.0481345338293282,
+            0.0749023977338581,
+            0.2658682573961002,
+            0.21255746067414805
+          ],
+          "cancellation_ratio": 0.9711753342166534
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 13,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.07416263679083634,
+          "net_signed_weight": 0.02472089449741044,
+          "mean_abs_member_weight": 0.058398189686908956,
+          "n_active_members": 7,
+          "member_weights": [
+            -0.1477078554901201,
+            -0.03979214850481716,
+            0.032972508969392855,
+            0.01553562830584898,
+            0.024150468595819374,
+            0.14409550528182535,
+            -0.0045332126605388545
+          ],
+          "cancellation_ratio": 0.06047373001982944
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 12,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.6373379634498748,
+          "net_signed_weight": 0.1765060441999129,
+          "mean_abs_member_weight": 0.08825302209995645,
+          "n_active_members": 2,
+          "member_weights": [
+            0.03580126061074829,
+            0.1407047835891646
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 13,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.3399883150280143,
+          "net_signed_weight": 0.11332942808451207,
+          "mean_abs_member_weight": 0.11332942808451207,
+          "n_active_members": 1,
+          "member_weights": [
+            0.11332942808451207
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[13][7]",
+      "step": 12,
+      "node": 7,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          0.18186081467172727
+        ],
+        [
+          "relax-candidate",
+          0.7241977097549743
+        ],
+        [
+          "node_fts (all steps)",
+          0.06097017228603363
+        ]
+      ],
+      "n_total_supernodes_into_target": 3,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.3533605682063611,
+          "net_signed_weight": 0.11752569896135479,
+          "mean_abs_member_weight": 0.041402851203191905,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.0033414273241104686,
+            0.06641118273015767,
+            0.054455943555307584
+          ],
+          "cancellation_ratio": 0.9461965021408499
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.19300527946284585,
+          "net_signed_weight": 0.06433511571037248,
+          "mean_abs_member_weight": 0.07079955956573594,
+          "n_active_members": 7,
+          "member_weights": [
+            -0.18702285600298296,
+            -0.026716140948849,
+            0.07038562226035694,
+            0.008510166856735835,
+            0.04751793522068404,
+            0.1535522919974852,
+            -0.0018919036730575822
+          ],
+          "cancellation_ratio": 0.12981338968972103
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.2895921126742098,
+          "net_signed_weight": 0.6448854972549605,
+          "mean_abs_member_weight": 0.14955658167725994,
+          "n_active_members": 5,
+          "member_weights": [
+            0.00028720022492767505,
+            -0.051448705565669606,
+            0.6239895851965542,
+            0.0347657918755333,
+            0.03729162552361487
+          ],
+          "cancellation_ratio": 0.8623966796013167
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.23793662672135119,
+          "net_signed_weight": 0.07931221250001386,
+          "mean_abs_member_weight": 0.07931221250001386,
+          "n_active_members": 1,
+          "member_weights": [
+            0.07931221250001386
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[5][15]",
+      "step": 4,
+      "node": 15,
+      "n_live_supernodes": 4,
+      "live_supernodes": [
+        [
+          "source",
+          0.16235017180813785
+        ],
+        [
+          "relax-candidate",
+          -0.03295967727479715
+        ],
+        [
+          "settled",
+          -0.024035556772760813
+        ],
+        [
+          "node_fts (all steps)",
+          0.06614165008068085
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.6746916903478444,
+          "net_signed_weight": 0.39960747610737024,
+          "mean_abs_member_weight": 0.10516854259464264,
+          "n_active_members": 4,
+          "member_weights": [
+            0.3641504720253863,
+            -0.001200822532183815,
+            -0.009332524603416381,
+            0.0459903512175841
+          ],
+          "cancellation_ratio": 0.949921588358415
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.711771980597046,
+          "net_signed_weight": -0.23725730429923236,
+          "mean_abs_member_weight": 0.06306973284490208,
+          "n_active_members": 5,
+          "member_weights": [
+            -0.1786092121538907,
+            -0.09769377210798069,
+            0.03127776257920711,
+            0.0024128963927396163,
+            0.005355020990692294
+          ],
+          "cancellation_ratio": 0.7523650207388181
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.1247445862855775,
+          "net_signed_weight": -0.05271184439460175,
+          "mean_abs_member_weight": 0.026355922197300874,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.05019218614391807,
+            -0.002519658250683676
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.05925649636140212,
+          "net_signed_weight": 0.019752167119804598,
+          "mean_abs_member_weight": 0.009876083559902299,
+          "n_active_members": 2,
+          "member_weights": [
+            0.019218875602783125,
+            0.0005332915170214725
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.02335870600995782,
+          "net_signed_weight": -0.008565878619205325,
+          "mean_abs_member_weight": 0.008565878619205325,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.008565878619205325
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.046409032752636414,
+          "net_signed_weight": -0.015469678153555488,
+          "mean_abs_member_weight": 0.015469678153555488,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.015469678153555488
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[11][1]",
+      "step": 10,
+      "node": 1,
+      "n_live_supernodes": 2,
+      "live_supernodes": [
+        [
+          "source",
+          0.4139369920675344
+        ],
+        [
+          "node_fts (all steps)",
+          0.0371333509683609
+        ]
+      ],
+      "n_total_supernodes_into_target": 3,
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 9,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.02186084538184696,
+          "net_signed_weight": -0.01980975406115082,
+          "mean_abs_member_weight": 0.024666825693053784,
+          "n_active_members": 2,
+          "member_weights": [
+            0.014761948662478375,
+            -0.034571702723629194
+          ],
+          "cancellation_ratio": 0.4015464800306526
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 10,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.01678914275387966,
+          "net_signed_weight": 0.0055963843516440015,
+          "mean_abs_member_weight": 0.006339772501031238,
+          "n_active_members": 3,
+          "member_weights": [
+            -0.0018962379350728753,
+            -0.004815228640651981,
+            0.012307850927368857
+          ],
+          "cancellation_ratio": 0.2942473803664976
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 9,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.4098063637383933,
+          "net_signed_weight": 0.513718478260186,
+          "mean_abs_member_weight": 0.09157218467847435,
+          "n_active_members": 6,
+          "member_weights": [
+            0.33782168623446296,
+            -0.0014597054107033103,
+            -0.016397609494626764,
+            0.05317856045244174,
+            0.046141272318054316,
+            0.09443427416055705
+          ],
+          "cancellation_ratio": 0.9349973103440011
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 10,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.2993445131164678,
+          "net_signed_weight": -0.09978148619265154,
+          "mean_abs_member_weight": 0.05386039013964618,
+          "n_active_members": 5,
+          "member_weights": [
+            -0.1845417184454412,
+            0.01226699157637512,
+            0.009534567323731313,
+            0.016506488108398054,
+            0.04645218524428518
+          ],
+          "cancellation_ratio": 0.370518987827395
+        }
+      ]
+    },
+    {
+      "target": "d[14][8]",
+      "step": 13,
+      "node": 8,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          0.07034032930398695
+        ],
+        [
+          "relax-candidate",
+          0.02644914516641972
+        ],
+        [
+          "node_fts (all steps)",
+          0.05135685205459595
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 12,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.5607925167356098,
+          "net_signed_weight": 0.28413427293532356,
+          "mean_abs_member_weight": 0.05435935995166371,
+          "n_active_members": 6,
+          "member_weights": [
+            0.2816172426123842,
+            -0.0013454873019417557,
+            -0.014070931768989325,
+            -0.000771933216616838,
+            0.023527973710268713,
+            -0.004822591099781448
+          ],
+          "cancellation_ratio": 0.8711602233358876
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 13,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.6413818793100601,
+          "net_signed_weight": -0.21379394363133658,
+          "mean_abs_member_weight": 0.052091145453390185,
+          "n_active_members": 5,
+          "member_weights": [
+            -0.12119803887196134,
+            -0.11397962844864296,
+            -0.001947168128539456,
+            0.007344683677396657,
+            0.01598620814041052
+          ],
+          "cancellation_ratio": 0.8208456226889228
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 12,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.08727015811167527,
+          "net_signed_weight": 0.03207318953489402,
+          "mean_abs_member_weight": 0.028945017959886687,
+          "n_active_members": 2,
+          "member_weights": [
+            0.0449816127273337,
+            -0.012908423192439678
+          ],
+          "cancellation_ratio": 0.554036442114883
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 13,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.016872142149909675,
+          "net_signed_weight": -0.005624044368474301,
+          "mean_abs_member_weight": 0.005624044368474301,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.005624044368474301
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 13,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0037718621100558125,
+          "net_signed_weight": 0.0012572880980600276,
+          "mean_abs_member_weight": 0.003211645473782887,
+          "n_active_members": 2,
+          "member_weights": [
+            0.003840289522812901,
+            -0.002583001424752873
+          ],
+          "cancellation_ratio": 0.195738930140865
+        }
+      ]
+    },
+    {
+      "target": "d[1][11]",
+      "step": 0,
+      "node": 11,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "source",
+          -0.04794947565947477
+        ],
+        [
+          "relax-candidate",
+          -0.03530028737560764
+        ],
+        [
+          "node_fts (all steps)",
+          0.05974312126636505
+        ]
+      ],
+      "n_total_supernodes_into_target": 3,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 0,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.1438484333444728,
+          "net_signed_weight": -0.04794947565947477,
+          "mean_abs_member_weight": 0.02023199443451372,
+          "n_active_members": 4,
+          "member_weights": [
+            -0.008335653546467925,
+            -0.0561030731522969,
+            0.005876137912577406,
+            0.010613113126712648
+          ],
+          "cancellation_ratio": 0.5924956609527069
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 0,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.10590086134513851,
+          "net_signed_weight": -0.03530028737560764,
+          "mean_abs_member_weight": 0.06931020115926734,
+          "n_active_members": 4,
+          "member_weights": [
+            0.12097025863073085,
+            -0.0013569509387028056,
+            -0.07502892600967925,
+            -0.07988466905795644
+          ],
+          "cancellation_ratio": 0.1273271711277082
+        }
+      ]
+    },
+    {
+      "target": "d[13][14]",
+      "step": 12,
+      "node": 14,
+      "n_live_supernodes": 3,
+      "live_supernodes": [
+        [
+          "relax-candidate",
+          0.3703722053715115
+        ],
+        [
+          "source",
+          0.8872460251680824
+        ],
+        [
+          "node_fts (all steps)",
+          0.07238452136516571
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.7965305406883317,
+          "net_signed_weight": 0.17873714138157837,
+          "mean_abs_member_weight": 0.08936857069078918,
+          "n_active_members": 2,
+          "member_weights": [
+            0.06329681101829365,
+            0.11544033036328472
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.5749052330672135,
+          "net_signed_weight": 0.19163506398993313,
+          "mean_abs_member_weight": 0.10400292817206402,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.00818539617709746,
+            0.1998204601670306
+          ],
+          "cancellation_ratio": 0.9212964834648173
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 11,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.03760172773981,
+          "net_signed_weight": 0.8443881556080463,
+          "mean_abs_member_weight": 0.14215004608634024,
+          "n_active_members": 6,
+          "member_weights": [
+            0.27395687129271096,
+            -0.004256060454997601,
+            0.03571474876917757,
+            0.08646514655566762,
+            0.23553800953751391,
+            0.2169694399079738
+          ],
+          "cancellation_ratio": 0.9900197934690022
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.12857360212060032,
+          "net_signed_weight": 0.042857869560036066,
+          "mean_abs_member_weight": 0.02884976555941029,
+          "n_active_members": 5,
+          "member_weights": [
+            -0.03853136095991472,
+            0.008423514236348184,
+            0.05966717857657322,
+            -0.012164118158592974,
+            0.025462655865622352
+          ],
+          "cancellation_ratio": 0.29711069555680725
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 12,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.04191566893953147,
+          "net_signed_weight": 0.013971896383623061,
+          "mean_abs_member_weight": 0.013971896383623061,
+          "n_active_members": 1,
+          "member_weights": [
+            0.013971896383623061
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    },
+    {
+      "target": "d[10][13]",
+      "step": 9,
+      "node": 13,
+      "n_live_supernodes": 4,
+      "live_supernodes": [
+        [
+          "source",
+          0.21258749391321535
+        ],
+        [
+          "settled",
+          -0.03959999019742888
+        ],
+        [
+          "relax-candidate",
+          -0.08384016257178306
+        ],
+        [
+          "node_fts (all steps)",
+          0.0597490556538105
+        ]
+      ],
+      "n_total_supernodes_into_target": 4,
+      "panels": [
+        {
+          "supernode": "source",
+          "clamp_step": 8,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.7536512372298785,
+          "net_signed_weight": 0.4092515529052456,
+          "mean_abs_member_weight": 0.08710333365216347,
+          "n_active_members": 5,
+          "member_weights": [
+            0.3640998482130442,
+            -0.0016721447999370476,
+            -0.011460412877848825,
+            0.0388914474096278,
+            0.019392814960359495
+          ],
+          "cancellation_ratio": 0.9396920548174235
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 9,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.5899922349324145,
+          "net_signed_weight": -0.19666405899203027,
+          "mean_abs_member_weight": 0.045221059404919356,
+          "n_active_members": 6,
+          "member_weights": [
+            -0.16720710137154704,
+            -0.06666365768033167,
+            -0.00012444865889449375,
+            0.02874574858602852,
+            0.0073921150003413705,
+            0.0011932851323730453
+          ],
+          "cancellation_ratio": 0.7248247519334478
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 8,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.05077231702890356,
+          "net_signed_weight": -0.016589914545983575,
+          "mean_abs_member_weight": 0.016589914545983575,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.016589914545983575
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 9,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.06903022441375944,
+          "net_signed_weight": -0.023010075651445305,
+          "mean_abs_member_weight": 0.023010075651445305,
+          "n_active_members": 1,
+          "member_weights": [
+            -0.023010075651445305
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 8,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.1997831815065491,
+          "net_signed_weight": -0.09496677562492506,
+          "mean_abs_member_weight": 0.04748338781246253,
+          "n_active_members": 2,
+          "member_weights": [
+            -0.07485769485702765,
+            -0.020109080767897414
+          ],
+          "cancellation_ratio": 1.0
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 9,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.03337983649155635,
+          "net_signed_weight": 0.011126613053141998,
+          "mean_abs_member_weight": 0.011126613053141998,
+          "n_active_members": 1,
+          "member_weights": [
+            0.011126613053141998
+          ],
+          "cancellation_ratio": 1.0
+        }
+      ]
+    }
+  ]
+}

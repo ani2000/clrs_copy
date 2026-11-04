@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CLRS-30 Circuit Tracer — Figure 4/7 reproduction</title>
+<style>
+  :root { --bg:#faf9f7; --panel:#fff; --line:#e5e0d8; --ink:#1f2328; --muted:#6b7280;
+          --pos:#2563eb; --neg:#dc2626; --accent:#f59e0b; --good:#065f46; --bad:#991b1b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { margin:0 0 4px; font-size:18px; }
+  header p { margin:0; color:var(--muted); font-size:12px; max-width:1000px; }
+  .algoTabs { display:flex; gap:6px; flex-wrap:wrap; padding:10px 20px; background:#f3f1ec; border-bottom:1px solid var(--line); }
+  .algoTab { padding:5px 10px; border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer; font-size:12px; }
+  .algoTab.active { background:var(--ink); color:#fff; }
+  .algoTab .cls { font-size:9px; opacity:.7; }
+  .layout { display:grid; grid-template-columns: 260px 1fr; gap:16px; padding:16px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:14px; }
+  .panel h2 { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 10px; }
+  .kv { display:flex; justify-content:space-between; font-size:12px; padding:3px 0; border-bottom:1px solid var(--line); }
+  .src { font-size:9px; color:#9ca3af; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:4px; }
+  .pill.clean { background:#ecfdf5; color:var(--good); }
+  .pill.severe { background:#fef2f2; color:var(--bad); }
+  .bar-row { display:flex; align-items:center; gap:8px; font-size:12px; padding:4px 0; }
+  .bar-track { flex:1; height:14px; background:#eee; border-radius:4px; overflow:hidden; display:flex; }
+  .bar-seg.confirmed { background:#34d399; }
+  .bar-seg.notconfirmed { background:#f87171; }
+  .bar-seg.trivial { background:#d1d5db; }
+  svg text { font-family: -apple-system, sans-serif; }
+  .node-box { fill:#eef2ff; stroke:#6366f1; }
+  .node-box.target { fill:#fef3c7; stroke:var(--accent); }
+  .edge-pos { stroke: var(--pos); } .edge-neg { stroke: var(--neg); }
+  .callout { background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; padding:12px; font-size:12px; margin-top:10px; }
+  .callout h3 { margin:0 0 6px; font-size:12px; }
+  .confBadge { font-size:10px; padding:2px 6px; border-radius:4px; background:#fef3c7; color:#92400e; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th, td { text-align:left; padding:3px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:10px; text-transform:uppercase; }
+  .legend { font-size:11px; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CLRS-30 Circuit Tracer — Figure 4 / Figure 7 reproduction</h1>
+  <p>Every number below traces to a saved file: accuracy from <code>summary_v3.json</code> (the original training run, authoritative);
+  the supernode diagram from <code>fig4_baseline_&lt;algo&gt;.json</code> (ONE illustrative example, not the aggregate);
+  the confirmation rates from <code>phase2agg_&lt;algo&gt;.json</code> (aggregated over 15 independently-sampled graphs, matching
+  the paper's own "X% of cases" standard — never a single example's misleading 100%-or-33%); the understudy-feature finding from
+  <code>phase3_maskchanged_&lt;algo&gt;.json</code>.</p>
+</header>
+<div class="algoTabs" id="tabs"></div>
+<div class="layout">
+  <div>
+    <div class="panel">
+      <h2>Accuracy <span class="src">(summary_v3.json)</span></h2>
+      <div class="kv"><span>val F1</span><span id="valF1">-</span></div>
+      <div class="kv"><span>test F1 (OOD)</span><span id="testF1">-</span></div>
+      <div class="kv"><span>gap</span><span id="gap">-</span></div>
+      <div id="clsPill"></div>
+    </div>
+    <div class="panel">
+      <h2>Step 2 — reconciled clean/severe split <span class="src">(fig4_viewer_data.json)</span></h2>
+      <div class="legend" id="step2Note"></div>
+    </div>
+    <div class="panel">
+      <h2>Step 3 — mask_changed finding <span class="src">(phase3_maskchanged summary)</span></h2>
+      <div class="legend" id="step3Note"></div>
+    </div>
+  </div>
+  <div>
+    <div class="panel">
+      <h2>Figure-4-style: distilled supernode diagram <span class="confBadge">measured, n=1 illustrative example</span></h2>
+      <div class="legend" id="targetDesc"></div>
+      <svg id="diagramSvg" width="720" height="320"></svg>
+    </div>
+    <div class="panel">
+      <h2>Figure-7-style: aggregate intervention confirmation (15 sampled graphs)</h2>
+      <div class="legend" id="aggHeadline" style="margin-bottom:10px; font-size:13px; font-weight:600;"></div>
+      <div id="supernodeBars"></div>
+      <div class="legend" style="margin-top:8px;">
+        <span style="color:#34d399">&#9632;</span> CONFIRMED &nbsp;
+        <span style="color:#f87171">&#9632;</span> NOT_CONFIRMED &nbsp;
+        <span style="color:#d1d5db">&#9632;</span> TRIVIAL (same-step, guaranteed by construction, not counted as validation)
+      </div>
+    </div>
+    <div id="calloutBox"></div>
+  </div>
+</div>
+
+<script>
+let DATA = null;
+const svgNS = 'http://www.w3.org/2000/svg';
+const fmt = (x,d=3) => x===null||x===undefined ? '-' : Number(x).toFixed(d);
+const ALGOS = ['bfs','dfs','bellman_ford','dijkstra','dag_shortest_paths','mst_prim','mst_kruskal',
+              'topological_sort','articulation_points','bridges','strongly_connected_components','floyd_warshall'];
+let curAlgo = 'bfs';
+
+async function boot() {
+  DATA = await (await fetch('fig4_viewer_data.json')).json();
+  const tabs = document.getElementById('tabs');
+  ALGOS.forEach(a => {
+    const b = document.createElement('div');
+    b.className = 'algoTab' + (a===curAlgo?' active':'');
+    const cls = DATA[a].clean ? 'CLEAN' : 'SEVERE';
+    b.innerHTML = `${a} <span class="cls">${cls}</span>`;
+    b.onclick = () => { curAlgo = a; render(); };
+    b.id = 'tab_'+a;
+    tabs.appendChild(b);
+  });
+  document.getElementById('step2Note').textContent = DATA._step2_reconciliation.threshold + '. ' + DATA._step2_reconciliation.result;
+  document.getElementById('step3Note').textContent = DATA._step3_overall.mask_changed_vs_delta + ' Verdict: ' + DATA._step3_overall.verdict;
+  render();
+}
+
+function render() {
+  document.querySelectorAll('.algoTab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab_'+curAlgo).classList.add('active');
+  const d = DATA[curAlgo];
+
+  document.getElementById('valF1').textContent = fmt(d.val_f1);
+  document.getElementById('testF1').textContent = fmt(d.test_f1);
+  document.getElementById('gap').textContent = fmt(d.gap);
+  document.getElementById('clsPill').innerHTML = `<span class="pill ${d.clean?'clean':'severe'}">${d.clean?'CLEAN':'SEVERE'}</span>`;
+
+  // Figure 4 style diagram
+  const svg = document.getElementById('diagramSvg'); svg.innerHTML = '';
+  document.getElementById('targetDesc').textContent = d.baseline_target ?
+    `Target: ${d.baseline_target} — full graph ${d.n_edges_all} edges, this example.` : 'No clean baseline example (see Phase 0).';
+  const edges = d.baseline_supernode_edges || [];
+  const nodes = edges.map(e => e[0]).filter(s => s !== 'bias');
+  const maxW = Math.max(...edges.map(e => Math.abs(e[1])), 1e-6);
+  const x0 = 40, xT = 560, yStep = 260 / Math.max(nodes.length,1);
+  nodes.forEach((n, i) => {
+    const y = 30 + i*yStep;
+    const w = edges.find(e => e[0]===n)[1];
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1', x0+140); l.setAttribute('y1', y+12); l.setAttribute('x2', xT); l.setAttribute('y2', 150);
+    l.setAttribute('class', w>0?'edge-pos':'edge-neg'); l.setAttribute('stroke-width', Math.max(1,4*Math.abs(w)/maxW));
+    l.setAttribute('opacity',0.7); svg.appendChild(l);
+    const r = document.createElementNS(svgNS,'rect'); r.setAttribute('x',x0); r.setAttribute('y',y);
+    r.setAttribute('width',140); r.setAttribute('height',24); r.setAttribute('rx',4); r.setAttribute('class','node-box'); svg.appendChild(r);
+    const t = document.createElementNS(svgNS,'text'); t.setAttribute('x',x0+6); t.setAttribute('y',y+16); t.setAttribute('font-size',11);
+    const f1 = d.mean_f1_per_supernode[n]; t.textContent = `${n}${f1!==undefined?' (F1='+f1.toFixed(2)+')':''}: ${w>0?'+':''}${w.toFixed(2)}`; svg.appendChild(t);
+  });
+  const rt = document.createElementNS(svgNS,'rect'); rt.setAttribute('x',xT); rt.setAttribute('y',138); rt.setAttribute('width',140);
+  rt.setAttribute('height',24); rt.setAttribute('rx',4); rt.setAttribute('class','node-box target'); svg.appendChild(rt);
+  const tt = document.createElementNS(svgNS,'text'); tt.setAttribute('x',xT+6); tt.setAttribute('y',154); tt.setAttribute('font-size',10);
+  tt.textContent = (d.baseline_target||'').slice(0,20); svg.appendChild(tt);
+
+  // Figure 7 style aggregate bars
+  document.getElementById('aggHeadline').textContent = d.downstream_total ?
+    `Confirmed in ${d.downstream_confirmed}/${d.downstream_total} downstream tests across 15 sampled graphs (${(d.downstream_frac*100).toFixed(0)}%)` :
+    'No downstream tests — Phase 0 found no clean baseline invariant to break for this algorithm.';
+  const box = document.getElementById('supernodeBars'); box.innerHTML = '';
+  Object.entries(d.per_supernode_verdicts || {}).forEach(([sn, v]) => {
+    const total = v.CONFIRMED + v.NOT_CONFIRMED + v.TRIVIAL;
+    const row = document.createElement('div'); row.className = 'bar-row';
+    row.innerHTML = `<span style="width:140px;">${sn}</span>
+      <span class="bar-track">
+        <span class="bar-seg confirmed" style="width:${100*v.CONFIRMED/total}%"></span>
+        <span class="bar-seg notconfirmed" style="width:${100*v.NOT_CONFIRMED/total}%"></span>
+        <span class="bar-seg trivial" style="width:${100*v.TRIVIAL/total}%"></span>
+      </span>
+      <span style="width:110px; text-align:right;">${v.CONFIRMED}C / ${v.NOT_CONFIRMED}NC / ${v.TRIVIAL}T</span>`;
+    box.appendChild(row);
+  });
+
+  // callout for understudy-feature finding
+  const cb = document.getElementById('calloutBox'); cb.innerHTML = '';
+  if (d.understudy_finding) {
+    const uf = d.understudy_finding;
+    const div = document.createElement('div'); div.className = 'panel callout';
+    div.innerHTML = `<h3>Step 3 finding <span class="confBadge">${uf.confidence}</span></h3>
+      <p>${uf.summary}</p>
+      <table><thead><tr><th>feature</th><th>label</th><th>recall</th></tr></thead><tbody>
+        ${uf.recurring_features.map(f=>`<tr><td>f${f.id}</td><td>${f.label}</td><td>${f.recall}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="legend">Recurred in ${uf.n_cases_with_recurrence}/${uf.n_cases} large wrong-direction NOT_CONFIRMED cases.</div>`;
+    cb.appendChild(div);
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "predictions": {
+    "black(done)": "decrease",
+    "node_fts (all steps)": "increase",
+    "gray(in-progress)": "increase",
+    "white(unvisited)": "decrease"
+  },
+  "frozen_at": "2026-09-24T08:06:58"
+}

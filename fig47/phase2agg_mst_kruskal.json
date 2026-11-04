@@ -1,0 +1,11 @@
+{
+  "algo": "mst_kruskal",
+  "n_examples": 15,
+  "n_downstream_tests": 34,
+  "n_downstream_confirmed": 24,
+  "downstream_confirmed_frac": 0.7058823529411765,
+  "n_trivial_tests": 39,
+  "n_examples_majority_confirmed": 11,
+  "n_examples_with_tests": 14,
+  "example_confirmed_frac": 0.7857142857142857
+}

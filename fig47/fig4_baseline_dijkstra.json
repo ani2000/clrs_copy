@@ -1,0 +1,33 @@
+{
+  "algo": "dijkstra",
+  "target": "d[8][4]",
+  "baseline_logit": 0.9741173993980039,
+  "step": 7,
+  "node": 4,
+  "source": 1,
+  "supernode_edges_into_target": [
+    [
+      "source",
+      0.5445
+    ],
+    [
+      "relax-candidate",
+      0.0631
+    ],
+    [
+      "node_fts (all steps)",
+      0.0465
+    ],
+    [
+      "bias",
+      0.027
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "source": 0.26169444444444445,
+    "relax-candidate": 0.31664999999999993,
+    "settled": 0.12603389830508474
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 10
+}

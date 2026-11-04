@@ -1,0 +1,5 @@
+jax==0.4.34
+jaxlib==0.4.34
+dm-haiku==0.0.12
+numpy==2.4.6
+git+https://github.com/google-deepmind/clrs.git

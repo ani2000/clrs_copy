@@ -1,0 +1,11 @@
+{
+  "algo": "dfs",
+  "n_examples": 15,
+  "n_downstream_tests": 31,
+  "n_downstream_confirmed": 24,
+  "downstream_confirmed_frac": 0.7741935483870968,
+  "n_trivial_tests": 40,
+  "n_examples_majority_confirmed": 13,
+  "n_examples_with_tests": 15,
+  "example_confirmed_frac": 0.8666666666666667
+}

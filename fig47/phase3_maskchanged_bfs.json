@@ -1,0 +1,1829 @@
+{
+  "algo": "bfs",
+  "examples": [
+    {
+      "target": "reach_h[2][15]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.5161852185191407,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            39,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            39
+          ],
+          "clamped_features": [
+            25,
+            28,
+            76,
+            116,
+            143,
+            147,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.5722026230877857,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            39,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            151,
+            165,
+            167,
+            169
+          ],
+          "clamped_features": [
+            9,
+            45,
+            68,
+            87,
+            107,
+            144,
+            151,
+            169
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.00022231363771219037,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            39,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            25,
+            28,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "clamped_features": [
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[6][4]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "NOT_CONFIRMED",
+          "delta": -0.05977193680290149,
+          "mask_changed": false,
+          "active_before_target_step": [
+            8,
+            38,
+            39,
+            48,
+            74,
+            131,
+            133,
+            143
+          ],
+          "active_after_target_step": [
+            8,
+            38,
+            39,
+            48,
+            74,
+            131,
+            133,
+            143
+          ],
+          "clamped_features": [
+            25
+          ]
+        },
+        {
+          "supernode": "frontier",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.8326912348003415,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            38,
+            39,
+            48,
+            74,
+            131,
+            133,
+            143
+          ],
+          "active_after_target_step": [
+            39
+          ],
+          "clamped_features": [
+            8,
+            38,
+            48,
+            74,
+            131,
+            133,
+            143
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.6043314239974222,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            38,
+            39,
+            48,
+            74,
+            131,
+            133,
+            143
+          ],
+          "active_after_target_step": [
+            0,
+            3,
+            7,
+            39,
+            45,
+            86,
+            156,
+            165
+          ],
+          "clamped_features": [
+            9,
+            20,
+            27,
+            47,
+            108,
+            125,
+            140
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.00541444909420985,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            38,
+            39,
+            48,
+            74,
+            131,
+            133,
+            143
+          ],
+          "active_after_target_step": [
+            8,
+            38,
+            48,
+            74,
+            131,
+            133,
+            143
+          ],
+          "clamped_features": [
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][14]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.7231465940469164,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            38,
+            76,
+            106,
+            116,
+            131,
+            143,
+            147
+          ],
+          "active_after_target_step": [
+            106
+          ],
+          "clamped_features": [
+            25,
+            38,
+            76,
+            116,
+            131,
+            143,
+            147
+          ]
+        },
+        {
+          "supernode": "interior",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.04986312888887223,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            38,
+            76,
+            106,
+            116,
+            131,
+            143,
+            147
+          ],
+          "active_after_target_step": [
+            25,
+            38,
+            76,
+            116,
+            131,
+            143,
+            147
+          ],
+          "clamped_features": [
+            106
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.01149874899037151,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            38,
+            76,
+            106,
+            116,
+            131,
+            143,
+            147
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            128,
+            151,
+            165,
+            176
+          ],
+          "clamped_features": [
+            9,
+            45,
+            68,
+            87,
+            107,
+            108,
+            151,
+            169
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][13]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.8823346406606003,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            39,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            39
+          ],
+          "clamped_features": [
+            25,
+            28,
+            76,
+            116,
+            143,
+            147,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.625428897158697,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            39,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            151,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            9,
+            45,
+            68,
+            87,
+            107,
+            144,
+            151,
+            169
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0014688734838355089,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            39,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            25,
+            28,
+            76,
+            116,
+            143,
+            147,
+            183
+          ],
+          "clamped_features": [
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][13]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.1020526762344813,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [],
+          "clamped_features": [
+            25,
+            28,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.6022350606536238,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            151,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            9,
+            14,
+            45,
+            68,
+            87,
+            107,
+            151,
+            169
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[3][5]",
+      "panels": [
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 2.0427386314439895,
+          "mask_changed": true,
+          "active_before_target_step": [
+            39,
+            48,
+            54,
+            76,
+            106,
+            131,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            86,
+            151,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            9,
+            44,
+            51,
+            60,
+            63,
+            144,
+            178
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0018855264102448643,
+          "mask_changed": true,
+          "active_before_target_step": [
+            39,
+            48,
+            54,
+            76,
+            106,
+            131,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            48,
+            54,
+            76,
+            106,
+            131,
+            143,
+            183
+          ],
+          "clamped_features": [
+            39
+          ]
+        },
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.015365135105995797,
+          "mask_changed": true,
+          "active_before_target_step": [
+            39,
+            48,
+            54,
+            76,
+            106,
+            131,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            39,
+            48,
+            54,
+            72,
+            76,
+            131,
+            143,
+            183
+          ],
+          "clamped_features": [
+            25
+          ]
+        },
+        {
+          "supernode": "frontier",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.2563941181833034,
+          "mask_changed": true,
+          "active_before_target_step": [
+            39,
+            48,
+            54,
+            76,
+            106,
+            131,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            39,
+            106
+          ],
+          "clamped_features": [
+            48,
+            54,
+            76,
+            131,
+            143,
+            183
+          ]
+        },
+        {
+          "supernode": "interior",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.01128824588632682,
+          "mask_changed": true,
+          "active_before_target_step": [
+            39,
+            48,
+            54,
+            76,
+            106,
+            131,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            39,
+            48,
+            54,
+            76,
+            131,
+            143,
+            183
+          ],
+          "clamped_features": [
+            106
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][6]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.9433558344446196,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            38,
+            53,
+            74,
+            76,
+            116,
+            143,
+            183
+          ],
+          "active_after_target_step": [],
+          "clamped_features": [
+            28,
+            38,
+            53,
+            74,
+            76,
+            116,
+            143,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 1.0432100229228345,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            38,
+            53,
+            74,
+            76,
+            116,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            8,
+            39,
+            86,
+            128,
+            148,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            7,
+            9,
+            45,
+            56,
+            87,
+            107,
+            144,
+            151
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][15]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.5752532978732567,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            74,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            39
+          ],
+          "clamped_features": [
+            25,
+            74,
+            116,
+            133,
+            143,
+            147,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.5253457236050068,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            74,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            134,
+            151,
+            165,
+            167
+          ],
+          "clamped_features": [
+            9,
+            14,
+            45,
+            68,
+            107,
+            151,
+            152,
+            169
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0028084761971571837,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            74,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            25,
+            74,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "clamped_features": [
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[4][4]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.2140008608552773,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            28,
+            30,
+            38,
+            48,
+            133,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            30
+          ],
+          "clamped_features": [
+            8,
+            28,
+            38,
+            48,
+            133,
+            143,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -2.7557173339453556,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            28,
+            30,
+            38,
+            48,
+            133,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            3,
+            7,
+            39,
+            45,
+            148,
+            165,
+            167
+          ],
+          "clamped_features": [
+            9,
+            27,
+            43,
+            47,
+            108,
+            109,
+            125,
+            140
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.07017969223685139,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            28,
+            30,
+            38,
+            48,
+            133,
+            143,
+            183
+          ],
+          "active_after_target_step": [
+            8,
+            28,
+            38,
+            48,
+            133,
+            143,
+            183
+          ],
+          "clamped_features": [
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][14]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.7534694146095218,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            39
+          ],
+          "clamped_features": [
+            25,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.6863544119331655,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            151,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            9,
+            45,
+            68,
+            87,
+            107,
+            144,
+            151,
+            169
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.001168066877101026,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "active_after_target_step": [
+            25,
+            76,
+            116,
+            133,
+            143,
+            147,
+            183
+          ],
+          "clamped_features": [
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[6][13]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.045318793989626,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            25,
+            28,
+            39,
+            106,
+            143,
+            168,
+            186
+          ],
+          "active_after_target_step": [
+            39,
+            106
+          ],
+          "clamped_features": [
+            8,
+            25,
+            28,
+            143,
+            168,
+            186
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 4.725697888671574,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            25,
+            28,
+            39,
+            106,
+            143,
+            168,
+            186
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            134,
+            151,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            9,
+            20,
+            27,
+            57,
+            108,
+            125,
+            140,
+            178
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0050932579252780386,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            25,
+            28,
+            39,
+            106,
+            143,
+            168,
+            186
+          ],
+          "active_after_target_step": [
+            8,
+            25,
+            28,
+            106,
+            143,
+            168,
+            186
+          ],
+          "clamped_features": [
+            39
+          ]
+        },
+        {
+          "supernode": "interior",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0702805053776423,
+          "mask_changed": true,
+          "active_before_target_step": [
+            8,
+            25,
+            28,
+            39,
+            106,
+            143,
+            168,
+            186
+          ],
+          "active_after_target_step": [
+            8,
+            25,
+            28,
+            39,
+            143,
+            168,
+            186
+          ],
+          "clamped_features": [
+            106
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[2][15]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.7493997105022814,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            74,
+            76,
+            116,
+            133,
+            143,
+            147
+          ],
+          "active_after_target_step": [],
+          "clamped_features": [
+            25,
+            28,
+            74,
+            76,
+            116,
+            133,
+            143,
+            147
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.7087217986296332,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            28,
+            74,
+            76,
+            116,
+            133,
+            143,
+            147
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            134,
+            151,
+            165,
+            169
+          ],
+          "clamped_features": [
+            9,
+            45,
+            68,
+            87,
+            107,
+            108,
+            151,
+            169
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[3][8]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.002297308800406128,
+          "mask_changed": false,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "active_after_target_step": [
+            28,
+            39,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "clamped_features": [
+            25
+          ]
+        },
+        {
+          "supernode": "frontier",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.4059229123370116,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "active_after_target_step": [
+            39,
+            106,
+            162
+          ],
+          "clamped_features": [
+            28,
+            72,
+            131,
+            143,
+            168
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 2.324058966035988,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            121,
+            151,
+            165,
+            167,
+            176
+          ],
+          "clamped_features": [
+            9,
+            44,
+            57,
+            59,
+            60,
+            63,
+            178
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0025034163031341095,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "active_after_target_step": [
+            28,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "clamped_features": [
+            39
+          ]
+        },
+        {
+          "supernode": "interior",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.05204759576274398,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            106,
+            131,
+            143,
+            162,
+            168
+          ],
+          "active_after_target_step": [
+            28,
+            39,
+            72,
+            131,
+            143,
+            168
+          ],
+          "clamped_features": [
+            106,
+            162
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[3][0]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.01670022751818756,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "active_after_target_step": [
+            8,
+            39,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "clamped_features": [
+            25
+          ]
+        },
+        {
+          "supernode": "frontier",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.09297065237981794,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "active_after_target_step": [
+            39,
+            94
+          ],
+          "clamped_features": [
+            25,
+            48,
+            54,
+            76,
+            131,
+            143
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.044101046307778446,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "active_after_target_step": [
+            3,
+            7,
+            8,
+            39,
+            86,
+            156,
+            165,
+            167
+          ],
+          "clamped_features": [
+            9,
+            44,
+            47,
+            51,
+            59,
+            60,
+            63
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.00254248246962252,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "active_after_target_step": [
+            25,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "clamped_features": [
+            39
+          ]
+        },
+        {
+          "supernode": "interior",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.1626398625941441,
+          "mask_changed": true,
+          "active_before_target_step": [
+            25,
+            39,
+            48,
+            54,
+            76,
+            94,
+            131,
+            143
+          ],
+          "active_after_target_step": [
+            25,
+            39,
+            48,
+            54,
+            76,
+            131,
+            143
+          ],
+          "clamped_features": [
+            94
+          ]
+        }
+      ]
+    },
+    {
+      "target": "reach_h[3][11]",
+      "panels": [
+        {
+          "supernode": "frontier",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.050671392984360075,
+          "mask_changed": false,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ],
+          "active_after_target_step": [
+            28,
+            39,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ],
+          "clamped_features": [
+            25
+          ]
+        },
+        {
+          "supernode": "frontier",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.06615345622551239,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ],
+          "active_after_target_step": [
+            39
+          ],
+          "clamped_features": [
+            28,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.6998517255456358,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ],
+          "active_after_target_step": [
+            0,
+            8,
+            39,
+            94,
+            147,
+            151,
+            165,
+            176
+          ],
+          "clamped_features": [
+            9,
+            44,
+            57,
+            59,
+            60,
+            63,
+            178
+          ]
+        },
+        {
+          "supernode": "unreached",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0023360516047610247,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            39,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ],
+          "active_after_target_step": [
+            28,
+            72,
+            76,
+            131,
+            133,
+            143,
+            168
+          ],
+          "clamped_features": [
+            39
+          ]
+        }
+      ]
+    }
+  ]
+}

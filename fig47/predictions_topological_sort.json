@@ -1,0 +1,10 @@
+{
+  "predictions": {
+    "ready-to-emit": "decrease",
+    "node_fts (all steps)": "decrease",
+    "blocked": "decrease",
+    "emitted": "decrease",
+    "(unlabeled feature)": "increase"
+  },
+  "frozen_at": "2026-09-24T08:07:06"
+}

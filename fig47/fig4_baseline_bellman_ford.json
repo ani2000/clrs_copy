@@ -1,0 +1,37 @@
+{
+  "algo": "bellman_ford",
+  "target": "d[3][13]",
+  "baseline_logit": 0.6737551378559034,
+  "step": 2,
+  "node": 13,
+  "source": 1,
+  "supernode_edges_into_target": [
+    [
+      "relax-candidate",
+      0.2113
+    ],
+    [
+      "source",
+      -0.0201
+    ],
+    [
+      "bias",
+      0.0149
+    ],
+    [
+      "node_fts (all steps)",
+      0.0082
+    ],
+    [
+      "settled",
+      0.0076
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "source": 0.6,
+    "relax-candidate": 0.27673015873015877,
+    "settled": 0.2172444444444445
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 14
+}

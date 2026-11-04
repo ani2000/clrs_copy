@@ -1,0 +1,11 @@
+{
+  "algo": "dag_shortest_paths",
+  "n_examples": 15,
+  "n_downstream_tests": 34,
+  "n_downstream_confirmed": 26,
+  "downstream_confirmed_frac": 0.7647058823529411,
+  "n_trivial_tests": 41,
+  "n_examples_majority_confirmed": 15,
+  "n_examples_with_tests": 15,
+  "example_confirmed_frac": 1.0
+}

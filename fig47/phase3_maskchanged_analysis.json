@@ -1,0 +1,79 @@
+{
+  "bfs": {
+    "median": 0.6558916545459312,
+    "large_n": 5,
+    "large_rate": 1.0,
+    "small_n": 4,
+    "small_rate": 0.75
+  },
+  "dfs": {
+    "median": 1.812110876474458,
+    "large_n": 3,
+    "large_rate": 1.0,
+    "small_n": 4,
+    "small_rate": 1.0
+  },
+  "bellman_ford": {
+    "median": 0.3526232475623656,
+    "large_n": 2,
+    "large_rate": 1.0,
+    "small_n": 5,
+    "small_rate": 0.8
+  },
+  "dijkstra": {
+    "median": 0.1622638838960633,
+    "large_n": 1,
+    "large_rate": 1.0,
+    "small_n": 1,
+    "small_rate": 0.0
+  },
+  "dag_shortest_paths": {
+    "median": 0.196789957903879,
+    "large_n": 2,
+    "large_rate": 1.0,
+    "small_n": 3,
+    "small_rate": 1.0
+  },
+  "mst_prim": {
+    "median": 0.08407632191919594,
+    "large_n": 3,
+    "large_rate": 1.0,
+    "small_n": 3,
+    "small_rate": 0.3333333333333333
+  },
+  "mst_kruskal": {
+    "median": 5.089466987634439,
+    "large_n": 2,
+    "large_rate": 1.0,
+    "small_n": 8,
+    "small_rate": 0.875
+  },
+  "topological_sort": {
+    "median": 2.7370315833532377,
+    "large_n": 7,
+    "large_rate": 1.0,
+    "small_n": 6,
+    "small_rate": 1.0
+  },
+  "articulation_points": {
+    "median": 1.776004385611258,
+    "large_n": 0,
+    "large_rate": NaN,
+    "small_n": 3,
+    "small_rate": 1.0
+  },
+  "bridges": {
+    "median": 1.0492311548704043,
+    "large_n": 1,
+    "large_rate": 1.0,
+    "small_n": 9,
+    "small_rate": 0.5555555555555556
+  },
+  "strongly_connected_components": {
+    "median": 0.42688427692153574,
+    "large_n": 2,
+    "large_rate": 1.0,
+    "small_n": 10,
+    "small_rate": 0.8
+  }
+}

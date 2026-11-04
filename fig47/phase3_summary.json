@@ -1,0 +1,98 @@
+[
+  {
+    "algo": "bfs",
+    "mean_f1": 0.2775532435740514,
+    "confirmed": 1,
+    "total": 1,
+    "frac": 1.0,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "dfs",
+    "mean_f1": 0.22061432880844645,
+    "confirmed": 2,
+    "total": 2,
+    "frac": 1.0,
+    "class": "SEVERE"
+  },
+  {
+    "algo": "bellman_ford",
+    "mean_f1": 0.24698730158730164,
+    "confirmed": 2,
+    "total": 2,
+    "frac": 1.0,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "dijkstra",
+    "mean_f1": 0.22134194915254235,
+    "confirmed": 1,
+    "total": 1,
+    "frac": 1.0,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "dag_shortest_paths",
+    "mean_f1": 0.22816466346153846,
+    "confirmed": 2,
+    "total": 2,
+    "frac": 1.0,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "mst_prim",
+    "mean_f1": 0.19379439941046428,
+    "confirmed": 1,
+    "total": 2,
+    "frac": 0.5,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "mst_kruskal",
+    "mean_f1": 0.166825,
+    "confirmed": 1,
+    "total": 2,
+    "frac": 0.5,
+    "class": "SEVERE"
+  },
+  {
+    "algo": "topological_sort",
+    "mean_f1": 0.2420953888888889,
+    "confirmed": 2,
+    "total": 3,
+    "frac": 0.6666666666666666,
+    "class": "SEVERE"
+  },
+  {
+    "algo": "articulation_points",
+    "mean_f1": 0.1558524711399711,
+    "confirmed": 3,
+    "total": 3,
+    "frac": 1.0,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "bridges",
+    "mean_f1": 0.20351301617471673,
+    "confirmed": 1,
+    "total": 3,
+    "frac": 0.3333333333333333,
+    "class": "CLEAN"
+  },
+  {
+    "algo": "strongly_connected_components",
+    "mean_f1": 0.18593333333333337,
+    "confirmed": 2,
+    "total": 3,
+    "frac": 0.6666666666666666,
+    "class": "SEVERE"
+  },
+  {
+    "algo": "floyd_warshall",
+    "mean_f1": null,
+    "confirmed": 0,
+    "total": 0,
+    "frac": null,
+    "class": "SEVERE"
+  }
+]

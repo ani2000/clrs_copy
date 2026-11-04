@@ -1,0 +1,42 @@
+{
+  "verdict": "WEAK",
+  "n_algos_confirming": 2,
+  "n_algos_tested": 4,
+  "confirming_algos": [
+    "bfs",
+    "topological_sort"
+  ],
+  "non_confirming_algos": [
+    "dag_shortest_paths",
+    "mst_prim"
+  ],
+  "callout_text": "Downgraded finding: the within-category recurring-feature pattern found for bfs and topological_sort (both 100% recurrence) does NOT generalize to dag_shortest_paths or mst_prim (50% and 67% recurrence, below the 80% threshold), the two other CLEAN-class algorithms tested for this specific mechanism. bfs and topological_sort should be treated as isolated cases showing a specific recurring-feature pattern, not evidence of a general within-category-redundancy mechanism across CLEAN algorithms.",
+  "per_algo_result": {
+    "bfs": {
+      "n_qualifying": 5,
+      "top1_frac": 1.0,
+      "same_category": true,
+      "generalizes": true
+    },
+    "topological_sort": {
+      "n_qualifying": 7,
+      "top1_frac": 1.0,
+      "same_category": true,
+      "generalizes": true
+    },
+    "dag_shortest_paths": {
+      "n_qualifying": 4,
+      "top1_frac": 0.5,
+      "same_category": true,
+      "generalizes": false,
+      "reason": "top-1 frequency 50% < 80% threshold"
+    },
+    "mst_prim": {
+      "n_qualifying": 3,
+      "top1_frac": 0.667,
+      "same_category": true,
+      "generalizes": false,
+      "reason": "top-1 frequency 67% < 80% threshold"
+    }
+  }
+}

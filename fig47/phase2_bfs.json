@@ -1,0 +1,74 @@
+{
+  "algo": "bfs",
+  "target": "reach_h[2][15]",
+  "baseline_logit": 5.685800551820453,
+  "panels": [
+    {
+      "supernode": "unreached",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "CONFIRMED",
+      "clamp_step": 0,
+      "trivial": false,
+      "features": [
+        9,
+        45,
+        107,
+        151,
+        87,
+        68,
+        169,
+        152
+      ],
+      "step": 0,
+      "node": 15,
+      "factor": -2.0,
+      "base_logit": 5.685800551820453,
+      "new_logit": 4.010502879697013,
+      "delta": -1.67529767212344,
+      "mask_changed": true
+    },
+    {
+      "supernode": "unreached",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "TRIVIAL",
+      "clamp_step": 1,
+      "trivial": true,
+      "features": [
+        39
+      ],
+      "step": 1,
+      "node": 15,
+      "factor": -2.0,
+      "base_logit": 5.685800551820453,
+      "new_logit": 5.68517852118501,
+      "delta": -0.0006220306354425276,
+      "mask_changed": true
+    },
+    {
+      "supernode": "frontier",
+      "predicted": "decrease",
+      "actual": "decrease",
+      "verdict": "TRIVIAL",
+      "clamp_step": 1,
+      "trivial": true,
+      "features": [
+        143,
+        183,
+        133,
+        76,
+        116,
+        25,
+        147
+      ],
+      "step": 1,
+      "node": 15,
+      "factor": -2.0,
+      "base_logit": 5.685800551820453,
+      "new_logit": 5.282231386746295,
+      "delta": -0.40356916507415797,
+      "mask_changed": true
+    }
+  ]
+}

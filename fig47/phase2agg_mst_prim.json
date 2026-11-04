@@ -1,0 +1,11 @@
+{
+  "algo": "mst_prim",
+  "n_examples": 15,
+  "n_downstream_tests": 32,
+  "n_downstream_confirmed": 26,
+  "downstream_confirmed_frac": 0.8125,
+  "n_trivial_tests": 43,
+  "n_examples_majority_confirmed": 12,
+  "n_examples_with_tests": 13,
+  "example_confirmed_frac": 0.9230769230769231
+}

@@ -1,0 +1,10 @@
+{
+  "predictions": {
+    "newly-flagged-cut": "decrease",
+    "not-cut": "decrease",
+    "node_fts (all steps)": "increase",
+    "confirmed-cut": "increase",
+    "(unlabeled feature)": "decrease"
+  },
+  "frozen_at": "2026-09-24T08:07:08"
+}

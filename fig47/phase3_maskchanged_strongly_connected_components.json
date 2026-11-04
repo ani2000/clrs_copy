@@ -1,0 +1,2790 @@
+{
+  "algo": "strongly_connected_components",
+  "examples": [
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.07582646875878396,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            145,
+            154,
+            172,
+            186
+          ],
+          "clamped_features": [
+            65,
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -6.740558905857596,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -12.031325252486571,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            48,
+            56,
+            97,
+            105,
+            140,
+            160,
+            180
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.9799859285863199,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            154,
+            186
+          ],
+          "clamped_features": [
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.0027699437556911732,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -17.44210798413546,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            154,
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[89][2]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 87,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -20.486240494739718,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            61,
+            84,
+            105,
+            108,
+            167,
+            180
+          ],
+          "clamped_features": [
+            77,
+            112,
+            139,
+            141,
+            188
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 88,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.40855349714335176,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            29,
+            154,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 87,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.17943028348089385,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            47,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "clamped_features": [
+            29,
+            158
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 88,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -17.946896754985048,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ],
+          "clamped_features": [
+            29,
+            154,
+            186
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 87,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 1.1216712426378805,
+          "mask_changed": false,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "clamped_features": [
+            47
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.6955043786010835,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            176,
+            186
+          ],
+          "active_after_target_step": [
+            77,
+            117,
+            141,
+            172,
+            176,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -8.61292828169194,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            176,
+            186
+          ],
+          "active_after_target_step": [
+            17,
+            46,
+            48,
+            69,
+            97,
+            140,
+            160,
+            180
+          ],
+          "clamped_features": [
+            3,
+            56,
+            77,
+            80,
+            112,
+            117,
+            157,
+            176
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.6732094379573432,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            176,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            77,
+            117,
+            141,
+            172,
+            176
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -18.140909689713823,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            176,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            176
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -13.976228631490292,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            97,
+            105,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            141,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.38696883154493555,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.04117376449860011,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            155,
+            172,
+            186
+          ],
+          "clamped_features": [
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.960267882611783,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.270664108885839,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            80,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -15.657194284722786,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.626638329642316,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            88,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            77,
+            88,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -8.716057868201233,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            88,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            17,
+            46,
+            48,
+            69,
+            97,
+            140,
+            160,
+            180
+          ],
+          "clamped_features": [
+            3,
+            56,
+            77,
+            80,
+            112,
+            117,
+            157,
+            176
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.7495412501605792,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            88,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            77,
+            88,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -17.61376581109368,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            88,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            88,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.09333677942714758,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            155,
+            172,
+            186
+          ],
+          "clamped_features": [
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.96072319919613,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            29,
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.07413279075746715,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            80,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -16.138389192651715,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            29,
+            186
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -14.548971244000333,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            97,
+            105,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            141,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.6072511780332341,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            29,
+            144,
+            186
+          ],
+          "clamped_features": [
+            77,
+            117,
+            141,
+            172
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[84][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.07403345476978629,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            145,
+            172,
+            186
+          ],
+          "clamped_features": [
+            65,
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 83,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -6.680242479805422,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            97,
+            144
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -8.626647725484851,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            48,
+            97,
+            105,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 83,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.2324844076843782,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            97,
+            144,
+            186
+          ],
+          "clamped_features": [
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.07915354198165403,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            65,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 83,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -17.7950787385273,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            97,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[94][5]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 92,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -19.809181850515166,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            61,
+            84,
+            105,
+            108,
+            167,
+            180
+          ],
+          "clamped_features": [
+            77,
+            112,
+            139,
+            141,
+            188
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 93,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.22058224688900907,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            29,
+            154,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 92,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 1.3958258214694403,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            48,
+            77,
+            93,
+            154,
+            161,
+            172,
+            186
+          ],
+          "clamped_features": [
+            29,
+            158
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 93,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -19.58843932155323,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ],
+          "clamped_features": [
+            29,
+            154,
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[84][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.20284667331737438,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            29,
+            77,
+            80,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 83,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -6.383968014590561,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            29,
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.28788863129488895,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            80,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 83,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -16.95893428176408,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            29,
+            186
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -14.582495704793864,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            69,
+            97,
+            105,
+            140,
+            160,
+            180
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            141,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 83,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.8090225017518708,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            29,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            29,
+            144,
+            186
+          ],
+          "clamped_features": [
+            77,
+            117,
+            141,
+            172
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[86][0]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 84,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -19.388577895917088,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            61,
+            70,
+            84,
+            108,
+            167,
+            180
+          ],
+          "clamped_features": [
+            77,
+            112,
+            139,
+            141,
+            188
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 85,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.1318205844653253,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            29,
+            154,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 84,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.4533846090211391,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            154,
+            161,
+            172,
+            186
+          ],
+          "clamped_features": [
+            29,
+            158
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 85,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -19.159991757377444,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ],
+          "clamped_features": [
+            29,
+            154,
+            186
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 84,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.5714184606781956,
+          "mask_changed": false,
+          "active_before_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            29,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "clamped_features": [
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[85][0]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 83,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -13.86615433278179,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            97,
+            105,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            141,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 84,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.48850524419970753,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 83,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.03041716468355915,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            154,
+            172,
+            186
+          ],
+          "clamped_features": [
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 84,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -6.413744995639534,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 83,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.2526948936333717,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            80,
+            99,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 84,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -17.615617168045695,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.044599420718308025,
+          "mask_changed": false,
+          "active_before_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            65,
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -6.218345780450408,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            77,
+            112,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -9.90347339419692,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            48,
+            97,
+            126,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.0820256447466097,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            77,
+            112,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.4530092769123737,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            80,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -18.76310147601545,
+          "mask_changed": true,
+          "active_before_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            112,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -14.053195159325455,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            97,
+            105,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.20223751423779746,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.13469475320046698,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            155,
+            172,
+            186
+          ],
+          "clamped_features": [
+            65,
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.962487008433307,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.1686574348553549,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            106,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -16.42900793773166,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -4.043098434673106,
+          "mask_changed": true,
+          "active_before_target_step": [
+            22,
+            49,
+            77,
+            117,
+            139,
+            141,
+            158,
+            188
+          ],
+          "active_after_target_step": [
+            22,
+            48,
+            93,
+            102,
+            139,
+            141,
+            188,
+            191
+          ],
+          "clamped_features": [
+            22,
+            29,
+            135,
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -4.088179351315674,
+          "mask_changed": true,
+          "active_before_target_step": [
+            22,
+            49,
+            77,
+            117,
+            139,
+            141,
+            158,
+            188
+          ],
+          "active_after_target_step": [
+            77,
+            117,
+            139,
+            141,
+            188
+          ],
+          "clamped_features": [
+            22,
+            49,
+            158
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.4007592769306978,
+          "mask_changed": true,
+          "active_before_target_step": [
+            22,
+            49,
+            77,
+            117,
+            139,
+            141,
+            158,
+            188
+          ],
+          "active_after_target_step": [
+            7,
+            33,
+            45,
+            46,
+            76,
+            77,
+            119,
+            123
+          ],
+          "clamped_features": [
+            77,
+            117,
+            141
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 1.7794032722340312,
+          "mask_changed": true,
+          "active_before_target_step": [
+            22,
+            49,
+            77,
+            117,
+            139,
+            141,
+            158,
+            188
+          ],
+          "active_after_target_step": [
+            22,
+            49,
+            158
+          ],
+          "clamped_features": [
+            77,
+            117,
+            139,
+            141,
+            188
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.2718138633545273,
+          "mask_changed": true,
+          "active_before_target_step": [
+            22,
+            49,
+            77,
+            117,
+            139,
+            141,
+            158,
+            188
+          ],
+          "active_after_target_step": [
+            20,
+            22,
+            49,
+            77,
+            80,
+            102,
+            135,
+            141
+          ],
+          "clamped_features": [
+            175
+          ]
+        }
+      ]
+    },
+    {
+      "target": "color[83][0]=2",
+      "panels": [
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -14.328245845560339,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            46,
+            56,
+            97,
+            105,
+            140,
+            160,
+            180,
+            189
+          ],
+          "clamped_features": [
+            80,
+            106,
+            112,
+            117,
+            157
+          ]
+        },
+        {
+          "supernode": "gray(in-progress)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.5832346866239533,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            144,
+            186
+          ],
+          "clamped_features": [
+            3,
+            77,
+            117,
+            141,
+            172
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.11495174125799679,
+          "mask_changed": false,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            65,
+            144
+          ]
+        },
+        {
+          "supernode": "white(unvisited)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -5.9645203155749895,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            77,
+            117,
+            141,
+            172,
+            186
+          ],
+          "clamped_features": [
+            27,
+            144
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 81,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.04817685663184257,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            27,
+            77,
+            80,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "clamped_features": [
+            186
+          ]
+        },
+        {
+          "supernode": "black(done)",
+          "clamp_step": 82,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -17.135665515484792,
+          "mask_changed": true,
+          "active_before_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172,
+            186
+          ],
+          "active_after_target_step": [
+            3,
+            27,
+            77,
+            117,
+            141,
+            144,
+            172
+          ],
+          "clamped_features": [
+            186
+          ]
+        }
+      ]
+    }
+  ]
+}

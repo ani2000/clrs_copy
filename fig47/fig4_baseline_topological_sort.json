@@ -1,0 +1,41 @@
+{
+  "algo": "topological_sort",
+  "target": "topo_head_h[35][12]",
+  "baseline_logit": 17.636711917012974,
+  "step": 34,
+  "node": 12,
+  "source": null,
+  "supernode_edges_into_target": [
+    [
+      "ready-to-emit",
+      15.3967
+    ],
+    [
+      "node_fts (all steps)",
+      3.5569
+    ],
+    [
+      "blocked",
+      1.586
+    ],
+    [
+      "emitted",
+      1.0675
+    ],
+    [
+      "bias",
+      0.4342
+    ],
+    [
+      "(unlabeled feature)",
+      -0.2946
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "ready-to-emit": 0.3571875,
+    "emitted": 0.24566666666666664,
+    "blocked": 0.123432
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 25
+}

@@ -1,0 +1,1991 @@
+{
+  "algo": "bellman_ford",
+  "examples": [
+    {
+      "target": "d[2][15]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.5418253036245573,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            67,
+            107,
+            138,
+            155,
+            160,
+            162,
+            165
+          ],
+          "active_after_target_step": [
+            138
+          ],
+          "clamped_features": [
+            7,
+            67,
+            107,
+            155,
+            160,
+            162,
+            165
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "NOT_CONFIRMED",
+          "delta": -0.08663389959689505,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            67,
+            107,
+            138,
+            155,
+            160,
+            162,
+            165
+          ],
+          "active_after_target_step": [
+            15,
+            28,
+            56,
+            100,
+            107,
+            130,
+            152,
+            161
+          ],
+          "clamped_features": [
+            25,
+            39,
+            90,
+            96,
+            110,
+            115,
+            151,
+            156
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.003799934539597316,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            67,
+            107,
+            138,
+            155,
+            160,
+            162,
+            165
+          ],
+          "active_after_target_step": [
+            7,
+            67,
+            107,
+            155,
+            160,
+            162,
+            165
+          ],
+          "clamped_features": [
+            138
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[3][13]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.3791391948990931,
+          "mask_changed": true,
+          "active_before_target_step": [
+            32,
+            33,
+            37,
+            54,
+            62,
+            68,
+            111,
+            142
+          ],
+          "active_after_target_step": [
+            4,
+            32,
+            37,
+            45,
+            54,
+            62,
+            68,
+            111
+          ],
+          "clamped_features": [
+            101,
+            105,
+            142,
+            157,
+            159
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.3675344773550433,
+          "mask_changed": true,
+          "active_before_target_step": [
+            32,
+            33,
+            37,
+            54,
+            62,
+            68,
+            111,
+            142
+          ],
+          "active_after_target_step": [
+            62
+          ],
+          "clamped_features": [
+            32,
+            33,
+            37,
+            54,
+            68,
+            111,
+            142
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "NOT_CONFIRMED",
+          "delta": -0.002566761377294391,
+          "mask_changed": false,
+          "active_before_target_step": [
+            32,
+            33,
+            37,
+            54,
+            62,
+            68,
+            111,
+            142
+          ],
+          "active_after_target_step": [
+            32,
+            33,
+            37,
+            54,
+            62,
+            68,
+            111,
+            142
+          ],
+          "clamped_features": [
+            2
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.007489486403625678,
+          "mask_changed": true,
+          "active_before_target_step": [
+            32,
+            33,
+            37,
+            54,
+            62,
+            68,
+            111,
+            142
+          ],
+          "active_after_target_step": [
+            32,
+            33,
+            37,
+            54,
+            68,
+            111,
+            142
+          ],
+          "clamped_features": [
+            62
+          ]
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.04493476479609515,
+          "mask_changed": true,
+          "active_before_target_step": [
+            32,
+            33,
+            37,
+            54,
+            62,
+            68,
+            111,
+            142
+          ],
+          "active_after_target_step": [
+            33,
+            37,
+            54,
+            56,
+            62,
+            68,
+            111,
+            142
+          ],
+          "clamped_features": [
+            71,
+            128
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[5][10]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.1360494201933955,
+          "mask_changed": true,
+          "active_before_target_step": [
+            23,
+            65,
+            120,
+            124,
+            143,
+            146,
+            162,
+            169
+          ],
+          "active_after_target_step": [
+            28,
+            41,
+            47,
+            49,
+            86,
+            111,
+            177,
+            188
+          ],
+          "clamped_features": [
+            14,
+            91,
+            124,
+            145,
+            162,
+            177,
+            188,
+            190
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.420058979552159,
+          "mask_changed": true,
+          "active_before_target_step": [
+            23,
+            65,
+            120,
+            124,
+            143,
+            146,
+            162,
+            169
+          ],
+          "active_after_target_step": [
+            143,
+            169
+          ],
+          "clamped_features": [
+            23,
+            65,
+            120,
+            124,
+            146,
+            162
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.3874343832798208,
+          "mask_changed": true,
+          "active_before_target_step": [
+            23,
+            65,
+            120,
+            124,
+            143,
+            146,
+            162,
+            169
+          ],
+          "active_after_target_step": [
+            23,
+            65,
+            120,
+            124,
+            146,
+            162
+          ],
+          "clamped_features": [
+            143,
+            169
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[5][11]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.3726629850818075,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            65,
+            124,
+            134,
+            138,
+            143,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            28,
+            49,
+            86,
+            111,
+            144,
+            152,
+            177,
+            188
+          ],
+          "clamped_features": [
+            14,
+            91,
+            124,
+            162,
+            177,
+            188
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.3646179328311674,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            65,
+            124,
+            134,
+            138,
+            143,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            138,
+            143
+          ],
+          "clamped_features": [
+            37,
+            65,
+            124,
+            134,
+            146,
+            162
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.046540671921456944,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            65,
+            124,
+            134,
+            138,
+            143,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            37,
+            65,
+            124,
+            138,
+            143,
+            146,
+            162,
+            169
+          ],
+          "clamped_features": [
+            138,
+            181
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.1442876438818983,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            65,
+            124,
+            134,
+            138,
+            143,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            37,
+            65,
+            124,
+            134,
+            146,
+            162
+          ],
+          "clamped_features": [
+            138,
+            143
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[6][9]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 5,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -6.210120554927508,
+          "mask_changed": true,
+          "active_before_target_step": [
+            14,
+            75,
+            91,
+            124,
+            126,
+            162,
+            177,
+            188
+          ],
+          "active_after_target_step": [],
+          "clamped_features": [
+            14,
+            75,
+            91,
+            124,
+            126,
+            162,
+            177,
+            188
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.4320297049295325,
+          "mask_changed": true,
+          "active_before_target_step": [
+            14,
+            75,
+            91,
+            124,
+            126,
+            162,
+            177,
+            188
+          ],
+          "active_after_target_step": [
+            9,
+            15,
+            28,
+            41,
+            77,
+            88,
+            137,
+            152
+          ],
+          "clamped_features": [
+            40,
+            42,
+            51,
+            90,
+            95,
+            110,
+            176,
+            181
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[4][12]",
+      "panels": [
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0289933747415676,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            28,
+            32,
+            45,
+            49,
+            62,
+            142
+          ],
+          "active_after_target_step": [
+            4,
+            32,
+            45,
+            142
+          ],
+          "clamped_features": [
+            2,
+            28,
+            49,
+            62
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.02417425527636541,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            28,
+            32,
+            45,
+            49,
+            62,
+            142
+          ],
+          "active_after_target_step": [
+            25,
+            62,
+            81,
+            104,
+            142,
+            150,
+            161,
+            167
+          ],
+          "clamped_features": [
+            32,
+            37,
+            54,
+            68,
+            105,
+            111,
+            142
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.06429570772742166,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            28,
+            32,
+            45,
+            49,
+            62,
+            142
+          ],
+          "active_after_target_step": [
+            2,
+            28,
+            49,
+            62
+          ],
+          "clamped_features": [
+            4,
+            32,
+            45,
+            142
+          ]
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.1584100467960593,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            28,
+            32,
+            45,
+            49,
+            62,
+            142
+          ],
+          "active_after_target_step": [
+            2,
+            4,
+            28,
+            32,
+            45,
+            62,
+            71,
+            142
+          ],
+          "clamped_features": [
+            128
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[3][15]",
+      "panels": [
+        {
+          "supernode": "settled",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.03899918221866949,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            32,
+            71,
+            105,
+            118,
+            141,
+            144,
+            162
+          ],
+          "active_after_target_step": [
+            28,
+            32,
+            37,
+            71,
+            105,
+            118,
+            141,
+            162
+          ],
+          "clamped_features": [
+            138
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.043335681697431294,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            32,
+            71,
+            105,
+            118,
+            141,
+            144,
+            162
+          ],
+          "active_after_target_step": [
+            32,
+            71,
+            105,
+            141,
+            144,
+            162
+          ],
+          "clamped_features": [
+            28,
+            118
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.7628484178265185,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            32,
+            71,
+            105,
+            118,
+            141,
+            144,
+            162
+          ],
+          "active_after_target_step": [
+            28,
+            49,
+            62,
+            86,
+            111,
+            130,
+            150,
+            163
+          ],
+          "clamped_features": [
+            7,
+            140,
+            160,
+            162,
+            163,
+            165,
+            177
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.2675928076627567,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            32,
+            71,
+            105,
+            118,
+            141,
+            144,
+            162
+          ],
+          "active_after_target_step": [
+            28,
+            71,
+            118
+          ],
+          "clamped_features": [
+            32,
+            105,
+            141,
+            144,
+            162
+          ]
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.01287168662532634,
+          "mask_changed": true,
+          "active_before_target_step": [
+            28,
+            32,
+            71,
+            105,
+            118,
+            141,
+            144,
+            162
+          ],
+          "active_after_target_step": [
+            28,
+            32,
+            105,
+            118,
+            141,
+            144,
+            162
+          ],
+          "clamped_features": [
+            71
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[2][4]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.07220109231337235,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            67,
+            91,
+            138,
+            160,
+            162,
+            165,
+            177
+          ],
+          "active_after_target_step": [
+            138
+          ],
+          "clamped_features": [
+            7,
+            67,
+            91,
+            160,
+            162,
+            165,
+            177
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 0,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.09237879300240748,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            67,
+            91,
+            138,
+            160,
+            162,
+            165,
+            177
+          ],
+          "active_after_target_step": [
+            15,
+            28,
+            39,
+            56,
+            100,
+            130,
+            152,
+            161
+          ],
+          "clamped_features": [
+            25,
+            90,
+            96,
+            110,
+            115,
+            119,
+            151,
+            156
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 1,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.0025880906879821586,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            67,
+            91,
+            138,
+            160,
+            162,
+            165,
+            177
+          ],
+          "active_after_target_step": [
+            7,
+            67,
+            91,
+            160,
+            162,
+            165,
+            177
+          ],
+          "clamped_features": [
+            138
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[7][3]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 5,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.14698393442223567,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            141,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            28,
+            41,
+            49,
+            75,
+            86,
+            170,
+            177,
+            188
+          ],
+          "clamped_features": [
+            65,
+            88,
+            124,
+            137,
+            146
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 6,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.9205014039165318,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            141,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            121,
+            143,
+            169
+          ],
+          "clamped_features": [
+            65,
+            124,
+            137,
+            141,
+            146
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 5,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.585991760675868,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            141,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            35,
+            41,
+            49,
+            118,
+            124,
+            137,
+            146,
+            177
+          ],
+          "clamped_features": [
+            121,
+            143,
+            169
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 6,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.7428076030920838,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            141,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            65,
+            124,
+            137,
+            141,
+            146
+          ],
+          "clamped_features": [
+            121,
+            143,
+            169
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[5][13]",
+      "panels": [
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.42770384676526807,
+          "mask_changed": true,
+          "active_before_target_step": [
+            49,
+            54,
+            62,
+            81,
+            111,
+            135,
+            142,
+            161
+          ],
+          "active_after_target_step": [
+            4,
+            32,
+            45,
+            54,
+            100,
+            111,
+            135,
+            142
+          ],
+          "clamped_features": [
+            2,
+            38,
+            49,
+            100,
+            114,
+            135
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.03584198905831798,
+          "mask_changed": true,
+          "active_before_target_step": [
+            49,
+            54,
+            62,
+            81,
+            111,
+            135,
+            142,
+            161
+          ],
+          "active_after_target_step": [
+            54,
+            111,
+            142
+          ],
+          "clamped_features": [
+            49,
+            62,
+            81,
+            135,
+            161
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.3801790900087766,
+          "mask_changed": true,
+          "active_before_target_step": [
+            49,
+            54,
+            62,
+            81,
+            111,
+            135,
+            142,
+            161
+          ],
+          "active_after_target_step": [
+            4,
+            45,
+            62,
+            104,
+            111,
+            135,
+            142,
+            161
+          ],
+          "clamped_features": [
+            54,
+            142
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.11515056027124637,
+          "mask_changed": true,
+          "active_before_target_step": [
+            49,
+            54,
+            62,
+            81,
+            111,
+            135,
+            142,
+            161
+          ],
+          "active_after_target_step": [
+            49,
+            62,
+            81,
+            135,
+            161
+          ],
+          "clamped_features": [
+            54,
+            111,
+            142
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[5][0]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -0.475772046288615,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            138,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            28,
+            47,
+            49,
+            86,
+            144,
+            150,
+            177,
+            188
+          ],
+          "clamped_features": [
+            14,
+            91,
+            124,
+            145,
+            149,
+            177,
+            188
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.6798191655310204,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            138,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            121,
+            138,
+            143,
+            169
+          ],
+          "clamped_features": [
+            65,
+            124,
+            137,
+            146
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.01468115877760856,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            138,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            65,
+            118,
+            121,
+            124,
+            137,
+            143,
+            146,
+            169
+          ],
+          "clamped_features": [
+            181
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 4,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.6309224313901838,
+          "mask_changed": true,
+          "active_before_target_step": [
+            65,
+            121,
+            124,
+            137,
+            138,
+            143,
+            146,
+            169
+          ],
+          "active_after_target_step": [
+            65,
+            124,
+            137,
+            146
+          ],
+          "clamped_features": [
+            121,
+            138,
+            143,
+            169
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[4][13]",
+      "panels": [
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.10215758497188399,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            38,
+            62,
+            100,
+            111,
+            130,
+            142
+          ],
+          "active_after_target_step": [
+            4,
+            111,
+            142
+          ],
+          "clamped_features": [
+            2,
+            38,
+            62,
+            100,
+            130
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.4866787854972754,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            38,
+            62,
+            100,
+            111,
+            130,
+            142
+          ],
+          "active_after_target_step": [
+            4,
+            7,
+            32,
+            45,
+            62,
+            104,
+            150,
+            161
+          ],
+          "clamped_features": [
+            4,
+            33,
+            37,
+            54,
+            111,
+            142,
+            159
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.1257843411808161,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            38,
+            62,
+            100,
+            111,
+            130,
+            142
+          ],
+          "active_after_target_step": [
+            2,
+            38,
+            62,
+            100,
+            130
+          ],
+          "clamped_features": [
+            4,
+            111,
+            142
+          ]
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.07751051217074012,
+          "mask_changed": true,
+          "active_before_target_step": [
+            2,
+            4,
+            38,
+            62,
+            100,
+            111,
+            130,
+            142
+          ],
+          "active_after_target_step": [
+            2,
+            4,
+            38,
+            62,
+            104,
+            111,
+            142,
+            150
+          ],
+          "clamped_features": [
+            128
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[3][5]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -1.0476527066811616,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            91,
+            138,
+            143,
+            145,
+            162,
+            173,
+            177
+          ],
+          "active_after_target_step": [
+            138,
+            143
+          ],
+          "clamped_features": [
+            7,
+            91,
+            145,
+            162,
+            173,
+            177
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 1,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "NOT_CONFIRMED",
+          "delta": 0.3526232475623656,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            91,
+            138,
+            143,
+            145,
+            162,
+            173,
+            177
+          ],
+          "active_after_target_step": [
+            15,
+            28,
+            39,
+            41,
+            56,
+            152,
+            161,
+            177
+          ],
+          "clamped_features": [
+            24,
+            90,
+            95,
+            110,
+            143,
+            151,
+            176,
+            181
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 2,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.018323405957887617,
+          "mask_changed": true,
+          "active_before_target_step": [
+            7,
+            91,
+            138,
+            143,
+            145,
+            162,
+            173,
+            177
+          ],
+          "active_after_target_step": [
+            7,
+            91,
+            145,
+            162,
+            173,
+            177
+          ],
+          "clamped_features": [
+            138,
+            143
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[4][14]",
+      "panels": [
+        {
+          "supernode": "settled",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "NOT_CONFIRMED",
+          "delta": -0.0003321362210926271,
+          "mask_changed": true,
+          "active_before_target_step": [
+            1,
+            37,
+            65,
+            105,
+            134,
+            144,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            1,
+            35,
+            37,
+            65,
+            105,
+            134,
+            146,
+            162
+          ],
+          "clamped_features": [
+            138
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.0030774146537313474,
+          "mask_changed": true,
+          "active_before_target_step": [
+            1,
+            37,
+            65,
+            105,
+            134,
+            144,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            37,
+            65,
+            105,
+            134,
+            144,
+            146,
+            162
+          ],
+          "clamped_features": [
+            1
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.1518431017070707,
+          "mask_changed": true,
+          "active_before_target_step": [
+            1,
+            37,
+            65,
+            105,
+            134,
+            144,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            28,
+            47,
+            49,
+            86,
+            111,
+            130,
+            163,
+            167
+          ],
+          "clamped_features": [
+            91,
+            149,
+            160,
+            162,
+            165,
+            173,
+            177
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "TRIVIAL",
+          "delta": -0.24898616973940169,
+          "mask_changed": true,
+          "active_before_target_step": [
+            1,
+            37,
+            65,
+            105,
+            134,
+            144,
+            146,
+            162
+          ],
+          "active_after_target_step": [
+            1
+          ],
+          "clamped_features": [
+            37,
+            65,
+            105,
+            134,
+            144,
+            146,
+            162
+          ]
+        }
+      ]
+    },
+    {
+      "target": "d[4][5]",
+      "panels": [
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "decrease",
+          "actual": "decrease",
+          "verdict": "CONFIRMED",
+          "delta": -1.4908438094233465,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            68,
+            105,
+            128,
+            134,
+            141,
+            146,
+            153
+          ],
+          "active_after_target_step": [
+            28,
+            37,
+            49,
+            86,
+            111,
+            130,
+            142,
+            144
+          ],
+          "clamped_features": [
+            91,
+            124,
+            145,
+            149,
+            162,
+            173,
+            177
+          ]
+        },
+        {
+          "supernode": "relax-candidate",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "decrease",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.23946065010577222,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            68,
+            105,
+            128,
+            134,
+            141,
+            146,
+            153
+          ],
+          "active_after_target_step": [
+            128
+          ],
+          "clamped_features": [
+            37,
+            68,
+            105,
+            134,
+            141,
+            146,
+            153
+          ]
+        },
+        {
+          "supernode": "source",
+          "clamp_step": 3,
+          "trivial": true,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "TRIVIAL",
+          "delta": 0.04385326020764324,
+          "mask_changed": true,
+          "active_before_target_step": [
+            37,
+            68,
+            105,
+            128,
+            134,
+            141,
+            146,
+            153
+          ],
+          "active_after_target_step": [
+            37,
+            68,
+            105,
+            134,
+            141,
+            146,
+            153
+          ],
+          "clamped_features": [
+            128
+          ]
+        },
+        {
+          "supernode": "settled",
+          "clamp_step": 2,
+          "trivial": false,
+          "predicted": "increase",
+          "actual": "increase",
+          "verdict": "CONFIRMED",
+          "delta": 0.0035048422405011825,
+          "mask_changed": false,
+          "active_before_target_step": [
+            37,
+            68,
+            105,
+            128,
+            134,
+            141,
+            146,
+            153
+          ],
+          "active_after_target_step": [
+            37,
+            68,
+            105,
+            128,
+            134,
+            141,
+            146,
+            153
+          ],
+          "clamped_features": [
+            138
+          ]
+        }
+      ]
+    }
+  ]
+}

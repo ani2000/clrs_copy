@@ -1,0 +1,11 @@
+{
+  "algo": "topological_sort",
+  "n_examples": 15,
+  "n_downstream_tests": 43,
+  "n_downstream_confirmed": 30,
+  "downstream_confirmed_frac": 0.6976744186046512,
+  "n_trivial_tests": 34,
+  "n_examples_majority_confirmed": 11,
+  "n_examples_with_tests": 15,
+  "example_confirmed_frac": 0.7333333333333333
+}

@@ -1,0 +1,11 @@
+.git
+.github
+__pycache__
+*.pyc
+*.log
+.DS_Store
+DEPLOYMENT_PROMPT.md
+README.md
+LICENSE
+verification
+VERIFICATION.md

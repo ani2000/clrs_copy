@@ -1,0 +1,65 @@
+{
+  "algo": "floyd_warshall",
+  "examples": [
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    },
+    {
+      "target": "k[15][15]",
+      "panels": []
+    }
+  ]
+}

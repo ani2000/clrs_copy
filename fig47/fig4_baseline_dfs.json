@@ -1,0 +1,37 @@
+{
+  "algo": "dfs",
+  "target": "color[47][0]=2",
+  "baseline_logit": 6.599334589663102,
+  "step": 46,
+  "node": 0,
+  "source": null,
+  "supernode_edges_into_target": [
+    [
+      "black(done)",
+      11.424
+    ],
+    [
+      "node_fts (all steps)",
+      -1.1459
+    ],
+    [
+      "gray(in-progress)",
+      -1.1127
+    ],
+    [
+      "white(unvisited)",
+      0.0916
+    ],
+    [
+      "bias",
+      -0.0172
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "black(done)": 0.19286153846153845,
+    "gray(in-progress)": 0.17424615384615383,
+    "white(unvisited)": 0.2947352941176471
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 15
+}

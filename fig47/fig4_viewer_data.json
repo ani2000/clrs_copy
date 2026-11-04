@@ -1,0 +1,752 @@
+{
+  "bfs": {
+    "val_f1": 1.0,
+    "test_f1": 0.998046875,
+    "gap": 0.002,
+    "clean": true,
+    "baseline_target": "reach_h[2][15]",
+    "baseline_supernode_edges": [
+      [
+        "node_fts (all steps)",
+        0.3943
+      ],
+      [
+        "unreached",
+        0.1651
+      ],
+      [
+        "frontier",
+        0.1345
+      ],
+      [
+        "bias",
+        0.0022
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "unreached": 0.3196315789473684,
+      "source": 0.5868333333333333,
+      "frontier": 0.29384210526315796,
+      "interior": 0.21918604651162787
+    },
+    "n_edges_all": 114,
+    "downstream_confirmed": 11,
+    "downstream_total": 20,
+    "downstream_frac": 0.55,
+    "example_confirmed": 9,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "frontier": {
+        "CONFIRMED": 3,
+        "NOT_CONFIRMED": 2,
+        "TRIVIAL": 15
+      },
+      "unreached": {
+        "CONFIRMED": 8,
+        "NOT_CONFIRMED": 7,
+        "TRIVIAL": 11
+      },
+      "interior": {
+        "CONFIRMED": 0,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 5
+      }
+    },
+    "understudy_finding": {
+      "confidence": "WEAK (isolated, does not generalize)",
+      "summary": "Isolated pattern (NOT a general finding -- see Step B verdict: WEAK): 5/5 large wrong-direction cases activated the same 3 features (f165/f167 'stays 1', f176 'newly 1'), but this same-category-recurrence pattern did NOT replicate in dag_shortest_paths (50%) or mst_prim (67%), the other CLEAN algorithms tested. Treat this as a bfs-specific observation, not evidence of a general mechanism.",
+      "recurring_features": [
+        {
+          "id": 165,
+          "label": "stays 1",
+          "recall": 0.29
+        },
+        {
+          "id": 167,
+          "label": "stays 1",
+          "recall": 0.098
+        },
+        {
+          "id": 176,
+          "label": "newly 1",
+          "recall": 0.468
+        }
+      ],
+      "n_cases": 5,
+      "n_cases_with_recurrence": 5
+    }
+  },
+  "dfs": {
+    "val_f1": 1.0,
+    "test_f1": 0.4814453125,
+    "gap": 0.5186,
+    "clean": false,
+    "baseline_target": "color[47][0]=2",
+    "baseline_supernode_edges": [
+      [
+        "black(done)",
+        11.424
+      ],
+      [
+        "node_fts (all steps)",
+        -1.1459
+      ],
+      [
+        "gray(in-progress)",
+        -1.1127
+      ],
+      [
+        "white(unvisited)",
+        0.0916
+      ],
+      [
+        "bias",
+        -0.0172
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "black(done)": 0.19286153846153845,
+      "gray(in-progress)": 0.17424615384615383,
+      "white(unvisited)": 0.2947352941176471
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 24,
+    "downstream_total": 31,
+    "downstream_frac": 0.7741935483870968,
+    "example_confirmed": 13,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "black(done)": {
+        "CONFIRMED": 11,
+        "NOT_CONFIRMED": 3,
+        "TRIVIAL": 15
+      },
+      "gray(in-progress)": {
+        "CONFIRMED": 13,
+        "NOT_CONFIRMED": 2,
+        "TRIVIAL": 15
+      },
+      "white(unvisited)": {
+        "CONFIRMED": 0,
+        "NOT_CONFIRMED": 2,
+        "TRIVIAL": 10
+      }
+    }
+  },
+  "bellman_ford": {
+    "val_f1": 0.998046875,
+    "test_f1": 0.94775390625,
+    "gap": 0.0503,
+    "clean": true,
+    "baseline_target": "d[3][13]",
+    "baseline_supernode_edges": [
+      [
+        "relax-candidate",
+        0.2113
+      ],
+      [
+        "source",
+        -0.0201
+      ],
+      [
+        "bias",
+        0.0149
+      ],
+      [
+        "node_fts (all steps)",
+        0.0082
+      ],
+      [
+        "settled",
+        0.0076
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "source": 0.6,
+      "relax-candidate": 0.27673015873015877,
+      "settled": 0.2172444444444445
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 19,
+    "downstream_total": 26,
+    "downstream_frac": 0.7307692307692307,
+    "example_confirmed": 12,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "relax-candidate": {
+        "CONFIRMED": 10,
+        "NOT_CONFIRMED": 1,
+        "TRIVIAL": 15
+      },
+      "settled": {
+        "CONFIRMED": 6,
+        "NOT_CONFIRMED": 6,
+        "TRIVIAL": 13
+      },
+      "source": {
+        "CONFIRMED": 3,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 2
+      }
+    }
+  },
+  "dijkstra": {
+    "val_f1": 1.0,
+    "test_f1": 0.97705078125,
+    "gap": 0.0229,
+    "clean": true,
+    "baseline_target": "d[8][4]",
+    "baseline_supernode_edges": [
+      [
+        "source",
+        0.5445
+      ],
+      [
+        "relax-candidate",
+        0.0631
+      ],
+      [
+        "node_fts (all steps)",
+        0.0465
+      ],
+      [
+        "bias",
+        0.027
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "source": 0.26169444444444445,
+      "relax-candidate": 0.31664999999999993,
+      "settled": 0.12603389830508474
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 31,
+    "downstream_total": 33,
+    "downstream_frac": 0.9393939393939394,
+    "example_confirmed": 13,
+    "example_total": 13,
+    "per_supernode_verdicts": {
+      "source": {
+        "CONFIRMED": 13,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 15
+      },
+      "relax-candidate": {
+        "CONFIRMED": 11,
+        "NOT_CONFIRMED": 2,
+        "TRIVIAL": 15
+      },
+      "settled": {
+        "CONFIRMED": 7,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 7
+      }
+    }
+  },
+  "dag_shortest_paths": {
+    "val_f1": 1.0,
+    "test_f1": 0.984375,
+    "gap": 0.0156,
+    "clean": true,
+    "baseline_target": "d[36][10]",
+    "baseline_supernode_edges": [
+      [
+        "node_fts (all steps)",
+        0.6478
+      ],
+      [
+        "relax-candidate",
+        0.222
+      ],
+      [
+        "settled",
+        0.1468
+      ],
+      [
+        "bias",
+        0.0078
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "source": 0.11440495867768594,
+      "relax-candidate": 0.2929230769230769,
+      "settled": 0.16340625000000003
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 26,
+    "downstream_total": 34,
+    "downstream_frac": 0.7647058823529411,
+    "example_confirmed": 15,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "relax-candidate": {
+        "CONFIRMED": 9,
+        "NOT_CONFIRMED": 2,
+        "TRIVIAL": 13
+      },
+      "settled": {
+        "CONFIRMED": 9,
+        "NOT_CONFIRMED": 3,
+        "TRIVIAL": 15
+      },
+      "source": {
+        "CONFIRMED": 8,
+        "NOT_CONFIRMED": 3,
+        "TRIVIAL": 13
+      }
+    },
+    "understudy_finding": {
+      "confidence": "NOT SUPPORTED",
+      "summary": "Top recurring feature (a 4-way tie: f161/f45/f31/f71, all \"source\"-category) appeared in only 2/4 (50%) of qualifying large-wrong-direction cases -- below the 80% threshold. No dominant understudy feature.",
+      "recurring_features": [
+        {
+          "id": 161,
+          "label": "is_source",
+          "recall": 0.334
+        },
+        {
+          "id": 71,
+          "label": "is_source",
+          "recall": 0.333
+        }
+      ],
+      "n_cases": 4,
+      "n_cases_with_recurrence": 2
+    }
+  },
+  "mst_prim": {
+    "val_f1": 1.0,
+    "test_f1": 0.92626953125,
+    "gap": 0.0737,
+    "clean": true,
+    "baseline_target": "key[15][6]",
+    "baseline_supernode_edges": [
+      [
+        "tree-interior",
+        -0.0521
+      ],
+      [
+        "bias",
+        0.0443
+      ],
+      [
+        "node_fts (all steps)",
+        0.0393
+      ],
+      [
+        "source",
+        0.0349
+      ],
+      [
+        "frontier-edge",
+        0.0157
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "tree-interior": 0.12776271186440677,
+      "source": 0.25912499999999994,
+      "frontier-edge": 0.25982608695652176
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 26,
+    "downstream_total": 32,
+    "downstream_frac": 0.8125,
+    "example_confirmed": 12,
+    "example_total": 13,
+    "per_supernode_verdicts": {
+      "source": {
+        "CONFIRMED": 13,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 15
+      },
+      "frontier-edge": {
+        "CONFIRMED": 8,
+        "NOT_CONFIRMED": 2,
+        "TRIVIAL": 14
+      },
+      "tree-interior": {
+        "CONFIRMED": 5,
+        "NOT_CONFIRMED": 4,
+        "TRIVIAL": 14
+      }
+    },
+    "understudy_finding": {
+      "confidence": "NOT SUPPORTED",
+      "summary": "Top recurring feature (f68, \"stays same\"/tree-interior category) appeared in only 2/3 (67%) of qualifying cases -- below the 80% threshold.",
+      "recurring_features": [
+        {
+          "id": 68,
+          "label": "stays same",
+          "recall": 0.22
+        }
+      ],
+      "n_cases": 3,
+      "n_cases_with_recurrence": 2
+    }
+  },
+  "mst_kruskal": {
+    "val_f1": 0.9054857898215465,
+    "test_f1": 0.44544431946006746,
+    "gap": 0.46,
+    "clean": false,
+    "baseline_target": "u[16][10]",
+    "baseline_supernode_edges": [
+      [
+        "frontier-edge",
+        2.9543
+      ],
+      [
+        "bias",
+        0.4309
+      ],
+      [
+        "excluded-edge",
+        -0.4189
+      ],
+      [
+        "node_fts (all steps)",
+        -0.1454
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "tree-interior": 0.17539999999999997,
+      "frontier-edge": 0.213,
+      "excluded-edge": 0.11207499999999998
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 24,
+    "downstream_total": 34,
+    "downstream_frac": 0.7058823529411765,
+    "example_confirmed": 11,
+    "example_total": 14,
+    "per_supernode_verdicts": {
+      "excluded-edge": {
+        "CONFIRMED": 8,
+        "NOT_CONFIRMED": 6,
+        "TRIVIAL": 15
+      },
+      "frontier-edge": {
+        "CONFIRMED": 9,
+        "NOT_CONFIRMED": 3,
+        "TRIVIAL": 15
+      },
+      "tree-interior": {
+        "CONFIRMED": 7,
+        "NOT_CONFIRMED": 1,
+        "TRIVIAL": 9
+      }
+    }
+  },
+  "topological_sort": {
+    "val_f1": 1.0,
+    "test_f1": 0.516845703125,
+    "gap": 0.4832,
+    "clean": false,
+    "baseline_target": "topo_head_h[35][12]",
+    "baseline_supernode_edges": [
+      [
+        "ready-to-emit",
+        15.3967
+      ],
+      [
+        "node_fts (all steps)",
+        3.5569
+      ],
+      [
+        "blocked",
+        1.586
+      ],
+      [
+        "emitted",
+        1.0675
+      ],
+      [
+        "bias",
+        0.4342
+      ],
+      [
+        "(unlabeled feature)",
+        -0.2946
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "ready-to-emit": 0.3571875,
+      "emitted": 0.24566666666666664,
+      "blocked": 0.123432
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 30,
+    "downstream_total": 43,
+    "downstream_frac": 0.6976744186046512,
+    "example_confirmed": 11,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "ready-to-emit": {
+        "CONFIRMED": 11,
+        "NOT_CONFIRMED": 4,
+        "TRIVIAL": 15
+      },
+      "blocked": {
+        "CONFIRMED": 15,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 15
+      },
+      "emitted": {
+        "CONFIRMED": 4,
+        "NOT_CONFIRMED": 9,
+        "TRIVIAL": 4
+      }
+    },
+    "understudy_finding": {
+      "confidence": "WEAK (isolated, does not generalize)",
+      "summary": "Isolated pattern (NOT a general finding -- see Step B verdict: WEAK): 7/7 large wrong-direction cases activated the same 6 features, but this pattern did not replicate in the two CLEAN-class algorithms tested (dag_shortest_paths, mst_prim). Treat as topological_sort-specific.",
+      "recurring_features": [
+        {
+          "id": 99,
+          "label": "stays 0",
+          "recall": 0.028
+        },
+        {
+          "id": 38,
+          "label": "stays 0",
+          "recall": 0.004
+        },
+        {
+          "id": 104,
+          "label": "stays 0",
+          "recall": 0.047
+        },
+        {
+          "id": 110,
+          "label": "stays 0",
+          "recall": 0.074
+        },
+        {
+          "id": 87,
+          "label": "stays 0",
+          "recall": 0.019
+        },
+        {
+          "id": 155,
+          "label": "newly 1",
+          "recall": 0.44
+        }
+      ],
+      "n_cases": 7,
+      "n_cases_with_recurrence": 7
+    }
+  },
+  "articulation_points": {
+    "val_f1": 0.9851851851851852,
+    "test_f1": 0.9487485101311086,
+    "gap": 0.0364,
+    "clean": true,
+    "baseline_target": "is_cut_h[64][9]",
+    "baseline_supernode_edges": [
+      [
+        "newly-flagged-cut",
+        6.0116
+      ],
+      [
+        "not-cut",
+        2.8802
+      ],
+      [
+        "node_fts (all steps)",
+        -1.1385
+      ],
+      [
+        "confirmed-cut",
+        -1.0982
+      ],
+      [
+        "(unlabeled feature)",
+        0.7005
+      ],
+      [
+        "bias",
+        -0.2096
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "confirmed-cut": 0.18384848484848484,
+      "newly-flagged-cut": 0.19493749999999999,
+      "not-cut": 0.08877142857142856
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 41,
+    "downstream_total": 44,
+    "downstream_frac": 0.9318181818181818,
+    "example_confirmed": 15,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "newly-flagged-cut": {
+        "CONFIRMED": 15,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 15
+      },
+      "not-cut": {
+        "CONFIRMED": 14,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 9
+      },
+      "confirmed-cut": {
+        "CONFIRMED": 12,
+        "NOT_CONFIRMED": 3,
+        "TRIVIAL": 14
+      }
+    }
+  },
+  "bridges": {
+    "val_f1": 0.9939516129032259,
+    "test_f1": 0.9676425269645609,
+    "gap": 0.0263,
+    "clean": true,
+    "baseline_target": "color[75][7]=2",
+    "baseline_supernode_edges": [
+      [
+        "black(done)",
+        6.8927
+      ],
+      [
+        "gray(in-progress)",
+        -0.6121
+      ],
+      [
+        "white(unvisited)",
+        0.1872
+      ],
+      [
+        "node_fts (all steps)",
+        -0.0732
+      ],
+      [
+        "bias",
+        -0.0041
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "black(done)": 0.170421875,
+      "gray(in-progress)": 0.21423255813953493,
+      "white(unvisited)": 0.22588461538461532
+    },
+    "n_edges_all": 167,
+    "downstream_confirmed": 28,
+    "downstream_total": 38,
+    "downstream_frac": 0.7368421052631579,
+    "example_confirmed": 14,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "gray(in-progress)": {
+        "CONFIRMED": 14,
+        "NOT_CONFIRMED": 1,
+        "TRIVIAL": 15
+      },
+      "black(done)": {
+        "CONFIRMED": 10,
+        "NOT_CONFIRMED": 3,
+        "TRIVIAL": 15
+      },
+      "white(unvisited)": {
+        "CONFIRMED": 4,
+        "NOT_CONFIRMED": 6,
+        "TRIVIAL": 14
+      }
+    }
+  },
+  "strongly_connected_components": {
+    "val_f1": 1.0,
+    "test_f1": 0.2734375,
+    "gap": 0.7266,
+    "clean": false,
+    "baseline_target": "color[83][0]=2",
+    "baseline_supernode_edges": [
+      [
+        "black(done)",
+        6.0244
+      ],
+      [
+        "white(unvisited)",
+        2.073
+      ],
+      [
+        "node_fts (all steps)",
+        -1.3354
+      ],
+      [
+        "gray(in-progress)",
+        0.8358
+      ],
+      [
+        "bias",
+        -0.0311
+      ]
+    ],
+    "mean_f1_per_supernode": {
+      "black(done)": 0.15585714285714286,
+      "gray(in-progress)": 0.24357142857142863,
+      "white(unvisited)": 0.15837142857142855
+    },
+    "n_edges_all": 178,
+    "downstream_confirmed": 28,
+    "downstream_total": 40,
+    "downstream_frac": 0.7,
+    "example_confirmed": 12,
+    "example_total": 15,
+    "per_supernode_verdicts": {
+      "white(unvisited)": {
+        "CONFIRMED": 6,
+        "NOT_CONFIRMED": 6,
+        "TRIVIAL": 11
+      },
+      "gray(in-progress)": {
+        "CONFIRMED": 15,
+        "NOT_CONFIRMED": 0,
+        "TRIVIAL": 15
+      },
+      "black(done)": {
+        "CONFIRMED": 7,
+        "NOT_CONFIRMED": 6,
+        "TRIVIAL": 15
+      }
+    }
+  },
+  "floyd_warshall": {
+    "val_f1": 0.93096923828125,
+    "test_f1": 0.3852081298828125,
+    "gap": 0.5458,
+    "clean": false,
+    "baseline_target": "k[15][15]",
+    "baseline_supernode_edges": [
+      [
+        "(unlabeled feature)",
+        12.5074
+      ],
+      [
+        "node_fts (all steps)",
+        -2.7033
+      ],
+      [
+        "bias",
+        -0.0105
+      ]
+    ],
+    "mean_f1_per_supernode": {},
+    "n_edges_all": 178,
+    "downstream_confirmed": 0,
+    "downstream_total": 0,
+    "downstream_frac": null,
+    "example_confirmed": 0,
+    "example_total": 0,
+    "per_supernode_verdicts": {}
+  },
+  "_step3_overall": {
+    "mask_changed_vs_delta": "100% of large-|delta| NOT_CONFIRMED cases had mask_changed=True across all algorithms with such cases; small-delta cases showed inconsistent, lower rates.",
+    "verdict": "Downgraded finding: the within-category recurring-feature pattern found for bfs and topological_sort (both 100% recurrence) does NOT generalize to dag_shortest_paths or mst_prim (50% and 67% recurrence, below the 80% threshold), the two other CLEAN-class algorithms tested for this specific mechanism. bfs and topological_sort should be treated as isolated cases showing a specific recurring-feature pattern, not evidence of a general within-category-redundancy mechanism across CLEAN algorithms."
+  },
+  "_step2_reconciliation": {
+    "threshold": "gap<0.10=CLEAN, gap>0.40=SEVERE (bimodal: max clean gap=0.074 mst_prim, min severe gap=0.460 mst_kruskal)",
+    "result": "Identical to Phase 3's original grouping -- no change. Phase 3's conclusion (clean/severe does not predict confirmability) stands."
+  },
+  "_bugfix_note": "A key-mismatch bug ('is source' vs 'is_source') silently disabled the 'source' supernode across 7 algorithms in every phase prior to this fix. Fixed in phase1.py; Phase 1, Phase 2 (aggregate), Phase 2.6, and Step A were all re-run with corrected data. All numbers on this page reflect the fix."
+}

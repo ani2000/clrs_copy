@@ -1,0 +1,33 @@
+{
+  "algo": "mst_kruskal",
+  "target": "u[16][10]",
+  "baseline_logit": -2.170851259355621,
+  "step": 15,
+  "node": 10,
+  "source": null,
+  "supernode_edges_into_target": [
+    [
+      "frontier-edge",
+      2.9543
+    ],
+    [
+      "bias",
+      0.4309
+    ],
+    [
+      "excluded-edge",
+      -0.4189
+    ],
+    [
+      "node_fts (all steps)",
+      -0.1454
+    ]
+  ],
+  "mean_f1_per_supernode": {
+    "tree-interior": 0.17539999999999997,
+    "frontier-edge": 0.213,
+    "excluded-edge": 0.11207499999999998
+  },
+  "n_edges_all": 178,
+  "n_edges_supernode": 10
+}

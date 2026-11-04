@@ -1,0 +1,11 @@
+{
+  "algo": "dijkstra",
+  "n_examples": 15,
+  "n_downstream_tests": 33,
+  "n_downstream_confirmed": 31,
+  "downstream_confirmed_frac": 0.9393939393939394,
+  "n_trivial_tests": 37,
+  "n_examples_majority_confirmed": 13,
+  "n_examples_with_tests": 13,
+  "example_confirmed_frac": 1.0
+}

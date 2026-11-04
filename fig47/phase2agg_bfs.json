@@ -1,0 +1,11 @@
+{
+  "algo": "bfs",
+  "n_examples": 15,
+  "n_downstream_tests": 20,
+  "n_downstream_confirmed": 11,
+  "downstream_confirmed_frac": 0.55,
+  "n_trivial_tests": 31,
+  "n_examples_majority_confirmed": 9,
+  "n_examples_with_tests": 15,
+  "example_confirmed_frac": 0.6
+}
