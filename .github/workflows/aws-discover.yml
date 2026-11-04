@@ -1,51 +1,64 @@
 name: AWS discovery (read-only)
 
-# Manual trigger only. Runs only read-only aws CLI commands (describe/list/get)
-# against us-east-1 -- nothing here creates, modifies, deletes, or launches
-# any resource. Requires repo secrets AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
-# for an IAM user with at least read access to ec2/ecr/iam.
+# Manual trigger only. Read-only describe/list/get calls, narrowed to what this
+# project needs: it never lists other projects' instances, security groups or
+# key pairs. Nothing here creates, modifies, deletes or launches anything.
 on:
   workflow_dispatch: {}
 
 permissions:
   contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
 
 env:
   AWS_DEFAULT_REGION: us-east-1
+  NAME: clrs-circuit-tracer
 
 jobs:
   discover:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Verify identity
-        run: aws sts get-caller-identity
+      - name: Identity
+        run: aws sts get-caller-identity --query '[Account,Arn]' --output text
 
-      - name: ECR repositories
-        run: aws ecr describe-repositories --region us-east-1 || true
-
-      - name: VPCs
-        run: aws ec2 describe-vpcs --region us-east-1
-
-      - name: Subnets in us-east-1a
+      - name: ECR repo and latest image
         run: |
-          aws ec2 describe-subnets --region us-east-1 \
-            --filters Name=availability-zone,Values=us-east-1a
+          aws ecr describe-images --repository-name "$NAME" --image-ids imageTag=latest \
+            --query 'imageDetails[].[imageTags,imagePushedAt,imageSizeInBytes]' --output text || echo "no ECR repo/image yet"
 
-      - name: Key pairs
-        run: aws ec2 describe-key-pairs --region us-east-1
+      - name: Default VPC and default subnet in us-east-1a
+        run: |
+          aws ec2 describe-vpcs --filters Name=isDefault,Values=true --query 'Vpcs[].[VpcId,CidrBlock]' --output text
+          aws ec2 describe-subnets --filters Name=default-for-az,Values=true Name=availability-zone,Values=us-east-1a \
+            --query 'Subnets[].[SubnetId,VpcId,MapPublicIpOnLaunch]' --output text
 
-      - name: Security groups
-        run: aws ec2 describe-security-groups --region us-east-1
+      - name: Name clashes (this project's names only)
+        run: |
+          echo "== instances named or tagged $NAME"
+          aws ec2 describe-instances --filters "Name=tag:Name,Values=$NAME" \
+            --query 'Reservations[].Instances[].[InstanceId,State.Name,InstanceType,Tags[?Key==`Project`].Value|[0]]' --output text
+          echo "== security groups named ${NAME}*"
+          aws ec2 describe-security-groups --filters "Name=group-name,Values=${NAME}*" \
+            --query 'SecurityGroups[].[GroupId,GroupName,VpcId]' --output text
+          echo "== key pairs named ${NAME}*"
+          aws ec2 describe-key-pairs --filters "Name=key-name,Values=${NAME}*" --query 'KeyPairs[].[KeyName,KeyPairId]' --output text
 
-      - name: Tagged EC2 instances
-        run: aws ec2 describe-instances --region us-east-1
-
-      - name: Instance profiles
-        run: aws iam list-instance-profiles
+      - name: Instance profile used by the instance
+        run: |
+          role=$(aws iam get-instance-profile --instance-profile-name ecsInstanceProfile --query 'InstanceProfile.Roles[0].RoleName' --output text)
+          echo "role: $role"
+          aws iam list-attached-role-policies --role-name "$role" --query 'AttachedPolicies[].PolicyName' --output text

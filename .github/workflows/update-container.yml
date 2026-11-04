@@ -1,9 +1,9 @@
 name: Update running container (pull latest image)
 
 # Manual trigger only; does nothing unless you type "confirmed". Uses SSM Run
-# Command on the single instance tagged Name=clrs-circuit-tracer to pull the
-# newest ECR image and restart the "tracer" container. Creates no resources.
-# Run "Build and push image to ECR" first.
+# Command on the single instance tagged Name=clrs-circuit-tracer AND
+# Project=clrs-circuit-tracer to pull the newest ECR image and restart the
+# "tracer" container. Creates no resources. Run "Build and push image to ECR" first.
 on:
   workflow_dispatch:
     inputs:
@@ -14,25 +14,42 @@ on:
 
 permissions:
   contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  NAME: clrs-circuit-tracer
+  PROJECT: clrs-circuit-tracer
 
 jobs:
   update:
     if: ${{ inputs.confirm == 'confirmed' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       - name: Pull latest image and restart container
         run: |
-          id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=clrs-circuit-tracer" "Name=instance-state-name,Values=running" \
-            --query 'Reservations[0].Instances[0].InstanceId' --output text)
-          [ "$id" != "None" ] || { echo "no running clrs-circuit-tracer instance"; exit 1; }
+          set -euo pipefail
+          ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$NAME" "Name=tag:Project,Values=$PROJECT" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          [ "$(echo "$ids" | wc -w)" = 1 ] || { echo "Expected exactly one running tagged instance, found: '$ids'"; exit 1; }
           acct=$(aws sts get-caller-identity --query Account --output text)
           reg="$acct.dkr.ecr.us-east-1.amazonaws.com"
-          cmd=$(aws ssm send-command --instance-ids "$id" --document-name AWS-RunShellScript --parameters "commands=[\"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $reg\",\"docker pull $reg/clrs-circuit-tracer:latest\",\"docker rm -f tracer\",\"docker run -d --restart always --name tracer -p 80:8766 -p 8080:8767 $reg/clrs-circuit-tracer:latest\",\"docker image prune -f\",\"docker ps\"]" \
+          cmd=$(aws ssm send-command --instance-ids "$ids" --document-name AWS-RunShellScript \
+            --parameters "commands=[\"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $reg\",\"docker pull $reg/$NAME:latest\",\"docker rm -f tracer\",\"docker run -d --restart always --name tracer --log-opt max-size=10m --log-opt max-file=3 -p 80:8766 -p 8080:8767 $reg/$NAME:latest\",\"docker image prune -f\",\"docker ps\"]" \
             --query Command.CommandId --output text)
-          aws ssm wait command-executed --command-id "$cmd" --instance-id "$id" || true
-          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text
+          aws ssm wait command-executed --command-id "$cmd" --instance-id "$ids" || true
+          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$ids" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text

@@ -1,10 +1,9 @@
 name: Build and push image to ECR
 
-# Manual trigger only. Builds the two-server container for linux/amd64 and
-# pushes it to Amazon ECR in us-east-1. ECR repository creation only happens
-# if you explicitly set create_repo_if_missing=true when running this
-# workflow -- that is the one mutating AWS call here, and it only runs
-# because you deliberately chose that input, not automatically.
+# Manual trigger only. Builds the two-server container for linux/amd64,
+# smoke-tests it (both servers must answer 200), then pushes it to Amazon ECR
+# in us-east-1. The ECR repository is only created if you tick
+# create_repo_if_missing.
 on:
   workflow_dispatch:
     inputs:
@@ -15,16 +14,18 @@ on:
 
 permissions:
   contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
 
 env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REPO: clrs-circuit-tracer
+  CREATE_REPO: ${{ inputs.create_repo_if_missing }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           lfs: true
 
@@ -32,8 +33,16 @@ jobs:
         run: |
           test "$(stat -c%s checkpoints_v3/bfs/best.pkl)" -gt 100000
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -43,22 +52,49 @@ jobs:
         if: ${{ inputs.create_repo_if_missing }}
         run: |
           aws ecr describe-repositories --repository-names "$ECR_REPO" \
-            || aws ecr create-repository --repository-name "$ECR_REPO" --image-scanning-configuration scanOnPush=true
+            || aws ecr create-repository --repository-name "$ECR_REPO" \
+                 --image-scanning-configuration scanOnPush=true \
+                 --tags Key=Name,Value="$ECR_REPO" Key=Project,Value="$ECR_REPO"
 
       - name: Login to ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build and push (linux/amd64)
-        uses: docker/build-push-action@v6
+      - name: Build image for smoke test (not pushed)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: clrs-smoke:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test (both servers must return 200)
+        run: |
+          docker run -d --name smoke -p 8766:8766 -p 8767:8767 clrs-smoke:test
+          for i in $(seq 1 60); do
+            a=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8766/viewer3.html || true)
+            b=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8767/viewer_fig47.html || true)
+            echo "attempt $i: 8766=$a 8767=$b"
+            if [ "$a" = 200 ] && [ "$b" = 200 ]; then exit 0; fi
+            sleep 5
+          done
+          docker logs smoke
+          exit 1
+
+      - name: Push to ECR (linux/amd64)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           platforms: linux/amd64
           push: true
           tags: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest
+          cache-from: type=gha
 
       - name: Print image URI
         run: echo "Pushed ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest" >> "$GITHUB_STEP_SUMMARY"

@@ -1,10 +1,12 @@
 name: Deploy to EC2 (one instance)
 
 # Manual trigger only, and does nothing unless you type "confirmed".
-# Creates exactly: 1 key pair, 1 security group, 1 instance (t3.micro or t3.small)
-# (us-east-1a, default VPC subnet). Uses an EXISTING instance profile; never
-# creates or edits IAM, VPCs, subnets, gateways or route tables, and never
-# touches any other resource. Run "Build and push image to ECR" first.
+# Creates exactly: 1 security group + 1 EC2 instance (no key pair, no port 22;
+# admin access is via SSM). Everything it creates is tagged
+# Name=clrs-circuit-tracer and Project=clrs-circuit-tracer, and it only ever
+# looks up or terminates resources carrying BOTH tags. It never creates or
+# edits IAM, VPCs, subnets, gateways, route tables or Elastic IPs.
+# Run "Build and push image to ECR" first.
 on:
   workflow_dispatch:
     inputs:
@@ -12,95 +14,132 @@ on:
         description: 'Type "confirmed" to allow creating AWS resources'
         required: true
         default: ''
-      ssh_cidr:
-        description: 'Optional CIDR for SSH (port 22), e.g. 203.0.113.5/32. Empty = SSH closed'
-        required: false
-        default: ''
       instance_type:
         description: 'Instance type for the new instance'
         type: choice
         options: [t3.small, t3.micro]
         default: t3.small
       replace_existing:
-        description: 'TERMINATE the existing clrs-circuit-tracer instance (and only it) before launching a new one'
+        description: 'TERMINATE the existing tagged clrs-circuit-tracer instance (by ID, only it) before launching a new one'
         type: boolean
         default: false
 
 permissions:
   contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
 
 env:
   AWS_DEFAULT_REGION: us-east-1
+  AZ: us-east-1a
   ECR_REPO: clrs-circuit-tracer
-  SUBNET_ID: subnet-0522fa9c6ad614895
-  VPC_ID: vpc-0ae7737cdd3571324
-  PROFILE: ecsInstanceProfile
   NAME: clrs-circuit-tracer
+  PROJECT: clrs-circuit-tracer
+  PROFILE: ecsInstanceProfile
+  INSTANCE_TYPE: ${{ inputs.instance_type }}
+  REPLACE_EXISTING: ${{ inputs.replace_existing }}
 
 jobs:
   deploy:
     if: ${{ inputs.confirm == 'confirmed' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Pre-checks
+      - name: Find network (read-only; fails safely)
         run: |
-          ids=$(aws ec2 describe-instances \
+          set -euo pipefail
+          vpc=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --query 'Vpcs[].VpcId' --output text)
+          [ "$(echo "$vpc" | wc -w)" = 1 ] || { echo "Expected exactly one default VPC, found: '$vpc'. Stopping."; exit 1; }
+          subnet=$(aws ec2 describe-subnets \
+            --filters "Name=vpc-id,Values=$vpc" "Name=default-for-az,Values=true" "Name=state,Values=available" "Name=availability-zone,Values=$AZ" \
+            --query 'Subnets[0].SubnetId' --output text)
+          [ "$subnet" != "None" ] || { echo "No default subnet in $AZ. Stopping."; exit 1; }
+          pub=$(aws ec2 describe-subnets --subnet-ids "$subnet" --query 'Subnets[0].MapPublicIpOnLaunch' --output text)
+          [ "$pub" = "True" ] || { echo "Subnet $subnet does not auto-assign public IPs. Stopping."; exit 1; }
+          off=$(aws ec2 describe-instance-type-offerings --location-type availability-zone \
+            --filters "Name=instance-type,Values=$INSTANCE_TYPE" "Name=location,Values=$AZ" --query 'InstanceTypeOfferings[0].InstanceType' --output text)
+          [ "$off" != "None" ] || { echo "$INSTANCE_TYPE is not offered in $AZ. Stopping."; exit 1; }
+          echo "VPC_ID=$vpc" >> "$GITHUB_ENV"
+          echo "SUBNET_ID=$subnet" >> "$GITHUB_ENV"
+
+      - name: Pre-checks (read-only)
+        run: |
+          set -euo pipefail
+          # Instances we own: BOTH tags. These are the only ones we may ever terminate.
+          owned=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$NAME" "Name=tag:Project,Values=$PROJECT" "Name=instance-state-name,Values=pending,running,stopped,stopping" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          # Same Name but not ours (no Project tag): never touched; stop so the user decides.
+          named=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=$NAME" "Name=instance-state-name,Values=pending,running,stopped,stopping" \
             --query 'Reservations[].Instances[].InstanceId' --output text)
-          if [ -n "$ids" ]; then
-            if [ "${{ inputs.replace_existing }}" = "true" ]; then
-              echo "Terminating existing $NAME instance: $ids"
-              aws ec2 terminate-instances --instance-ids $ids >/dev/null
-              aws ec2 wait instance-terminated --instance-ids $ids
-            else
-              echo "An instance named $NAME already exists; set replace_existing to replace it."; exit 1
-            fi
+          for i in $named; do
+            case " $owned " in *" $i "*) ;; *) echo "Instance $i has Name=$NAME but no Project tag. Not touching it. Stopping."; exit 1;; esac
+          done
+          echo "OWNED_IDS=$owned" >> "$GITHUB_ENV"
+          if [ -n "$owned" ] && [ "$REPLACE_EXISTING" != "true" ]; then
+            echo "Tagged instance(s) already exist: $owned. Set replace_existing to replace."; exit 1
           fi
+
+          # Security-group name clash: reuse only if it carries our Project tag.
+          sg=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=${NAME}-sg" "Name=vpc-id,Values=$VPC_ID" --query 'SecurityGroups[0].GroupId' --output text)
+          if [ "$sg" != "None" ]; then
+            tag=$(aws ec2 describe-security-groups --group-ids "$sg" --query "SecurityGroups[0].Tags[?Key=='Project'].Value | [0]" --output text)
+            [ "$tag" = "$PROJECT" ] || { echo "Security group ${NAME}-sg ($sg) exists without Project=$PROJECT. Not touching it. Stopping."; exit 1; }
+            echo "EXISTING_SG=$sg" >> "$GITHUB_ENV"
+          fi
+
           aws ecr describe-images --repository-name "$ECR_REPO" --image-ids imageTag=latest >/dev/null \
             || { echo "ECR image $ECR_REPO:latest not found; run the build workflow first."; exit 1; }
+
           role=$(aws iam get-instance-profile --instance-profile-name "$PROFILE" --query 'InstanceProfile.Roles[0].RoleName' --output text)
-          aws iam list-attached-role-policies --role-name "$role" --query 'AttachedPolicies[].PolicyName' --output text | tee /tmp/pols
-          grep -Eqi 'ContainerRegistry|ContainerServiceforEC2|ECR' /tmp/pols \
+          pols=$(aws iam list-attached-role-policies --role-name "$role" --query 'AttachedPolicies[].PolicyName' --output text)
+          echo "Role $role policies: $pols"
+          echo "$pols" | grep -Eqi 'ContainerRegistry|ContainerServiceforEC2|ECR' \
             || { echo "Role $role has no obvious ECR read policy; stopping."; exit 1; }
-
-      - name: Create key pair if missing (private key kept out of logs)
-        run: |
-          aws ec2 describe-key-pairs --key-names "${NAME}-key" >/dev/null 2>&1 && { echo "key pair exists, reusing"; exit 0; }
-          aws ec2 create-key-pair --key-name "${NAME}-key" --key-type ed25519 \
-            --query KeyMaterial --output text > "${NAME}-key.pem"
-          chmod 600 "${NAME}-key.pem"
-
-      - name: Upload private key (private artifact, 1 day)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.NAME }}-key
-          path: ${{ env.NAME }}-key.pem
-          retention-days: 1
-          if-no-files-found: ignore
-
-      - name: Create security group if missing
-        id: sg
-        run: |
-          sg=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=${NAME}-sg" "Name=vpc-id,Values=$VPC_ID" --query 'SecurityGroups[0].GroupId' --output text)
-          if [ "$sg" != "None" ]; then echo "sg=$sg" >> "$GITHUB_OUTPUT"; exit 0; fi
-          sg=$(aws ec2 create-security-group --group-name "${NAME}-sg" \
-            --description "clrs circuit tracer" --vpc-id "$VPC_ID" --query GroupId --output text)
-          aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 80 --cidr 0.0.0.0/0
-          aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 8080 --cidr 0.0.0.0/0
-          if [ -n "${{ inputs.ssh_cidr }}" ]; then
-            aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 22 --cidr "${{ inputs.ssh_cidr }}"
+          if ! echo "$pols" | grep -qi 'SSMManagedInstanceCore'; then
+            echo "::warning::Role $role lacks AmazonSSMManagedInstanceCore: SSM admin/update/diagnose will not work. IAM was not changed."
+            echo "WARNING: role $role lacks AmazonSSMManagedInstanceCore (no SSM access to the instance)." >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "sg=$sg" >> "$GITHUB_OUTPUT"
+
+      - name: Terminate previous tagged instance (only if requested; by ID)
+        if: ${{ inputs.replace_existing }}
+        run: |
+          set -euo pipefail
+          [ -z "${OWNED_IDS:-}" ] && { echo "Nothing to replace."; exit 0; }
+          echo "Terminating $OWNED_IDS"
+          aws ec2 terminate-instances --instance-ids $OWNED_IDS >/dev/null
+          aws ec2 wait instance-terminated --instance-ids $OWNED_IDS
+
+      - name: Create security group if missing (tagged)
+        run: |
+          set -euo pipefail
+          sg="${EXISTING_SG:-}"
+          if [ -z "$sg" ]; then
+            sg=$(aws ec2 create-security-group --group-name "${NAME}-sg" --description "clrs circuit tracer" --vpc-id "$VPC_ID" \
+              --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=${NAME}-sg},{Key=Project,Value=$PROJECT}]" \
+              --query GroupId --output text)
+            aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 80 --cidr 0.0.0.0/0 >/dev/null
+            aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 8080 --cidr 0.0.0.0/0 >/dev/null
+          fi
+          echo "SG_ID=$sg" >> "$GITHUB_ENV"
 
       - name: Launch instance
         run: |
+          set -euo pipefail
           ami=$(aws ec2 describe-images --owners amazon \
             --filters "Name=name,Values=al2023-ami-2023*-x86_64" "Name=state,Values=available" \
             --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text)
@@ -115,17 +154,19 @@ jobs:
           systemctl enable --now docker
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $reg
           docker pull $reg/$ECR_REPO:latest
-          docker run -d --restart always --name tracer -p 80:8766 -p 8080:8767 $reg/$ECR_REPO:latest
+          docker run -d --restart always --name tracer --log-opt max-size=10m --log-opt max-file=3 -p 80:8766 -p 8080:8767 $reg/$ECR_REPO:latest
           EOF
-          id=$(aws ec2 run-instances --image-id "$ami" --instance-type ${{ inputs.instance_type }} --count 1 \
-            --subnet-id "$SUBNET_ID" --security-group-ids "${{ steps.sg.outputs.sg }}" \
-            --key-name "${NAME}-key" --iam-instance-profile Name="$PROFILE" \
+          tags="Tags=[{Key=Name,Value=$NAME},{Key=Project,Value=$PROJECT}]"
+          id=$(aws ec2 run-instances --image-id "$ami" --instance-type "$INSTANCE_TYPE" --count 1 \
+            --subnet-id "$SUBNET_ID" --security-group-ids "$SG_ID" \
+            --iam-instance-profile Name="$PROFILE" \
+            --credit-specification CpuCredits=standard \
             --metadata-options HttpTokens=required,HttpPutResponseHopLimit=2 \
-            --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=16,VolumeType=gp3,DeleteOnTermination=true}' \
+            --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=16,VolumeType=gp3,DeleteOnTermination=true,Encrypted=true}' \
             --user-data file://userdata.sh \
-            --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$NAME}]" \
+            --tag-specifications "ResourceType=instance,$tags" "ResourceType=volume,$tags" \
             --query 'Instances[0].InstanceId' --output text)
           aws ec2 wait instance-running --instance-ids "$id"
           ip=$(aws ec2 describe-instances --instance-ids "$id" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-          echo "Instance $id at http://$ip/viewer3.html (figures: http://$ip:8080/viewer_fig47.html). Allow ~5 min for boot + image pull + model load." >> "$GITHUB_STEP_SUMMARY"
+          echo "Instance $id ($INSTANCE_TYPE, CpuCredits=standard) at http://$ip/viewer3.html (figures: http://$ip:8080/viewer_fig47.html). Allow ~5 min for boot + image pull + model load." >> "$GITHUB_STEP_SUMMARY"
           echo "Instance $id, public IP $ip"
