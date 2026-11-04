@@ -242,6 +242,7 @@ function stopPlay() {
   if (playTimer) { clearTimeout(playTimer); playTimer = null; }
   const b = document.getElementById('btnPlay'); if (b) b.textContent = '\u25B6 Play';
 }
+const BUILD = '__BUILD__';   // filled in by the server; versions the immutable URLs below
 async function getJSON(url, signal) { const r = await fetch(url, { signal }); return r.json(); }
 // ---------- in-browser model execution (Web Workers running mpnn.js on the real 128-hidden weights) ----------
 // The server only samples the graph (a few KB); the model forward pass runs here, so once an algorithm's
@@ -302,8 +303,18 @@ function ensureLocalModel(algo) {
   const entry = LOCAL.models[algo] = { state: 'loading' };
   entry.promise = (async () => {
     try {
-      const [man, buf] = await Promise.all([fetch('/models/' + algo + '.json').then(r => r.json()),
-                                            fetch('/models/' + algo + '.bin').then(r => r.arrayBuffer())]);
+      let man, buf;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          [man, buf] = await Promise.all([
+            fetch('/models/' + algo + '.json?v=' + BUILD).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+            fetch('/models/' + algo + '.bin?v=' + BUILD).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })]);
+          break;
+        } catch (err) {
+          if (attempt >= 3) throw err;
+          await new Promise(res => setTimeout(res, 1000 * (attempt + 1)));
+        }
+      }
       entry.man = man; entry.buf = buf;
       await Promise.all(LOCAL.workers.map(st => new Promise(res => {
         st.waiters[algo] = res;
@@ -499,8 +510,8 @@ async function loadAlgo() {
   else {
     algoAbort = new AbortController();
     try {
-      [w, fl] = await Promise.all([getJSON('/api/weights?algo=' + algo, algoAbort.signal),
-                                   getJSON('/api/feature_labels?algo=' + algo, algoAbort.signal)]);
+      [w, fl] = await Promise.all([getJSON('/api/weights?algo=' + algo + '&v=' + BUILD, algoAbort.signal),
+                                   getJSON('/api/feature_labels?algo=' + algo + '&v=' + BUILD, algoAbort.signal)]);
     } catch (e) { if (e.name !== 'AbortError') document.getElementById('status').textContent = 'error: ' + e.message; return; }
     if (w.error || fl.error) { document.getElementById('status').textContent = 'error: ' + (w.error || fl.error); return; }
     ALGO_CACHE[algo] = { W: w, FL: fl };

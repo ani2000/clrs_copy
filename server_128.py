@@ -4,7 +4,7 @@ checkpoints_v3, all 12 graph algorithms. One CaptureNet per algorithm
 loaded once at startup. Attribution/intervention math still runs
 client-side in JS; this server only runs the real jax forward pass.
 """
-import json, pickle, os, threading, gzip, select, socket, re
+import json, pickle, os, threading, gzip, select, socket, re, hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -175,6 +175,27 @@ def find_contexts(algo, feature, n, p, n_episodes=200, seed=54321, cancelled=lam
            for a, adj, source, tt, step, node in top]
 
 
+CACHE_IMMUTABLE = 'public, max-age=31536000, immutable'   # safe: client URLs carry ?v=BUILD (changes with every new image)
+_ETAGS = {}
+
+
+def _etag(data):
+    k = id(data)
+    if k not in _ETAGS:
+        _ETAGS[k] = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
+    return _ETAGS[k]
+
+
+def _build_id():
+    try:
+        return hashlib.sha1(b''.join(open(f'models/{a}.json', 'rb').read() for a in sorted(ALGOS))).hexdigest()[:10]
+    except OSError:
+        return 'dev'
+
+
+BUILD = _build_id()
+
+
 STATIC_FILES = {'viewer3.html': 'text/html; charset=utf-8', 'mpnn.js': 'application/javascript',
                 'mpnn_worker.js': 'application/javascript', 'explain.js': 'application/javascript', 'attrib.js': 'application/javascript', 'attrview.js': 'application/javascript'}
 MODEL_RE = re.compile(r'^models/([a-z_]+)\.(json|bin)$')
@@ -186,7 +207,10 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
-    def _send(self, body, gz=None, cache=False):
+    def _send(self, body, gz=None, cache=False, etag=None):
+        if etag and self.headers.get('If-None-Match') == etag:
+            self.send_response(304); self.send_header('ETag', etag)
+            self.send_header('Cache-Control', CACHE_IMMUTABLE); self.end_headers(); return
         if 'gzip' in self.headers.get('Accept-Encoding', ''):
             body, enc = (gz if gz is not None else gzip.compress(body, compresslevel=3)), 'gzip'
         else:
@@ -195,7 +219,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         if cache:
-            self.send_header('Cache-Control', 'public, max-age=86400')
+            self.send_header('Cache-Control', CACHE_IMMUTABLE)
+        if etag:
+            self.send_header('ETag', etag); self.send_header('Vary', 'Accept-Encoding')
         if enc:
             self.send_header('Content-Encoding', enc)
         self.send_header('Content-Length', str(len(body)))
@@ -213,7 +239,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send(json.dumps(obj).encode())
 
     def _raw(self, body, gz=None):
-        self._send(body, gz, cache=True)
+        self._send(body, gz, cache=True, etag=_etag(body))
 
     def do_GET(self):
         u = urlparse(self.path)
@@ -235,7 +261,8 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(run_graph(algo, n, p, seed))
             elif u.path == '/api/feature_labels':
                 algo = qs.get('algo', ['bfs'])[0]
-                self._json(json.load(open(f'algos/{algo}/feature_labels.json')))
+                body = open(f'algos/{algo}/feature_labels.json', 'rb').read()
+                self._send(body, cache=True, etag='"' + hashlib.sha1(body).hexdigest()[:20] + '"')
             elif u.path == '/api/contexts':
                 algo = qs.get('algo', ['bfs'])[0]; feature = int(qs.get('feature', ['0'])[0])
                 n = int(qs.get('n', ['16'])[0]); p = float(qs.get('p', ['0.4'])[0])
@@ -274,13 +301,47 @@ class Handler(BaseHTTPRequestHandler):
                     data = open(path, 'rb').read()
                 except OSError:
                     self.send_error(404, 'not found'); return
+                if path == 'viewer3.html':
+                    data = data.replace(b'__BUILD__', BUILD.encode())
+                tag = None
+                if m:
+                    tag = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
+                    if self.headers.get('If-None-Match') == tag:
+                        self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache); self.end_headers(); return
                 self.send_response(200); self.send_header('Content-Type', ctype)
                 self.send_header('Cache-Control', cache)
+                if tag: self.send_header('ETag', tag)
                 self.send_header('Content-Length', str(len(data))); self.end_headers()
                 self.wfile.write(data)
         except Exception as e:
             import traceback
             self._json({'error': str(e), 'trace': traceback.format_exc()})
+
+
+def _mem_available_mb():
+    try:
+        for line in open('/proc/meminfo'):
+            if line.startswith('MemAvailable:'):
+                return int(line.split()[1]) // 1024
+    except OSError:
+        pass
+    return 10 ** 9
+
+
+def _warm_all():
+    # loads each model and triggers its JIT compile so the first real request is fast.
+    # Stops early if memory gets low (small host); WARM=0 disables.
+    min_mb = int(os.environ.get('WARM_MIN_MB', '450'))
+    for a in ALGOS:
+        if _mem_available_mb() < min_mb:
+            print(f'warm-up stopped before {a}: only {_mem_available_mb()} MB available', flush=True); return
+        try:
+            with GRAPH_SEM:
+                run_graph(a, 16, 0.4, 1)
+            print(f'  warmed {a}', flush=True)
+        except Exception as e:
+            print(f'  warm-up {a} failed: {e}', flush=True)
+    print('warm-up done', flush=True)
 
 
 if __name__ == '__main__':
@@ -296,4 +357,7 @@ if __name__ == '__main__':
                 return                     # client aborted the request: expected, not an error
             super().handle_error(request, client_address)
 
-    QuietServer((host, int(os.environ.get('PORT', '8766'))), Handler).serve_forever()
+    srv = QuietServer((host, int(os.environ.get('PORT', '8766'))), Handler)
+    if os.environ.get('WARM', '1') != '0':
+        threading.Thread(target=_warm_all, daemon=True).start()
+    srv.serve_forever()
