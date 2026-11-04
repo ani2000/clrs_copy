@@ -33,6 +33,7 @@ env:
   AZ: us-east-1a
   ECR_REPO: clrs-circuit-tracer
   NAME: clrs-circuit-tracer
+  SG_NAME: clrs-circuit-tracer-app-sg
   PROJECT: clrs-circuit-tracer
   PROFILE: ecsInstanceProfile
   INSTANCE_TYPE: ${{ inputs.instance_type }}
@@ -95,10 +96,10 @@ jobs:
           fi
 
           # Security-group name clash: reuse only if it carries our Project tag.
-          sg=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=${NAME}-sg" "Name=vpc-id,Values=$VPC_ID" --query 'SecurityGroups[0].GroupId' --output text)
+          sg=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" "Name=vpc-id,Values=$VPC_ID" --query 'SecurityGroups[0].GroupId' --output text)
           if [ "$sg" != "None" ]; then
             tag=$(aws ec2 describe-security-groups --group-ids "$sg" --query "SecurityGroups[0].Tags[?Key=='Project'].Value | [0]" --output text)
-            [ "$tag" = "$PROJECT" ] || { echo "Security group ${NAME}-sg ($sg) exists without Project=$PROJECT. Not touching it. Stopping."; exit 1; }
+            [ "$tag" = "$PROJECT" ] || { echo "Security group $SG_NAME ($sg) exists without Project=$PROJECT. Not touching it. Stopping."; exit 1; }
             echo "EXISTING_SG=$sg" >> "$GITHUB_ENV"
           fi
 
@@ -129,8 +130,8 @@ jobs:
           set -euo pipefail
           sg="${EXISTING_SG:-}"
           if [ -z "$sg" ]; then
-            sg=$(aws ec2 create-security-group --group-name "${NAME}-sg" --description "clrs circuit tracer" --vpc-id "$VPC_ID" \
-              --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=${NAME}-sg},{Key=Project,Value=$PROJECT}]" \
+            sg=$(aws ec2 create-security-group --group-name "$SG_NAME" --description "clrs circuit tracer" --vpc-id "$VPC_ID" \
+              --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=$SG_NAME},{Key=Project,Value=$PROJECT}]" \
               --query GroupId --output text)
             aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 80 --cidr 0.0.0.0/0 >/dev/null
             aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 8080 --cidr 0.0.0.0/0 >/dev/null
