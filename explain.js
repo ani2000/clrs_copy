@@ -15,7 +15,7 @@
   const sgn = w => (w > 0 ? '+' : '') + f3(w);
   const CLRS = 'Veličković et al., “The CLRS Algorithmic Reasoning Benchmark”, ICML 2022';
   const CT = 'Ameisen et al., “Circuit Tracing: Revealing Computational Graphs in Language Models”, Anthropic 2025';
-  const BIO = 'Lindsey et al., “On the Biology of a Large Language Model” (Claude 3.5 Haiku), Anthropic 2025';
+  const BIO = 'Lindsey et al., “On the Biology of a Large Language Model”, Anthropic 2025';
 
   const TARGETS = {
     reach_h: ['reachability hint', 'reach_h[t][v] = 1 once BFS has reached node v from the source by step t, else 0. It grows by one frontier per step.'],

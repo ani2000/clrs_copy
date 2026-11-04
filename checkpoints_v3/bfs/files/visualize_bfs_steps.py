@@ -195,7 +195,7 @@ if __name__ == '__main__':
     WEIGHTS = {(0, 1): 4, (0, 2): 1, (1, 3): 2, (2, 3): 5, (2, 4): 8,
                (3, 5): 3, (4, 5): 2, (5, 6): 6, (6, 7): 1}
 
-    step_files, strip_file = visualize(EDGES, N_NODES, SOURCE, '/home/claude/bfs_viz/out', WEIGHTS)
+    step_files, strip_file = visualize(EDGES, N_NODES, SOURCE, './bfs_viz/out', WEIGHTS)
     print(f"Wrote {len(step_files)} per-step PNGs and 1 combined strip:")
     for f in step_files:
         print(" ", f)
