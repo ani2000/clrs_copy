@@ -1,0 +1,132 @@
+name: Clean up old clrs-circuit-tracer resources (one exact ID per run)
+
+# Manual trigger only. Handles exactly two leftover resources from the previous
+# deployment and refuses anything else:
+#   sg-0dc604c9b3c0acfc5   (security group named clrs-circuit-tracer-sg)
+#   key-0862ad30aa3ca38a4  (key pair named clrs-circuit-tracer-key)
+# The target is a fixed choice (no free text, no names, no wildcards) and the
+# script re-checks the ID AND the resource name before doing anything.
+# Default mode is a read-only dry run that prints the evidence. Deleting needs
+# mode=delete AND confirm=confirmed, only one resource per run, and is skipped
+# unless the evidence shows the resource is unused.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Exact resource ID to inspect or delete'
+        type: choice
+        options:
+          - sg-0dc604c9b3c0acfc5
+          - key-0862ad30aa3ca38a4
+        default: sg-0dc604c9b3c0acfc5
+      mode:
+        description: 'dry-run (read-only) or delete'
+        type: choice
+        options: [dry-run, delete]
+        default: dry-run
+      confirm:
+        description: 'Type "confirmed" (only needed for mode=delete)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  TARGET: ${{ inputs.target }}
+  MODE: ${{ inputs.mode }}
+  CONFIRM: ${{ inputs.confirm }}
+  OLD_SG_ID: sg-0dc604c9b3c0acfc5
+  OLD_SG_NAME: clrs-circuit-tracer-sg
+  OLD_KEY_ID: key-0862ad30aa3ca38a4
+  OLD_KEY_NAME: clrs-circuit-tracer-key
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Evidence (read-only) and safety decision
+        run: |
+          set -euo pipefail
+          sum() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          live="pending,running,stopping,stopped,shutting-down"
+
+          if [ "$TARGET" = "$OLD_SG_ID" ]; then
+            kind=sg
+            name=$(aws ec2 describe-security-groups --group-ids "$TARGET" --query 'SecurityGroups[0].GroupName' --output text)
+            [ "$name" = "$OLD_SG_NAME" ] || { echo "REFUSING: $TARGET is named '$name', expected '$OLD_SG_NAME'."; exit 1; }
+
+            sum "### Security group $TARGET ($name)"
+            echo "--- details (name, description, VPC, tags, rules)"
+            aws ec2 describe-security-groups --group-ids "$TARGET" --output json \
+              --query 'SecurityGroups[0].{Id:GroupId,Name:GroupName,Description:Description,Vpc:VpcId,Tags:Tags,Ingress:IpPermissions,Egress:IpPermissionsEgress}'
+
+            enis=$(aws ec2 describe-network-interfaces --filters "Name=group-id,Values=$TARGET" \
+              --query 'NetworkInterfaces[].[NetworkInterfaceId,Status,Description]' --output text)
+            insts=$(aws ec2 describe-instances --filters "Name=instance.group-id,Values=$TARGET" "Name=instance-state-name,Values=$live" \
+              --query 'Reservations[].Instances[].InstanceId' --output text)
+            refs_in=$(aws ec2 describe-security-groups --filters "Name=ip-permission.group-id,Values=$TARGET" \
+              --query 'SecurityGroups[].[GroupId,GroupName]' --output text)
+            refs_out=$(aws ec2 describe-security-groups --filters "Name=egress.ip-permission.group-id,Values=$TARGET" \
+              --query 'SecurityGroups[].[GroupId,GroupName]' --output text)
+            refs=$(printf '%s\n%s\n' "$refs_in" "$refs_out" | grep -v "^$" | grep -v "^$TARGET" || true)
+
+            sum "- network interfaces using it: ${enis:-none}"
+            sum "- instances using it (non-terminated): ${insts:-none}"
+            sum "- other security groups whose rules reference it: ${refs:-none}"
+            if [ -z "$enis" ] && [ -z "$insts" ] && [ -z "$refs" ]; then safe=yes; else safe=no; fi
+            sum "- **safe to delete: $safe**"
+
+          elif [ "$TARGET" = "$OLD_KEY_ID" ]; then
+            kind=key
+            name=$(aws ec2 describe-key-pairs --key-pair-ids "$TARGET" --query 'KeyPairs[0].KeyName' --output text)
+            [ "$name" = "$OLD_KEY_NAME" ] || { echo "REFUSING: $TARGET is named '$name', expected '$OLD_KEY_NAME'."; exit 1; }
+
+            sum "### Key pair $TARGET ($name)"
+            aws ec2 describe-key-pairs --key-pair-ids "$TARGET" --output json \
+              --query 'KeyPairs[0].{Id:KeyPairId,Name:KeyName,Type:KeyType,Created:CreateTime,Tags:Tags}'
+            insts=$(aws ec2 describe-instances --filters "Name=key-name,Values=$name" "Name=instance-state-name,Values=$live" \
+              --query 'Reservations[].Instances[].[InstanceId,State.Name,Tags[?Key==`Name`].Value|[0]]' --output text)
+            sum "- instances in us-east-1 using this key pair (non-terminated): ${insts:-none}"
+            if [ -z "$insts" ]; then safe=yes; else safe=no; fi
+            sum "- **safe to delete: $safe**"
+
+          else
+            echo "REFUSING: $TARGET is not one of the two allowed IDs."; exit 1
+          fi
+
+          echo "KIND=$kind"  >> "$GITHUB_ENV"
+          echo "SAFE=$safe"  >> "$GITHUB_ENV"
+          echo "NAME_OK=$name" >> "$GITHUB_ENV"
+
+      - name: Delete (only when mode=delete, confirm=confirmed and evidence says unused)
+        if: ${{ inputs.mode == 'delete' }}
+        run: |
+          set -euo pipefail
+          [ "$CONFIRM" = "confirmed" ] || { echo "Not deleting: type confirmed."; exit 1; }
+          [ "$SAFE" = "yes" ] || { echo "Not deleting: evidence shows $TARGET is still in use."; exit 1; }
+          if [ "$KIND" = "sg" ] && [ "$TARGET" = "$OLD_SG_ID" ] && [ "$NAME_OK" = "$OLD_SG_NAME" ]; then
+            aws ec2 delete-security-group --group-id "$TARGET"
+          elif [ "$KIND" = "key" ] && [ "$TARGET" = "$OLD_KEY_ID" ] && [ "$NAME_OK" = "$OLD_KEY_NAME" ]; then
+            aws ec2 delete-key-pair --key-pair-id "$TARGET"
+          else
+            echo "REFUSING: target/name mismatch."; exit 1
+          fi
+          echo "Deleted $TARGET ($NAME_OK)." | tee -a "$GITHUB_STEP_SUMMARY"
