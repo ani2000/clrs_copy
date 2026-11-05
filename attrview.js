@@ -46,6 +46,7 @@ async function avEnsure(algo) {
   const entry = LOCAL.models[algo];
   if (!entry) throw new Error('model bundle unavailable');
   await entry.promise;
+  if (entry.state === 'aborted' || algo !== curAlgo) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
   if (entry.state !== 'ready' || !entry.man) throw new Error('model bundle failed to load');
   if (!AV.ready['loaded:' + algo] && !AV['sent:' + algo]) { AV['sent:' + algo] = true; w.postMessage({ type: 'load', algo, manifest: entry.man, buffer: entry.buf.slice(0) }); }
   if (!AV.ready['tcloaded:' + algo] && !AV['tcsent:' + algo]) { AV['tcsent:' + algo] = true; w.postMessage({ type: 'tc', algo, W: ALGO_CACHE[algo].W }); }
@@ -70,7 +71,7 @@ async function avRequest(step, node) {
     if (!inst) { inst = await getJSON(`/api/instance?algo=${curAlgo}&n=${G.n}&p=${+document.getElementById('inP').value}&seed=${G.seed}`); G._inst = inst; }
     if (AV.want !== req) return;
     req.inst = inst; AV.pending = req; avPump();
-  } catch (e) { if (AV.want === req) avStatus('The in-browser model is needed for attribution graphs and is not available: ' + e.message); }
+  } catch (e) { if (e && e.name === 'AbortError') return; if (AV.want === req) avStatus('The in-browser model is needed for attribution graphs and is not available: ' + e.message); }
 }
 function avStatus(text, busy) {
   const s = document.getElementById('gstat'); if (s) s.textContent = text;

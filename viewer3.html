@@ -300,21 +300,24 @@ function localReady(algo) { const m = LOCAL.models[algo]; return !!(m && m.state
 function ensureLocalModel(algo) {
   initWorkers();
   if (!LOCAL.workers.length || LOCAL.models[algo]) return;
-  const entry = LOCAL.models[algo] = { state: 'loading' };
+  const ctl = new AbortController(), sig = ctl.signal;
+  const entry = LOCAL.models[algo] = { state: 'loading', ctl, downloading: true };
   entry.promise = (async () => {
     try {
       let man, buf;
       for (let attempt = 0; ; attempt++) {
         try {
           [man, buf] = await Promise.all([
-            fetch('/models/' + algo + '.json?v=' + BUILD).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
-            fetch('/models/' + algo + '.bin?v=' + BUILD).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })]);
+            fetch('/models/' + algo + '.json?v=' + BUILD, { signal: sig }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+            fetch('/models/' + algo + '.bin?v=' + BUILD, { signal: sig }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })]);
           break;
         } catch (err) {
-          if (attempt >= 3) throw err;
-          await new Promise(res => setTimeout(res, 1000 * (attempt + 1)));
+          if (sig.aborted || attempt >= 3) throw err;
+          await new Promise(res => { const t = setTimeout(res, 1000 * (attempt + 1)); sig.addEventListener('abort', () => { clearTimeout(t); res(); }, { once: true }); });
+          if (sig.aborted) throw new DOMException('aborted', 'AbortError');
         }
       }
+      entry.downloading = false;                     // fully downloaded: finishing the worker load costs no bandwidth, so it is kept
       entry.man = man; entry.buf = buf;
       await Promise.all(LOCAL.workers.map(st => new Promise(res => {
         st.waiters[algo] = res;
@@ -327,8 +330,25 @@ function ensureLocalModel(algo) {
         NEXTQ = { algo: null, n: null, p: null, seeds: [] };
         const P = readParams(); if (P) speculate(algo, P.n, P.p, P.seed);
       }
-    } catch (e) { entry.state = 'failed'; }
+    } catch (e) {
+      entry.downloading = false;
+      if (e && e.name === 'AbortError') {            // the user moved to another algorithm: forget this attempt entirely, so coming back restarts cleanly
+        entry.state = 'aborted';
+        if (LOCAL.models[algo] === entry) delete LOCAL.models[algo];
+      } else entry.state = 'failed';
+    }
   })();
+}
+// Stop all network work that belongs to algorithms other than `keep`: unfinished bundle downloads and every unfinished
+// graph request (user-level or speculative). Finished downloads/graphs stay cached, so switching back to them is instant.
+function abortOtherAlgos(keep) {
+  for (const a of Object.keys(LOCAL.models)) {
+    const m = LOCAL.models[a];
+    if (a !== keep && m.downloading && m.ctl) m.ctl.abort();
+  }
+  for (const [k, e] of [...GRAPH_CACHE]) {
+    if (!e.done && !k.startsWith(keep + '|')) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+  }
 }
 function rowsOf(flat, T, N, dim) {
   const out = new Array(T);
@@ -504,7 +524,7 @@ async function loadAlgo() {
   const gen = ++algoGen, algo = curAlgo;
   ++graphGen; ++ctxGen;
   if (algoAbort) algoAbort.abort(); if (graphAbort) graphAbort.abort(); if (ctxAbort) ctxAbort.abort();
-  cancelSpec(); stopPlay();
+  cancelSpec(); abortOtherAlgos(algo); stopPlay();
   G = null; selected = null;                       // never show old-graph data with new-algo weights
   if (typeof drawAttribution === 'function') drawAttribution();
   document.getElementById('status').textContent = 'loading ' + algo + '\u2026';
