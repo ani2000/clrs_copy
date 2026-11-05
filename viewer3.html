@@ -393,6 +393,9 @@ function speculate(algo, n, p, seed) {
   // the neighbouring seeds (spinner arrows), and neighbouring n / p values.
   const gen = ++specGen;
   for (const [k, e] of [...GRAPH_CACHE]) if (!e.done && e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+  // Until the in-browser model is ready every speculative graph is a ~350 KB server download that competes with the
+  // weights and the model bundle on slow links. The load handler above calls speculate() again once the model is ready.
+  if (!localReady(algo)) return;
   n = +n; p = +p; seed = +seed;
   if (NEXTQ.algo !== algo || NEXTQ.n !== n || NEXTQ.p !== p) NEXTQ = { algo, n, p, seeds: [] };
   const rnd = () => { let s = Math.floor(Math.random() * 1e6); NEXTQ.seeds.push(s); return s; };
