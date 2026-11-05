@@ -226,7 +226,16 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Encoding', enc)
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self._write(body)
+
+    def _write(self, data):
+        # Slow links: write in 64 KB chunks. The socket timeout then applies per chunk (progress-based)
+        # instead of to the whole body, which used to abort big downloads after 30 s.
+        self.connection.settimeout(120)
+        mv = memoryview(data)
+        for i in range(0, len(mv), 65536):
+            self.wfile.write(mv[i:i + 65536])
+        self.connection.settimeout(self.timeout)
 
     def _client_gone(self):
         try:
@@ -312,7 +321,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Cache-Control', cache)
                 if tag: self.send_header('ETag', tag)
                 self.send_header('Content-Length', str(len(data))); self.end_headers()
-                self.wfile.write(data)
+                self._write(data)
+        except OSError:
+            self.close_connection = True      # client gone or write timed out mid-response: nothing more to send
         except Exception as e:
             import traceback
             self._json({'error': str(e), 'trace': traceback.format_exc()})
