@@ -1,0 +1,52 @@
+name: Reboot the instance (soft reboot, same IP)
+
+# Manual trigger only; does nothing unless you type "confirmed". Soft-reboots the single running instance tagged
+# Name=clrs-circuit-tracer AND Project=clrs-circuit-tracer, and only if its ID is the expected one. A reboot keeps
+# the public IP, the disk and the settings in /etc/sysctl.d; the container restarts by itself (--restart always).
+# Creates, deletes and resizes nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "confirmed" to reboot the instance'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  NAME: clrs-circuit-tracer
+  PROJECT: clrs-circuit-tracer
+  EXPECTED_ID: i-0877713b5583c8533
+
+jobs:
+  reboot:
+    if: ${{ inputs.confirm == 'confirmed' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Reboot the tagged instance
+        run: |
+          set -euo pipefail
+          ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$NAME" "Name=tag:Project,Values=$PROJECT" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          [ "$(echo "$ids" | wc -w)" = 1 ] || { echo "Expected exactly one running tagged instance, found: '$ids'"; exit 1; }
+          [ "$ids" = "$EXPECTED_ID" ] || { echo "Refusing: instance $ids is not the expected $EXPECTED_ID"; exit 1; }
+          aws ec2 reboot-instances --instance-ids "$ids"
+          echo "Reboot requested for $ids"
