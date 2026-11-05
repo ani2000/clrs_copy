@@ -80,18 +80,9 @@ jobs:
         run: |
           set -euo pipefail
           TAGS="Key=Project,Value=$PROJECT Key=Name,Value=$NAME"
-          # 1) Elastic IP (re-use ours if it already exists)
-          alloc=$(aws ec2 describe-addresses --filters "Name=tag:Project,Values=$PROJECT" --query 'Addresses[0].AllocationId' --output text)
-          if [ "$alloc" = "None" ]; then
-            alloc=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=$PROJECT},{Key=Name,Value=$NAME}]" --query AllocationId --output text)
-            echo "allocated $alloc"
-          fi
-          cur=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].InstanceId' --output text)
-          if [ "$cur" != "$IID" ]; then aws ec2 associate-address --allocation-id "$alloc" --instance-id "$IID" --no-allow-reassociation >/dev/null; fi
-          ip=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].PublicIp' --output text)
-          origin="ec2-${ip//./-}.compute-1.amazonaws.com"
-          echo "Elastic IP $ip, origin $origin"
-          # 2) cache policy: long cache only for answers the origin marks immutable (the versioned ?v= URLs); everything else is not stored
+          # Order: cache policy and alarm first (if this key may not create them, nothing about the instance has changed yet),
+          # then the Elastic IP (the instance's public address changes here), then the distribution that points at it.
+          # a) cache policy: long cache only for answers the origin marks immutable (the versioned ?v= URLs); everything else is not stored
           pid=$(aws cloudfront list-cache-policies --type custom --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='$NAME-versioned'].CachePolicy.Id | [0]" --output text)
           if [ "$pid" = "None" ]; then
             cat > policy.json <<EOF
@@ -103,7 +94,25 @@ jobs:
             pid=$(aws cloudfront create-cache-policy --cache-policy-config file://policy.json --query CachePolicy.Id --output text)
             echo "created cache policy $pid"
           fi
-          # 3) distribution
+          # b) alarm: reboot this instance (only) when its status checks fail for 3 minutes
+          aws cloudwatch put-metric-alarm --alarm-name "$NAME-status-reboot" \
+            --alarm-description "Reboot $IID if its EC2 status checks fail" \
+            --namespace AWS/EC2 --metric-name StatusCheckFailed --dimensions Name=InstanceId,Value="$IID" \
+            --statistic Maximum --period 60 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold \
+            --treat-missing-data notBreaching --alarm-actions arn:aws:automate:us-east-1:ec2:reboot \
+            --tags Key=Project,Value=$PROJECT Key=Name,Value=$NAME
+          # c) Elastic IP (re-use ours if it already exists)
+          alloc=$(aws ec2 describe-addresses --filters "Name=tag:Project,Values=$PROJECT" --query 'Addresses[0].AllocationId' --output text)
+          if [ "$alloc" = "None" ]; then
+            alloc=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=$PROJECT},{Key=Name,Value=$NAME}]" --query AllocationId --output text)
+            echo "allocated $alloc"
+          fi
+          cur=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].InstanceId' --output text)
+          if [ "$cur" != "$IID" ]; then aws ec2 associate-address --allocation-id "$alloc" --instance-id "$IID" --no-allow-reassociation >/dev/null; fi
+          ip=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].PublicIp' --output text)
+          origin="ec2-${ip//./-}.compute-1.amazonaws.com"
+          echo "Elastic IP $ip, origin $origin"
+          # d) distribution
           did=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='$NAME'].Id | [0]" --output text)
           if [ "$did" = "None" ]; then
             NOCACHE=4135ea2d-6df8-44a3-9df3-4b5a84be39ad      # managed CachingDisabled
@@ -119,13 +128,6 @@ jobs:
             did=$(aws cloudfront create-distribution-with-tags --distribution-config-with-tags file://dist.json --query Distribution.Id --output text)
             echo "created distribution $did"
           fi
-          # 4) alarm: reboot this instance (only) when its status checks fail for 3 minutes
-          aws cloudwatch put-metric-alarm --alarm-name "$NAME-status-reboot" \
-            --alarm-description "Reboot $IID if its EC2 status checks fail" \
-            --namespace AWS/EC2 --metric-name StatusCheckFailed --dimensions Name=InstanceId,Value="$IID" \
-            --statistic Maximum --period 60 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold \
-            --treat-missing-data notBreaching --alarm-actions arn:aws:automate:us-east-1:ec2:reboot \
-            --tags Key=Project,Value=$PROJECT Key=Name,Value=$NAME
           echo "waiting for the distribution to deploy (up to ~15 minutes)"
           aws cloudfront wait distribution-deployed --id "$did"
           dom=$(aws cloudfront get-distribution --id "$did" --query Distribution.DomainName --output text)
