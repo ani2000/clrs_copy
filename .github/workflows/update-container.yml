@@ -49,7 +49,7 @@ jobs:
           acct=$(aws sts get-caller-identity --query Account --output text)
           reg="$acct.dkr.ecr.us-east-1.amazonaws.com"
           cmd=$(aws ssm send-command --instance-ids "$ids" --document-name AWS-RunShellScript \
-            --parameters "commands=[\"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $reg\",\"docker pull $reg/$NAME:latest\",\"docker rm -f tracer\",\"docker run -d --restart always --name tracer --log-opt max-size=10m --log-opt max-file=3 -p 80:8766 -p 8080:8767 $reg/$NAME:latest\",\"docker image prune -f\",\"docker ps\"]" \
+            --parameters "commands=[\"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $reg\",\"docker pull $reg/$NAME:latest\",\"docker rm -f tracer\",\"docker run -d --restart always --memory 1500m --memory-swap 1800m --name tracer --log-opt max-size=10m --log-opt max-file=3 -p 80:8766 -p 8080:8767 $reg/$NAME:latest\",\"docker image prune -f\",\"docker ps\"]" \
             --query Command.CommandId --output text)
           aws ssm wait command-executed --command-id "$cmd" --instance-id "$ids" || true
           aws ssm get-command-invocation --command-id "$cmd" --instance-id "$ids" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text

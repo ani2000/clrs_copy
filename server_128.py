@@ -4,7 +4,7 @@ checkpoints_v3, all 12 graph algorithms. One CaptureNet per algorithm
 loaded once at startup. Attribution/intervention math still runs
 client-side in JS; this server only runs the real jax forward pass.
 """
-import json, pickle, os, threading, gzip, select, socket, re, hashlib
+import json, pickle, os, threading, gzip, select, socket, re, hashlib, collections, gc
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -26,10 +26,39 @@ def _f32(a):
     return [[float(str(v)) for v in row] for row in a]
 
 
-def _load(algo):
-    spec = clrs.SPECS[algo]
+def _weights_payload(algo):
+    """Bytes served by /api/weights. Needs only the transcoder + meta files: no JAX model."""
     meta = META[algo]
     t = dict(np.load(f'algos/{algo}/transcoder.npz'))
+    weights_json = dict(
+        w_enc=_f32(t['w_enc']), b_enc=_f32(t['b_enc']), w_dec=_f32(t['w_dec']), b_dec=_f32(t['b_dec']),
+        mu_x=_f32(t['mu_x']), sd_x=_f32(t['sd_x']), F=int(t['F']), K=int(t['K']), hidden=HIDDEN,
+        W_dec=meta['W_dec'], b_dec_target=meta['b_dec'],
+        target=meta['target'], target_stage=meta['target_stage'], target_type=meta['target_type'],
+        source_field=meta['source_field'], fvu=meta['fvu'], val_f1=meta['val_f1'], test_f1=meta['test_f1'],
+    )
+    weights_bytes = json.dumps(weights_json).encode()
+    return weights_bytes, gzip.compress(weights_bytes, compresslevel=6)
+
+
+_WEIGHTS = {}
+_WEIGHTS_LOCK = threading.Lock()
+
+
+def get_weights(algo):
+    if algo not in META:
+        raise KeyError(algo)
+    if algo not in _WEIGHTS:
+        with _WEIGHTS_LOCK:
+            if algo not in _WEIGHTS:
+                _WEIGHTS[algo] = _weights_payload(algo)
+    return _WEIGHTS[algo]
+
+
+def _load(algo):
+    """The JAX/Haiku model for /api/graph and /api/contexts (the only endpoints that run it)."""
+    spec = clrs.SPECS[algo]
+    meta = META[algo]
     sampler0, _ = clrs.build_sampler(algo, num_samples=1, seed=0, length=8, p=(0.4,))
     fb0 = sampler0.next()
     nb_dims = {}
@@ -49,39 +78,82 @@ def _load(algo):
     ckpt = pickle.load(open(f'{CKPT_DIR}/{algo}/best.pkl', 'rb'))['params']
     assert set(params) == set(ckpt), f'{algo}: checkpoint mismatch'
     params = hk.data_structures.merge(params, ckpt)
-
-    weights_json = dict(
-        w_enc=_f32(t['w_enc']), b_enc=_f32(t['b_enc']), w_dec=_f32(t['w_dec']), b_dec=_f32(t['b_dec']),
-        mu_x=_f32(t['mu_x']), sd_x=_f32(t['sd_x']), F=int(t['F']), K=int(t['K']), hidden=HIDDEN,
-        W_dec=meta['W_dec'], b_dec_target=meta['b_dec'],
-        target=meta['target'], target_stage=meta['target_stage'], target_type=meta['target_type'],
-        source_field=meta['source_field'], fvu=meta['fvu'], val_f1=meta['val_f1'], test_f1=meta['test_f1'],
-    )
-    weights_bytes = json.dumps(weights_json).encode()
-    weights_gz = gzip.compress(weights_bytes, compresslevel=6)
     print(f'  loaded {algo}: target={meta["target"]} ({meta["target_type"]}), FVU={meta["fvu"]:.4f}', flush=True)
     apply_jit = jax.jit(lambda params, rng, feats: net.apply(params, rng, [feats], True, 0, True, False))
-    return dict(apply=apply_jit, net=net, params=params, spec=spec, nb_dims=nb_dims, meta=meta, weights_bytes=weights_bytes, weights_gz=weights_gz)
+    return dict(apply=apply_jit, net=net, params=params, spec=spec, nb_dims=nb_dims, meta=meta)
 
 
 class LazyRegistry:
-    """Loads each algorithm's model on first use (keeps peak RAM low on small hosts)."""
-    def __init__(self):
-        self._d = {}
+    """Loads each algorithm's model on first use and keeps at most `cap` of them (least recently used is
+    evicted), so peak RAM stays bounded on a small host. A request that already holds a model keeps it
+    alive until it finishes, so eviction never breaks a running forward pass."""
+    def __init__(self, cap):
+        self._d = collections.OrderedDict()
         self._lock = threading.Lock()
+        self.cap = max(1, cap)
 
     def __getitem__(self, algo):
-        if algo not in self._d:
-            with self._lock:
-                if algo not in self._d:
-                    self._d[algo] = _load(algo)
-        return self._d[algo]
+        with self._lock:                      # loads are serialised: two at once would double the peak
+            if algo in self._d:
+                self._d.move_to_end(algo)
+                return self._d[algo]
+            if algo not in META:
+                raise KeyError(algo)
+            evicted = []
+            while len(self._d) >= self.cap:
+                evicted.append(self._d.popitem(last=False)[0])
+            if evicted:
+                release_memory()
+                print(f'  evicted model(s): {", ".join(evicted)}', flush=True)
+            self._d[algo] = _load(algo)
+            return self._d[algo]
+
+    def loaded(self):
+        with self._lock:
+            return list(self._d)
 
 
-REG = LazyRegistry()
+REG = LazyRegistry(int(os.environ.get('MODEL_CAP', '3')))
 GRAPH_SEM = threading.Semaphore(2)      # bounded concurrent model runs (protects a small host)
 CTX_SEM = threading.Semaphore(1)        # the 200-episode context search is heavy: one at a time
 CTX_CACHE = {}                          # (algo,feature,n,p) -> result
+
+# Every new graph length makes jax compile (and keep) another program for the model; for the long-trace algorithms
+# each one holds ~50 MB, which is what filled the small host. Keep only a few compiled programs: when more than
+# VARIANT_CAP are held, drop them (they are rebuilt on demand; the models and their outputs are unchanged).
+VARIANT_CAP = int(os.environ.get("VARIANT_CAP", "3"))
+_TRIM_LOCK = threading.Lock()
+try:
+    import ctypes
+    _LIBC = ctypes.CDLL("libc.so.6")
+except Exception:
+    _LIBC = None
+
+
+def release_memory():
+    gc.collect()
+    if _LIBC is not None:
+        try:
+            _LIBC.malloc_trim(0)          # hand freed heap pages back to the OS (glibc)
+        except Exception:
+            pass
+
+
+def trim_compiled(force=False):
+    try:
+        held = sum(m["apply"]._cache_size() for m in list(REG._d.values()))
+    except Exception:
+        return
+    if held <= VARIANT_CAP and not force:
+        return
+    if not _TRIM_LOCK.acquire(blocking=False):
+        return
+    try:
+        jax.clear_caches()
+        release_memory()
+    finally:
+        _TRIM_LOCK.release()
+
 print('ready: models load lazily on first request per algorithm (checkpoints_v3).', flush=True)
 
 
@@ -91,6 +163,7 @@ def _run_graph_once(algo, n, p, seed):
     fb = sampler.next()
     out_preds, hint_preds, hiddens, z, msgs = r['apply'](
         r['params'], jax.random.PRNGKey(seed + 1), fb.features)
+    trim_compiled()
     z, msgs, hiddens = np.asarray(z)[:, 0], np.asarray(msgs)[:, 0], np.asarray(hiddens)[:, 0]
     node_fts = z[:, :, :HIDDEN]
     L = int(np.asarray(fb.features.lengths)[0])
@@ -146,6 +219,7 @@ def find_contexts(algo, feature, n, p, n_episodes=200, seed=54321, cancelled=lam
             continue
         out_preds, hint_preds, hiddens, z, msgs = r['apply'](
             r['params'], jax.random.PRNGKey(ep + 1), fb.features)
+        trim_compiled()
         z, msgs = np.asarray(z)[:, 0], np.asarray(msgs)[:, 0]
         names_i = [i.name for i in fb.features.inputs]
         adj = np.asarray(fb.features.inputs[names_i.index('adj')].data)[0]
@@ -260,7 +334,7 @@ class Handler(BaseHTTPRequestHandler):
                                    test_f1=META[a]['test_f1']) for a in ALGOS})
             elif u.path == '/api/weights':
                 algo = qs.get('algo', ['bfs'])[0]
-                r = REG[algo]; self._raw(r['weights_bytes'], r['weights_gz'])
+                wb, wz = get_weights(algo); self._raw(wb, wz)
             elif u.path == '/api/graph':
                 algo = qs.get('algo', ['bfs'])[0]
                 n = int(qs.get('n', ['16'])[0]); p = float(qs.get('p', ['0.4'])[0]); seed = int(qs.get('seed', ['42'])[0])
@@ -340,10 +414,11 @@ def _mem_available_mb():
 
 
 def _warm_all():
-    # loads each model and triggers its JIT compile so the first real request is fast.
+    # loads the default algorithms and triggers their JIT compile so the first real request is fast.
+    # Only WARM_ALGOS (default bfs,dfs) are warmed; the rest load on demand under the MODEL_CAP limit.
     # Stops early if memory gets low (small host); WARM=0 disables.
     min_mb = int(os.environ.get('WARM_MIN_MB', '450'))
-    for a in ALGOS:
+    for a in [x for x in os.environ.get('WARM_ALGOS', 'bfs,dfs').split(',') if x in META]:
         if _mem_available_mb() < min_mb:
             print(f'warm-up stopped before {a}: only {_mem_available_mb()} MB available', flush=True); return
         try:
