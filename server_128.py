@@ -260,18 +260,27 @@ def _etag(data):
     return _ETAGS[k]
 
 
+STATIC_FILES = {'viewer3.html': 'text/html; charset=utf-8', 'mpnn.js': 'application/javascript',
+                'mpnn_worker.js': 'application/javascript', 'explain.js': 'application/javascript', 'attrib.js': 'application/javascript', 'attrview.js': 'application/javascript'}
 def _build_id():
+    """Cache key for every versioned URL: changes whenever any served page, script or model file changes."""
     try:
-        return hashlib.sha1(b''.join(open(f'models/{a}.json', 'rb').read() for a in sorted(ALGOS))).hexdigest()[:10]
+        h = hashlib.sha1()
+        for f in sorted(STATIC_FILES):
+            h.update(f.encode()); h.update(open(f, 'rb').read())
+        for a in sorted(ALGOS):
+            for ext in ('json', 'bin'):
+                h.update(open(f'models/{a}.{ext}', 'rb').read())
+        return h.hexdigest()[:10]
     except OSError:
         return 'dev'
 
 
 BUILD = _build_id()
+ALGOS_JSON = json.dumps({a: dict(target=META[a]['target'], target_type=META[a]['target_type'], fvu=META[a]['fvu'],
+                                 val_f1=META[a]['val_f1'], test_f1=META[a]['test_f1']) for a in ALGOS}).encode()
 
 
-STATIC_FILES = {'viewer3.html': 'text/html; charset=utf-8', 'mpnn.js': 'application/javascript',
-                'mpnn_worker.js': 'application/javascript', 'explain.js': 'application/javascript', 'attrib.js': 'application/javascript', 'attrview.js': 'application/javascript'}
 MODEL_RE = re.compile(r'^models/([a-z_]+)\.(json|bin)$')
 
 
@@ -328,10 +337,16 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         qs = parse_qs(u.query)
         try:
+            ver = qs.get('v', [None])[0]
+            versioned = ver is not None
+            if versioned and BUILD != 'dev' and ver != BUILD and not u.path.startswith(('/api/graph', '/api/contexts')):
+                # an old page is still open after a new deploy: tell it plainly instead of mixing old and new files
+                body = json.dumps({'error': 'stale', 'build': BUILD}).encode()
+                self.send_response(409); self.send_header('Content-Type', 'application/json')
+                self.send_header('Cache-Control', 'no-store'); self.send_header('Content-Length', str(len(body)))
+                self.end_headers(); self._write(body); return
             if u.path == '/api/algos':
-                self._json({a: dict(target=META[a]['target'], target_type=META[a]['target_type'],
-                                   fvu=META[a]['fvu'], val_f1=META[a]['val_f1'],
-                                   test_f1=META[a]['test_f1']) for a in ALGOS})
+                self._send(ALGOS_JSON, cache=versioned)
             elif u.path == '/api/weights':
                 algo = qs.get('algo', ['bfs'])[0]
                 wb, wz = get_weights(algo); self._raw(wb, wz)
@@ -369,12 +384,12 @@ class Handler(BaseHTTPRequestHandler):
                 if algo not in META or not (4 <= n <= 32) or not (0.05 <= p <= 0.95):
                     self.send_error(400, 'bad parameters'); return
                 inst, _ = build_instance(algo, n, p, seed, META[algo])   # sampler only: cheap, no model run
-                self._json(inst)
+                self._send(json.dumps(inst).encode(), cache=versioned)   # deterministic for its query: cacheable when versioned
             else:
                 path = u.path.lstrip('/') or 'viewer3.html'
                 m = MODEL_RE.match(path)
                 if path in STATIC_FILES:
-                    ctype, cache = STATIC_FILES[path], 'no-cache'
+                    ctype, cache = STATIC_FILES[path], (CACHE_IMMUTABLE if versioned else 'no-cache')
                 elif m and m.group(1) in META:
                     ctype = 'application/json' if m.group(2) == 'json' else 'application/octet-stream'
                     cache = 'public, max-age=31536000, immutable'        # model bundles never change for a given image
@@ -386,8 +401,9 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_error(404, 'not found'); return
                 if path == 'viewer3.html':
                     data = data.replace(b'__BUILD__', BUILD.encode())
+                    data = data.replace(b'__ALGOS_JSON__', ALGOS_JSON.replace(b'<', b'\\u003c'))
                 tag = None
-                if m:
+                if m or path == 'viewer3.html':
                     tag = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
                     if self.headers.get('If-None-Match') == tag:
                         self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache); self.end_headers(); return

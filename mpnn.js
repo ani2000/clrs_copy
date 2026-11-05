@@ -25,10 +25,49 @@
   }
 
   // out[r*dout+o] = b[o] + sum_i X[r*din+i] * W[i*dout+o]
+  // Four input rows are folded into each pass over the output (fewer loads/stores than one at a time); all-zero groups are skipped,
+  // which is common after a ReLU. Only the order of the additions changes (double precision), not the maths.
   function linRows(X, rows, lay, out) {
     const { w, b, din, dout } = lay;
     out = out || new Float64Array(rows * dout);
-    for (let r = 0; r < rows; r++) {
+    const din4 = din - (din % 4);
+    let r = 0;
+    for (; r + 3 < rows; r += 4) {                      // four output rows at a time: each weight is loaded once for all four
+      const xa = r * din, xb = xa + din, xc = xb + din, xd = xc + din, oa = r * dout, ob = oa + dout, oc = ob + dout, od = oc + dout;
+      for (let o = 0; o < dout; o++) { const bo = b[o]; out[oa + o] = bo; out[ob + o] = bo; out[oc + o] = bo; out[od + o] = bo; }
+      let i = 0;
+      for (; i < din4; i += 4) {
+        const a0 = X[xa + i], a1 = X[xa + i + 1], a2 = X[xa + i + 2], a3 = X[xa + i + 3];
+        const b0 = X[xb + i], b1 = X[xb + i + 1], b2 = X[xb + i + 2], b3 = X[xb + i + 3];
+        const c0 = X[xc + i], c1 = X[xc + i + 1], c2 = X[xc + i + 2], c3 = X[xc + i + 3];
+        const d0 = X[xd + i], d1 = X[xd + i + 1], d2 = X[xd + i + 2], d3 = X[xd + i + 3];
+        if (a0 === 0 && a1 === 0 && a2 === 0 && a3 === 0 && b0 === 0 && b1 === 0 && b2 === 0 && b3 === 0 &&
+            c0 === 0 && c1 === 0 && c2 === 0 && c3 === 0 && d0 === 0 && d1 === 0 && d2 === 0 && d3 === 0) continue;
+        const w0 = i * dout, w1 = w0 + dout, w2 = w1 + dout, w3 = w2 + dout;
+        for (let o = 0; o < dout; o++) {
+          const v0 = w[w0 + o], v1 = w[w1 + o], v2 = w[w2 + o], v3 = w[w3 + o];
+          out[oa + o] += a0 * v0 + a1 * v1 + a2 * v2 + a3 * v3;
+          out[ob + o] += b0 * v0 + b1 * v1 + b2 * v2 + b3 * v3;
+          out[oc + o] += c0 * v0 + c1 * v1 + c2 * v2 + c3 * v3;
+          out[od + o] += d0 * v0 + d1 * v1 + d2 * v2 + d3 * v3;
+        }
+      }
+      for (; i < din; i++) {
+        const a = X[xa + i], bb = X[xb + i], c = X[xc + i], d = X[xd + i]; if (a === 0 && bb === 0 && c === 0 && d === 0) continue;
+        const wo = i * dout;
+        for (let o = 0; o < dout; o++) { const v = w[wo + o]; out[oa + o] += a * v; out[ob + o] += bb * v; out[oc + o] += c * v; out[od + o] += d * v; }
+      }
+    }
+    for (; r + 1 < rows; r += 2) {
+      const xa = r * din, xb = xa + din, oa = r * dout, ob = oa + dout;
+      for (let o = 0; o < dout; o++) { out[oa + o] = b[o]; out[ob + o] = b[o]; }
+      for (let i = 0; i < din; i++) {
+        const a = X[xa + i], c = X[xb + i]; if (a === 0 && c === 0) continue;
+        const wo = i * dout;
+        for (let o = 0; o < dout; o++) { out[oa + o] += a * w[wo + o]; out[ob + o] += c * w[wo + o]; }
+      }
+    }
+    for (; r < rows; r++) {                             // odd last row
       const xo = r * din, oo = r * dout;
       for (let o = 0; o < dout; o++) out[oo + o] = b[o];
       for (let i = 0; i < din; i++) {
@@ -150,7 +189,7 @@
   // opts.stopAt: t            stop after step t (inclusive)
   // opts.patch: {t, i, dy}    add dy (H) to node i's new hidden state at step t (feature intervention)
   // opts.hints: [..]          use these per-step hint inputs instead of the model's own decoded ones
-  function runRecord(M, inst, opts) {
+  function* runGen(M, inst, opts) {      // one step at a time: yields {t, z, msgs} so a caller can show early steps while the rest is computed
     opts = opts || {};
     const N = inst.n, H = M.H, P = M.proc;
     const steps = Math.min(inst.length - 1, opts.stopAt !== undefined ? opts.stopAt + 1 : Infinity);
@@ -206,8 +245,15 @@
         hints = next;
       }
       hidden = hNew;
+      yield { t, z: zr, msgs: mr };
     }
     return { z: Z, msgs: MS, rec, hintsRead, inputs };
+  }
+
+  function runRecord(M, inst, opts) {
+    const g = runGen(M, inst, opts); let s;
+    while (!(s = g.next()).done);
+    return s.value;
   }
 
   function runModel(M, inst) { const r = runRecord(M, inst); return { z: r.z, msgs: r.msgs }; }
@@ -222,5 +268,5 @@
     return sel;
   }
 
-  return { loadModel, runModel, runRecord, pointerSel, linRows, prep };
+  return { loadModel, runModel, runRecord, runGen, pointerSel, linRows, prep };
 });

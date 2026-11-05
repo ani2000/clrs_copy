@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CLRS-30 Circuit Tracer (128-hidden)</title>
+<script>
+/* Start the default algorithm's downloads right away, before the page scripts have even loaded (saves several round trips on a first visit). */
+window.__early = {};
+(function () { try { var B = '__BUILD__', q = '?v=' + B, E = window.__early;
+  E.json = fetch('/models/bfs.json' + q); E.bin = fetch('/models/bfs.bin' + q);
+  E.inst = fetch('/api/instance?algo=bfs&n=16&p=0.4&seed=42&v=' + B);
+  ['json', 'bin', 'inst'].forEach(function (k) { E[k].catch(function () {}); }); } catch (e) {} })();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='4' cy='4' r='3' fill='%236366f1'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23f59e0b'/%3E%3Cpath d='M4 4L12 12' stroke='%231f2328' stroke-width='1.5'/%3E%3C/svg%3E">
 <style>
   :root { --bg:#faf9f7; --panel:#fff; --line:#e5e0d8; --ink:#1f2328; --muted:#6b7280;
@@ -130,6 +138,10 @@
         border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px rgba(15,23,42,.14), 0 1px 3px rgba(15,23,42,.08);
         padding:10px 12px; font-size:12px; line-height:1.45; animation: hcIn .12s ease-out; }
   .hc[hidden] { display:none; }
+  #btnRetry[hidden] { display:none; }
+  .sk { fill:#e5e7eb; animation: skp 1.1s ease-in-out infinite alternate; }
+  @keyframes skp { from { opacity:.35; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .sk { animation:none; } }
   .hc::after { content:''; position:absolute; left:var(--arrow-x,50%); bottom:-6px; width:10px; height:10px; background:#fff;
                border-right:1px solid var(--line); border-bottom:1px solid var(--line); transform:translateX(-50%) rotate(45deg); }
   .hc.below::after { bottom:auto; top:-6px; transform:translateX(-50%) rotate(225deg); }
@@ -158,8 +170,10 @@
   <div class="ctrl"><span class="tt" data-tip="g:p">p</span> <input data-tip="g:p" id="inP" type="number" value="0.4" min="0.1" max="0.95" step="0.05"></div>
   <div class="ctrl"><span class="tt" data-tip="g:seed">seed</span> <input data-tip="g:seed" id="inSeed" type="number" value="42"></div>
   <button class="primary" id="btnNew" data-tip="g:new">New random graph</button>
-  <span id="status" class="tt" data-tip="dyn:status">loading…</span>
+  <span id="status" class="tt" data-tip="dyn:status" role="status" aria-live="polite">Starting…</span>
+  <button id="btnRetry" hidden>Retry</button>
 </header>
+<script type="application/json" id="algosData">__ALGOS_JSON__</script>
 <div class="intro">The trained 128-hidden MPNN executes a CLRS-30 algorithm on a random graph, one message-passing step at a time. Click a node to trace the circuit behind its prediction. Hover any <span class="tt" data-tip="g:howItWorks">dotted term</span>, number or box for an explanation of what it is and why it is there.</div>
 <div class="layout">
   <div class="panel">
@@ -169,7 +183,7 @@
     <div class="kv"><span class="tt" data-tip="dyn:fvu">transcoder FVU</span><span id="fvu" data-tip="dyn:fvu">-</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:f1">val / test score (OOD)</span><span id="f1s" data-tip="dyn:f1">-</span></div>
     <h2 style="margin-top:16px"><span class="tt" data-tip="g:simulation">Simulation</span></h2>
-    <svg id="graphSvg" viewBox="0 0 260 230" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="graphSvg" viewBox="0 0 260 230" preserveAspectRatio="xMidYMid meet"><circle class="sk" cx="126.0" cy="20.0" r="11"/><circle class="sk" cx="176.0" cy="36.2" r="11"/><circle class="sk" cx="206.8" cy="78.7" r="11"/><circle class="sk" cx="206.8" cy="131.3" r="11"/><circle class="sk" cx="176.0" cy="173.8" r="11"/><circle class="sk" cx="126.0" cy="190.0" r="11"/><circle class="sk" cx="76.0" cy="173.8" r="11"/><circle class="sk" cx="45.2" cy="131.3" r="11"/><circle class="sk" cx="45.2" cy="78.7" r="11"/><circle class="sk" cx="76.0" cy="36.2" r="11"/></svg>
     <div id="stepBar">
       <button id="btnPlay" data-tip="g:play">▶ Play</button>
       <input data-tip="dyn:step" id="stepRange" type="range" min="0" max="0" value="0">
@@ -204,8 +218,8 @@
   </div>
 </div>
 
-<script src="explain.js"></script>
-<script src="attrview.js"></script>
+<script src="explain.js?v=__BUILD__"></script>
+<script src="attrview.js?v=__BUILD__"></script>
 <script>
 const svgNS = 'http://www.w3.org/2000/svg';
 const fmt = (x, d=3) => (x===null||x===undefined||Number.isNaN(x)) ? '-' : Number(x).toFixed(d);
@@ -234,16 +248,120 @@ let NODE_PRED = {}, SHOWN_EDGES = [], LAST_IV = null;   // read by explain.js ho
 // if it is still the newest request, and superseded fetches are aborted.
 let graphGen = 0, algoGen = 0, ctxGen = 0, graphAbort = null, algoAbort = null, ctxAbort = null;
 const GRAPH_CACHE = new Map();  // key -> {promise, ctl, spec, done}: every graph fetched, shared by user requests and prefetch
-const GRAPH_CACHE_MAX = 30;
+const GRAPH_CACHE_MAX = 16;
 let NEXTQ = { algo: null, n: null, p: null, seeds: [] };   // seeds of the next random graphs, already prefetched
 let specGen = 0, paramTimer = null;
-const ALGO_CACHE = {};          // algo -> {W, FL}: switching back to a visited algorithm is instant
+let labelByFeat = {};
 function stopPlay() {
   if (playTimer) { clearTimeout(playTimer); playTimer = null; }
   const b = document.getElementById('btnPlay'); if (b) b.textContent = '\u25B6 Play';
 }
-const BUILD = '__BUILD__';   // filled in by the server; versions the immutable URLs below
-async function getJSON(url, signal) { const r = await fetch(url, { signal }); return r.json(); }
+const BUILD = '__BUILD__';   // filled in by the server; versions every cached URL below
+const VQ = '?v=' + BUILD;
+const RES_CAP = 4;           // models kept ready in the background workers at any time
+const FALLBACK_MS = 10000;   // the model download made no progress for this long: show the server's graph instead
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const abortErr = () => new DOMException('aborted', 'AbortError');
+const isAbort = e => !!(e && e.name === 'AbortError');
+class StaleError extends Error {}
+const NET = { user: 0, lastInput: 0 };   // user-requested transfers in flight / last time the person touched the page
+['pointerdown', 'keydown', 'wheel', 'touchstart', 'input', 'change'].forEach(ev => addEventListener(ev, () => { NET.lastInput = performance.now(); }, { passive: true, capture: true }));
+function checkResp(r) { if (r.status === 409) throw new StaleError('stale'); if (!r.ok) throw new Error('HTTP ' + r.status); return r; }
+async function getJSON(url, signal) {
+  NET.user++;
+  try { const r = checkResp(await fetch(url, { signal })); return await r.json(); } finally { NET.user--; }
+}
+// Download a file in pieces so progress can be shown and a background download can pause while the person is busy.
+const takeEarly = k => { const E = window.__early; const p = E && E[k]; if (E) E[k] = null; return p || null; };   // each early download is used once
+async function fetchBytes(url, { signal, low, keep = true, onProgress, wait, early } = {}) {
+  if (!low) NET.user++;
+  try {
+    const r = checkResp(early ? await early : await fetch(url, { signal, priority: low ? 'low' : 'high' }));
+    const total = +r.headers.get('Content-Length') || 0;
+    if (!r.body || !r.body.getReader) { const b = await r.arrayBuffer(); if (onProgress) onProgress(1); return keep ? b : null; }
+    const rd = r.body.getReader(), parts = []; let got = 0;
+    if (signal) signal.addEventListener('abort', () => { rd.cancel().catch(() => {}); }, { once: true });   // a download started early by the page head is not tied to the signal by fetch itself
+    for (;;) {
+      if (wait) await wait();
+      const { done, value } = await rd.read();
+      if (done) { if (signal && signal.aborted) throw abortErr(); break; }
+      got += value.length; if (keep) parts.push(value);
+      if (onProgress && total) onProgress(Math.min(1, got / total));
+    }
+    if (!keep) return null;
+    const out = new Uint8Array(got); let o = 0; for (const c of parts) { out.set(c, o); o += c.length; }
+    return out.buffer;
+  } finally { if (!low) NET.user--; }
+}
+async function withRetry(fn, signal, tries = 4) {   // automatic retry with a growing pause; gives up at once if the page was updated or the work was cancelled
+  for (let a = 0; ; a++) {
+    try { return await fn(); }
+    catch (e) {
+      if (isAbort(e) || e instanceof StaleError || (signal && signal.aborted) || a >= tries - 1) throw e;
+      await new Promise(res => { const t = setTimeout(res, 800 * (a + 1)); if (signal) signal.addEventListener('abort', () => { clearTimeout(t); res(); }, { once: true }); });
+      if (signal && signal.aborted) throw abortErr();
+    }
+  }
+}
+// ---------- small helpers for what the person sees ----------
+const setStatus = t => { document.getElementById('status').textContent = t; };
+function showProblem(msg, retry, label) {
+  setStatus(msg);
+  const b = document.getElementById('btnRetry'); b.textContent = label || 'Retry'; b.hidden = false;
+  b.onclick = () => { b.hidden = true; retry(); };
+}
+function clearProblem() { const b = document.getElementById('btnRetry'); if (b) b.hidden = true; }
+function showStale() { showProblem('This page was just updated. Reload to continue.', () => location.reload(), 'Reload'); }
+function showSkeleton() {
+  const svg = document.getElementById('graphSvg'); let h = '';
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 10; h += `<circle class="sk" cx="${126 + 85 * Math.cos(a)}" cy="${105 + 85 * Math.sin(a)}" r="11"/>`; }
+  svg.innerHTML = h;
+  document.getElementById('nodeTableBody').innerHTML = '<tr><td colspan="4" class="small">Loading…</td></tr>';
+}
+let lastProg = 0;
+function progressText(algo) { const m = LOCAL.models[algo]; return m && m.state === 'loading' && m.progress > 0 ? `Loading ${algo}: ${Math.round(m.progress * 100)}%` : `Loading ${algo}…`; }
+function progressLine() {            // keeps the "Loading <algo>: n%" line fresh while the model is on its way
+  const now = performance.now(); if (now - lastProg < 120) return; lastProg = now;
+  if (G && !G._preview) return;
+  const t = progressText(curAlgo); setStatus(t);
+  if (!AV.data) { const gs = document.getElementById('gstat'); if (gs) gs.textContent = t.replace('Loading ', 'Loading the model for '); }
+}
+
+// ---------- per-algorithm data: small summary first, large weights only when needed ----------
+const HEAVY = {}, LABELS = {}, LABEL_REQ = {}, WT = {}, INST = new Map();
+function metaFor(a) { const m = ALGOS[a]; return { target: m.target, target_type: m.target_type, fvu: m.fvu, val_f1: m.val_f1, test_f1: m.test_f1, hidden: 128 }; }
+function weightsFor(a) { return HEAVY[a] || metaFor(a); }
+function ensureLabels(a) {
+  if (LABELS[a]) return Promise.resolve(LABELS[a]);
+  if (!LABEL_REQ[a]) LABEL_REQ[a] = withRetry(() => getJSON('/api/feature_labels?algo=' + a + '&v=' + BUILD)).then(fl => {
+    if (fl.error) throw new Error(fl.error);
+    LABELS[a] = fl; delete LABEL_REQ[a]; return fl;
+  }, e => { delete LABEL_REQ[a]; throw e; });
+  return LABEL_REQ[a];
+}
+function ensureWeights(a) {             // the large transcoder weights (about 0.5 MB): needed for the node table and the attribution graph
+  if (HEAVY[a]) return Promise.resolve(HEAVY[a]);
+  if (!WT[a]) {
+    const ctl = new AbortController();
+    const p = withRetry(() => getJSON('/api/weights?algo=' + a + '&v=' + BUILD, ctl.signal), ctl.signal).then(w => {
+      if (w.error) throw new Error(w.error);
+      HEAVY[a] = w; delete WT[a];
+      if (a === curAlgo) { W = w; if (G && !G._preview) renderNodeTable(); maybePrefetch(); }
+      return w;
+    }, e => { delete WT[a]; throw e; });
+    p.ctl = ctl; WT[a] = p;
+  }
+  return WT[a];
+}
+function getInstance(a, n, p, seed) {   // tiny, deterministic for its query: shared by every caller and cached
+  const k = gkey(a, n, p, seed); let e = INST.get(k);
+  if (e) { INST.delete(k); INST.set(k, e); return e; }
+  let early = k === gkey('bfs', 16, 0.4, 42) ? takeEarly('inst') : null;     // started by the page head
+  e = withRetry(() => { const er = early; early = null; return er ? er.then(r => checkResp(r).json()) : getJSON(`/api/instance?algo=${a}&n=${n}&p=${p}&seed=${seed}&v=${BUILD}`); });
+  INST.set(k, e); e.catch(() => INST.delete(k));
+  while (INST.size > 60) INST.delete(INST.keys().next().value);
+  return e;
+}
 // ---------- in-browser model execution (Web Workers running mpnn.js on the real 128-hidden weights) ----------
 // The server only samples the graph (a few KB); the model forward pass runs here, so once an algorithm's
 // weight bundle (1-2 MB, cached forever) is loaded, a new graph needs no heavy download.
@@ -254,7 +372,7 @@ function initWorkers() {
   const count = Math.max(1, Math.min(2, hc - 2));
   for (let i = 0; i < count; i++) {
     try {
-      const st = { w: new Worker('mpnn_worker.js'), busy: null, loaded: new Set(), waiters: {} };
+      const st = { w: new Worker('mpnn_worker.js' + VQ), busy: null, loaded: new Set(), waiters: {} };
       st.w.onmessage = ev => onWorkerMsg(st, ev.data);
       st.w.onerror = () => { st.dead = true; };
       LOCAL.workers.push(st);
@@ -264,8 +382,12 @@ function initWorkers() {
 function onWorkerMsg(st, m) {
   if (m.type === 'loaded') { st.loaded.add(m.algo); const cb = st.waiters[m.algo]; if (cb) cb(); return; }
   const job = st.busy; if (!job || job.id !== m.id) return;
+  if (m.type === 'chunk' && job.dead) return;
+  if (m.type === 'chunk') { if (job.onChunk && !job.dead) job.onChunk(m); return; }      // early steps of a run that is still going
   st.busy = null;
-  if (m.type === 'result') job.resolve(m); else job.reject(new Error(m.error));
+  if (m.type === 'result') { if (job.onChunk && !job.dead) job.onChunk(m); job.resolve(m); }
+  else if (m.type === 'cancelled') { /* the worker stopped an unwanted run; the promise was already rejected */ }
+  else job.reject(new Error(m.error));
   pumpLocal();
 }
 function pumpLocal() {
@@ -283,72 +405,147 @@ function pumpLocal() {
     st.w.postMessage({ type: 'run', id: job.id, algo: job.algo, inst: job.inst });
   }
 }
-function runLocal(algo, inst, meta, signal) {
+function runLocal(algo, inst, meta, signal, onChunk) {
   return new Promise((resolve, reject) => {
-    const job = { id: ++LOCAL.seq, algo, inst, meta, resolve, reject };
+    const job = { id: ++LOCAL.seq, algo, inst, meta, resolve, reject, onChunk, dead: false };
     const abort = () => {
+      job.dead = true;
       const i = LOCAL.queue.indexOf(job);
       if (i >= 0) LOCAL.queue.splice(i, 1);
+      const st = LOCAL.workers.find(s => s.busy === job);
+      if (st) st.w.postMessage({ type: 'cancel', id: job.id });       // stop a run that nobody wants any more
       reject(new DOMException('aborted', 'AbortError'));
     };
     if (signal.aborted) return abort();
     signal.addEventListener('abort', abort, { once: true });
-    LOCAL.queue.push(job); pumpLocal();
+    LOCAL.queue.push(job);
+    if (meta.prio === 0 && !LOCAL.workers.some(s => !s.busy && !s.dead && s.loaded.has(algo))) {   // a person is waiting: background runs make way
+      const bg = LOCAL.workers.find(s => s.busy && s.busy.meta.prio !== 0 && !s.busy.dead);
+      if (bg) { bg.busy.dead = true; bg.busy.reject(new DOMException('aborted', 'AbortError')); bg.w.postMessage({ type: 'cancel', id: bg.busy.id }); }
+    }
+    pumpLocal();
   });
 }
 function localReady(algo) { const m = LOCAL.models[algo]; return !!(m && m.state === 'ready'); }
-function ensureLocalModel(algo) {
+function ensureLocalModel(algo, opts) {
+  const quiet = !!(opts && opts.quiet);
   initWorkers();
-  if (!LOCAL.workers.length || LOCAL.models[algo]) return;
+  if (!LOCAL.workers.length) return;
+  const old = LOCAL.models[algo];
+  if (old && old.state !== 'failed') { if (!quiet) { old.quiet = false; old.used = Date.now(); } return; }
   const ctl = new AbortController(), sig = ctl.signal;
-  const entry = LOCAL.models[algo] = { state: 'loading', ctl, downloading: true };
+  const entry = LOCAL.models[algo] = { state: 'loading', ctl, downloading: true, quiet, progress: 0, used: quiet ? 0 : Date.now(), lastAt: Date.now() };
   entry.promise = (async () => {
     try {
       let man, buf;
-      for (let attempt = 0; ; attempt++) {
-        try {
-          [man, buf] = await Promise.all([
-            fetch('/models/' + algo + '.json?v=' + BUILD, { signal: sig }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
-            fetch('/models/' + algo + '.bin?v=' + BUILD, { signal: sig }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })]);
-          break;
-        } catch (err) {
-          if (sig.aborted || attempt >= 3) throw err;
-          await new Promise(res => { const t = setTimeout(res, 1000 * (attempt + 1)); sig.addEventListener('abort', () => { clearTimeout(t); res(); }, { once: true }); });
-          if (sig.aborted) throw new DOMException('aborted', 'AbortError');
-        }
+      const pf = PF.cur && PF.cur.algo === algo ? PF.cur : null;     // already on its way as a background download: reuse it, never fetch twice
+      if (pf) { pf.adopted = true; try { [man, buf] = await pf.promise; } catch (e) { man = buf = null; } }
+      if (!buf) {
+        const eJ = algo === 'bfs' && !quiet ? takeEarly('json') : null, eB = eJ ? takeEarly('bin') : null;   // the page already started the default model's download
+        let first = true;
+        [man, buf] = await withRetry(() => { const useEarly = first && eJ && eB; first = false; return Promise.all([
+          fetchBytes('/models/' + algo + '.json' + VQ, { signal: sig, low: quiet, early: useEarly ? eJ : null }).then(b => JSON.parse(new TextDecoder().decode(b))),
+          fetchBytes('/models/' + algo + '.bin' + VQ, { signal: sig, low: quiet, early: useEarly ? eB : null, onProgress: pr => { if (pr !== entry.progress) entry.lastAt = Date.now(); entry.progress = pr; progressLine(); } })]); }, sig);
       }
+      if (sig.aborted) throw abortErr();
       entry.downloading = false;                     // fully downloaded: finishing the worker load costs no bandwidth, so it is kept
       entry.man = man; entry.buf = buf;
-      await Promise.all(LOCAL.workers.map(st => new Promise(res => {
-        st.waiters[algo] = res;
-        st.w.postMessage({ type: 'load', algo, manifest: man, buffer: buf.slice(0) });
-      })));
-      entry.state = 'ready';
+      await Promise.race([
+        Promise.all(LOCAL.workers.map(st => new Promise(res => {
+          st.waiters[algo] = res;
+          st.w.postMessage({ type: 'load', algo, manifest: man, buffer: buf.slice(0) });
+        }))),
+        sleep(20000).then(() => { throw new Error('model load timed out'); })]);
+      entry.state = 'ready'; entry.progress = 1;
+      residentTrim(algo);
       pumpLocal();
-      if (algo === curAlgo && G) {                    // re-fill the ready-queue with fast in-browser runs
+      if (algo === curAlgo && G && !G._preview) {     // re-fill the ready-queue with fast in-browser runs
         for (const [k, e] of [...GRAPH_CACHE]) if (e.spec && k.startsWith(algo + '|')) { if (!e.done) e.ctl.abort(); GRAPH_CACHE.delete(k); }
         NEXTQ = { algo: null, n: null, p: null, seeds: [] };
         const P = readParams(); if (P) speculate(algo, P.n, P.p, P.seed);
       }
+      maybePrefetch();
     } catch (e) {
       entry.downloading = false;
-      if (e && e.name === 'AbortError') {            // the user moved to another algorithm: forget this attempt entirely, so coming back restarts cleanly
+      if (isAbort(e)) {                              // the user moved to another algorithm: forget this attempt entirely, so coming back restarts cleanly
         entry.state = 'aborted';
         if (LOCAL.models[algo] === entry) delete LOCAL.models[algo];
-      } else entry.state = 'failed';
+      } else { entry.state = 'failed'; entry.stale = e instanceof StaleError; }
     }
   })();
 }
-// Stop all network work that belongs to algorithms other than `keep`: unfinished bundle downloads and every unfinished
-// graph request (user-level or speculative). Finished downloads/graphs stay cached, so switching back to them is instant.
+// Keep at most RES_CAP algorithms ready inside the workers (the least recently used one is released) so small laptops stay healthy.
+function residentTrim(keep) {
+  const ready = Object.keys(LOCAL.models).filter(a => LOCAL.models[a].state === 'ready');
+  while (ready.length > RES_CAP) {
+    let victim = null;
+    for (const a of ready) if (a !== curAlgo && a !== keep && (!victim || LOCAL.models[a].used < LOCAL.models[victim].used)) victim = a;
+    if (!victim) break;
+    unloadAlgo(victim); ready.splice(ready.indexOf(victim), 1);
+  }
+}
+function unloadAlgo(a) {
+  delete LOCAL.models[a];
+  for (const st of LOCAL.workers) { st.loaded.delete(a); delete st.waiters[a]; st.w.postMessage({ type: 'unload', algo: a }); }
+  if (AV.worker) AV.worker.postMessage({ type: 'unload', algo: a });
+  delete AV.ready['loaded:' + a]; delete AV.ready['tcloaded:' + a]; delete AV['sent:' + a]; delete AV['tcsent:' + a];
+  delete HEAVY[a];
+  for (const [k, e] of [...GRAPH_CACHE]) if (k.startsWith(a + '|')) { if (!e.done) e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+// Stop all network work that belongs to algorithms other than `keep`: unfinished bundle downloads the person asked for and every
+// unfinished graph request (user-level or speculative). Quiet background downloads are never cancelled; they just wait their turn.
+// Finished downloads/graphs stay cached, so switching back to them is instant.
 function abortOtherAlgos(keep) {
+  for (const a of Object.keys(WT)) if (a !== keep && WT[a].ctl) WT[a].ctl.abort();     // the large weights of the algorithm just left are not needed any more
   for (const a of Object.keys(LOCAL.models)) {
     const m = LOCAL.models[a];
-    if (a !== keep && m.downloading && m.ctl) m.ctl.abort();
+    if (a !== keep && m.downloading && m.ctl && !m.quiet) m.ctl.abort();
   }
   for (const [k, e] of [...GRAPH_CACHE]) {
     if (!e.done && !k.startsWith(keep + '|')) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
   }
+}
+// ---------- quiet background download of the other algorithms ----------
+const PF = { cur: null, running: false, done: new Set(), tries: {}, ifail: 0, stale: false };
+const userIdle = () => performance.now() - NET.lastInput > 1200 && NET.user === 0 && !document.hidden;
+const pfWait = (pf, sig) => async () => { while (!pf.adopted && !userIdle()) { if (sig.aborted) throw abortErr(); await sleep(150); } };
+const pfReady = () => !!(ALGOS && G && !G._preview && localReady(curAlgo) && HEAVY[curAlgo]);
+function pfOrder() { const keys = Object.keys(ALGOS), i = keys.indexOf(curAlgo); return keys.slice(i + 1).concat(keys.slice(0, Math.max(0, i))); }
+function maybePrefetch() {
+  if (PF.running || PF.stale || !pfReady()) return;
+  PF.running = true;
+  pfLoop().catch(() => {}).finally(() => { PF.running = false; if (pfReady() && pfOrder().some(a => !PF.done.has(a) && (PF.tries[a] || 0) < 3)) setTimeout(maybePrefetch, 2000); });
+}
+async function pfLoop() {
+  while (pfReady()) {
+    const P = readParams();
+    const next = pfOrder().find(a => !PF.done.has(a) && (PF.tries[a] || 0) < 3);
+    const need = P && [...PF.done].find(a => a !== curAlgo && !INST.has(gkey(a, P.n, P.p, P.seed)));
+    if (!next && !need) return;
+    while (!userIdle()) await sleep(200);
+    if (!pfReady()) return;
+    if (need) { try { await getInstance(need, P.n, P.p, P.seed); } catch (e) { if (e instanceof StaleError || ++PF.ifail > 5) return; } continue; }
+    try { await prefetchOne(next); PF.done.add(next); warmLoad(next); }
+    catch (e) { if (e instanceof StaleError) { PF.stale = true; return; } PF.tries[next] = (PF.tries[next] || 0) + 1; await sleep(3000); }
+  }
+}
+async function prefetchOne(a) {
+  const ctl = new AbortController(), pf = { algo: a, adopted: false };
+  const wait = pfWait(pf, ctl.signal);
+  pf.promise = Promise.all([
+    fetchBytes('/models/' + a + '.json' + VQ, { signal: ctl.signal, low: true, wait }).then(b => JSON.parse(new TextDecoder().decode(b))),
+    fetchBytes('/models/' + a + '.bin' + VQ, { signal: ctl.signal, low: true, wait })]);
+  pf.promise.catch(() => {});
+  PF.cur = pf;
+  try {
+    await pf.promise;
+    await fetchBytes('/api/weights?algo=' + a + '&v=' + BUILD, { signal: ctl.signal, low: true, keep: false, wait });
+    await fetchBytes('/api/feature_labels?algo=' + a + '&v=' + BUILD, { signal: ctl.signal, low: true, keep: false, wait });
+  } finally { if (PF.cur === pf) PF.cur = null; }
+}
+function warmLoad(a) {                 // while idle, get the most likely next algorithms ready inside the workers (from the browser cache)
+  const live = Object.keys(LOCAL.models).filter(k => LOCAL.models[k].state !== 'failed').length;
+  if (live < RES_CAP && pfOrder().slice(0, 3).includes(a)) ensureLocalModel(a, { quiet: true });
 }
 function rowsOf(flat, T, N, dim) {
   const out = new Array(T);
@@ -356,20 +553,62 @@ function rowsOf(flat, T, N, dim) {
   return out;
 }
 async function fetchGraphLocal(algo, n, p, seed, signal, meta) {
-  const inst = await getJSON(`/api/instance?algo=${algo}&n=${n}&p=${p}&seed=${seed}`, signal);
+  const inst = await getInstance(algo, n, p, seed);
+  if (signal.aborted) throw abortErr();
   if (inst.error) return { error: inst.error, trace: inst.trace };
-  const r = await runLocal(algo, inst, meta, signal);
-  const z = rowsOf(r.z, r.T, r.N, 256), msgs = rowsOf(r.msgs, r.T, r.N, 128);
+  // The model hands back its first steps within milliseconds; the graph is shown from them while the later steps keep arriving.
   const g = { n: inst.n, length: inst.length, adj: inst.adj, source: inst.source, target_true: inst.target_true,
-              seed: inst.seed, z, msgs, node_fts: z.map(st => st.map(row => row.subarray(0, 128))), _local: true, _inst: inst };
-  return { g, seed: inst.seed };
+              seed: inst.seed, z: [], msgs: [], node_fts: [], _local: true, _inst: inst, _computing: true, _broken: false };
+  let gotFirst; const first = new Promise(res => { gotFirst = res; });
+  const grow = m => {
+    const N = m.N, zf = m.z, sf = m.msgs;
+    for (let t = 0; t < m.steps; t++) {
+      const zr = new Array(N), sr = new Array(N);
+      for (let i = 0; i < N; i++) { const o = (t * N + i); zr[i] = zf.subarray(o * 256, (o + 1) * 256); sr[i] = sf.subarray(o * 128, (o + 1) * 128); }
+      g.z.push(zr); g.msgs.push(sr); g.node_fts.push(zr.map(row => row.subarray(0, 128)));
+    }
+    if (m.type === 'result') g._computing = false;
+    gotFirst({ g, seed: inst.seed });
+    onGraphGrow(g);
+  };
+  const done = runLocal(algo, inst, meta, signal, grow);
+  done.then(() => { g._computing = false; gotFirst({ g, seed: inst.seed }); onGraphGrow(g); },
+            e => { g._broken = true; g._computing = false; });
+  return Promise.race([first, done.then(() => first)]);
+}
+function onGraphGrow(g) {            // later steps arrived: refresh whatever was waiting for them
+  if (G === g && G._need) { G._need = false; renderNodeTable(); drawStepLabel(); }
+}
+function cancelComputing(exceptKey) {  // a run for some other graph is still going: stop it, the person has moved on
+  for (const [k, e] of [...GRAPH_CACHE]) if (k !== exceptKey && e.done && e.res && e.res.g && e.res.g._computing) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
 }
 async function fetchGraph(algo, n, p, seed, signal, meta) {
+  meta = meta || { prio: 0 };
   if (localReady(algo)) {
-    try { return await fetchGraphLocal(algo, n, p, seed, signal, meta || { prio: 0 }); }
-    catch (e) { if (e && e.name === 'AbortError') throw e; /* local path failed: fall back to the server model */ }
+    try { return await fetchGraphLocal(algo, n, p, seed, signal, meta); }
+    catch (e) { if (isAbort(e)) throw e; /* local path failed: fall back to the server model */ }
+    return fetchGraphServer(algo, n, p, seed, signal);
   }
-  return fetchGraphServer(algo, n, p, seed, signal);
+  if (meta.prio !== 0) throw abortErr();                  // background work only ever uses the in-browser model
+  ensureLocalModel(algo);
+  const ent = LOCAL.models[algo];
+  if (!ent) return fetchGraphServer(algo, n, p, seed, signal);   // no workers in this browser
+  // Wait for the in-browser model. A slow link is fine (the page shows progress); only a download that has made no progress for
+  // FALLBACK_MS, or one that failed, switches to the server's graph.
+  const cancelled = new Promise((_, rej) => signal.addEventListener('abort', () => rej(abortErr()), { once: true }));
+  const finished = ent.promise.then(() => ent.state === 'ready');
+  let state;
+  while (state === undefined) {
+    const tick = new Promise(r => setTimeout(() => r('tick'), 1000));
+    const r = await Promise.race([finished, tick, cancelled]);
+    if (r === 'tick') { if (Date.now() - ent.lastAt > FALLBACK_MS) state = 'stalled'; } else state = r;
+  }
+  if (signal.aborted) throw abortErr();
+  if (state === true) {
+    try { return await fetchGraphLocal(algo, n, p, seed, signal, meta); }
+    catch (e) { if (isAbort(e)) throw e; }
+  }
+  return fetchGraphServer(algo, n, p, seed, signal);       // the model failed to load, or the link is very slow: use the server's graph
 }
 async function fetchGraphServer(algo, n, p, seed, signal) {
   let g = null;
@@ -387,11 +626,12 @@ const gkey = (a, n, p, sd) => `${a}|${+n}|${+p}|${+sd}`;
 function graphFor(algo, n, p, seed, spec) {
   const k = gkey(algo, n, p, seed);
   let e = GRAPH_CACHE.get(k);
+  if (e && e.res && e.res.g && e.res.g._broken) { GRAPH_CACHE.delete(k); e = null; }
   if (e) { if (!spec) { e.spec = false; e.meta.prio = 0; } GRAPH_CACHE.delete(k); GRAPH_CACHE.set(k, e); return e.promise; }
   const ctl = new AbortController();
   e = { promise: null, ctl, spec: !!spec, done: false, meta: { prio: spec ? 1 : 0 } };
   e.promise = fetchGraph(algo, +n, +p, +seed, ctl.signal, e.meta);
-  e.promise.then(r => { if (r.error) GRAPH_CACHE.delete(k); else e.done = true; }, () => { GRAPH_CACHE.delete(k); });
+  e.promise.then(r => { if (r.error) GRAPH_CACHE.delete(k); else { e.done = true; e.res = r; } }, () => { GRAPH_CACHE.delete(k); });
   GRAPH_CACHE.set(k, e);
   while (GRAPH_CACHE.size > GRAPH_CACHE_MAX) {
     const [ok, oe] = GRAPH_CACHE.entries().next().value;
@@ -400,7 +640,7 @@ function graphFor(algo, n, p, seed, spec) {
   }
   return e.promise;
 }
-function isCached(algo, n, p, seed) { const e = GRAPH_CACHE.get(gkey(algo, n, p, seed)); return !!(e && e.done); }
+function isCached(algo, n, p, seed) { const e = GRAPH_CACHE.get(gkey(algo, n, p, seed)); return !!(e && e.done && !(e.res && e.res.g && e.res.g._broken)); }
 function dropStale(exceptKey) {        // abort user-level requests that the user has already moved past
   for (const [k, e] of [...GRAPH_CACHE]) if (k !== exceptKey && !e.done && !e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
 }
@@ -413,8 +653,8 @@ function speculate(algo, n, p, seed) {
   // the neighbouring seeds (spinner arrows), and neighbouring n / p values.
   const gen = ++specGen;
   for (const [k, e] of [...GRAPH_CACHE]) if (!e.done && e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
-  // Until the in-browser model is ready every speculative graph is a ~350 KB server download that competes with the
-  // weights and the model bundle on slow links. The load handler above calls speculate() again once the model is ready.
+  // Background graphs only use the in-browser model, so nothing is requested until it is ready. The load handler above
+  // calls speculate() again once the model is ready.
   if (!localReady(algo)) return;
   n = +n; p = +p; seed = +seed;
   if (NEXTQ.algo !== algo || NEXTQ.n !== n || NEXTQ.p !== p) NEXTQ = { algo, n, p, seeds: [] };
@@ -428,7 +668,7 @@ function speculate(algo, n, p, seed) {
   if (p - 0.05 >= pm[0]) plan.push(() => [n, r2(p - 0.05), seed]);
   plan.push(seedAt(2));
   let next = 0;
-  const worker = async () => {                      // two lanes: the server runs two model evaluations at once
+  const worker = async () => {                      // two lanes
     while (gen === specGen && next < plan.length) {
       const [nn, pp, sd] = plan[next++]();
       try { await graphFor(algo, nn, pp, sd, true); } catch (e) { /* aborted/failed: skip */ }
@@ -452,12 +692,20 @@ function onParamChange(force) {
 }
 function setPending(on) {
   const svg = document.getElementById('graphSvg'); if (svg) svg.style.opacity = on ? '0.45' : '';
-  if (on) document.getElementById('status').textContent = 'updating\u2026';
+  if (on) setStatus('updating…');
 }
 
 async function boot() {
-  ALGOS = await (await fetch('/api/algos')).json();
+  try {
+    try { ALGOS = JSON.parse(document.getElementById('algosData').textContent); } catch (e) { ALGOS = null; }   // the server puts the list into the page itself
+    if (!ALGOS || !ALGOS.bfs) ALGOS = await withRetry(() => getJSON('/api/algos?v=' + BUILD), null, 5);
+  } catch (e) {
+    if (e instanceof StaleError) return showStale();
+    return showProblem('Could not reach the server. Check your connection, then press Retry.', boot);
+  }
+  clearProblem();
   const sel = document.getElementById('inAlgo');
+  sel.innerHTML = '';
   Object.keys(ALGOS).forEach(a => {
     const o = document.createElement('option'); o.value = a;
     const gt = SUMMARY_V3[a];
@@ -465,89 +713,78 @@ async function boot() {
     sel.appendChild(o);
   });
   sel.value = 'bfs';
-  sel.addEventListener('change', () => { curAlgo = sel.value; loadAlgo(); });
-  document.getElementById('btnNew').addEventListener('click', () => {
-    const P = readParams() || { n: +document.getElementById('inN').value, p: +document.getElementById('inP').value };
-    let seed;
-    if (NEXTQ.algo === curAlgo && NEXTQ.n === P.n && NEXTQ.p === P.p && NEXTQ.seeds.length) seed = NEXTQ.seeds.shift();
-    else seed = Math.floor(Math.random() * 1e6);
-    document.getElementById('inSeed').value = seed;
-    loadGraph(seed);
-  });
-  ['inN', 'inP', 'inSeed'].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener('input', () => onParamChange(false));
-    el.addEventListener('change', () => onParamChange(true));
-    el.addEventListener('keydown', e => { if (e.key === 'Enter') onParamChange(true); });
-  });
-  document.getElementById('stepRange').addEventListener('input', e => {
-    if (!G) return;
-    curStep = +e.target.value;
-    if (selected) selected = { node: selected.node, step: Math.min(curStep, G.length - 2) };
-    drawGraph(); drawAttribution();
-  });
-  document.querySelectorAll('#pruneSeg button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('#pruneSeg button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active'); pruneMode = b.dataset.v;
-    if (pruneMode === 'all' && minW === 0) { minW = 0.5; document.getElementById('minW').value = '0.5'; document.getElementById('minWVal').textContent = '0.50'; }
-    if (G) { drawAttribution(); drawGraph(); }
-  }));
-  document.querySelectorAll('#viewSeg button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('#viewSeg button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active'); viewMode = b.dataset.v; if (G) drawAttribution();
-  }));
-  document.getElementById('minW').addEventListener('input', e => {
-    minW = +e.target.value; document.getElementById('minWVal').textContent = minW.toFixed(2); if (G) drawAttribution();
-  });
-  document.getElementById('btnPlay').addEventListener('click', () => {
-    if (playTimer) { stopPlay(); return; }
-    if (!G) return;
-    if (!selected) selected = { node: G.source !== null ? G.source : 0, step: 0 };
-    document.getElementById('btnPlay').textContent = '\u23F8 Pause';
-    const gen = graphGen;
-    const tick = () => {
-      if (gen !== graphGen || !G) { stopPlay(); return; }   // graph was replaced: stop instantly
-      curStep = (curStep + 1) % G.length;
-      document.getElementById('stepRange').value = curStep;
-      selected = { node: selected ? selected.node : 0, step: Math.min(curStep, G.length - 2) };
+  if (!bootWired) {
+    bootWired = true;
+    sel.addEventListener('change', () => { curAlgo = sel.value; loadAlgo(); });
+    document.getElementById('btnNew').addEventListener('click', () => {
+      const P = readParams() || { n: +document.getElementById('inN').value, p: +document.getElementById('inP').value };
+      let seed;
+      if (NEXTQ.algo === curAlgo && NEXTQ.n === P.n && NEXTQ.p === P.p && NEXTQ.seeds.length) seed = NEXTQ.seeds.shift();
+      else seed = Math.floor(Math.random() * 1e6);
+      document.getElementById('inSeed').value = seed;
+      loadGraph(seed);
+    });
+    ['inN', 'inP', 'inSeed'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => onParamChange(false));
+      el.addEventListener('change', () => onParamChange(true));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') onParamChange(true); });
+    });
+    document.getElementById('stepRange').addEventListener('input', e => {
+      if (!G) return;
+      curStep = +e.target.value;
+      if (selected) selected = { node: selected.node, step: Math.min(curStep, G.length - 2) };
       drawGraph(); drawAttribution();
-      if (curStep === G.length - 1) { stopPlay(); return; }
-      playTimer = setTimeout(tick, 1600);  // next tick only after this frame finished (no overlap)
-    };
-    playTimer = setTimeout(tick, 1600);
-  });
+    });
+    document.querySelectorAll('#pruneSeg button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#pruneSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); pruneMode = b.dataset.v;
+      if (pruneMode === 'all' && minW === 0) { minW = 0.5; document.getElementById('minW').value = '0.5'; document.getElementById('minWVal').textContent = '0.50'; }
+      if (G) { drawAttribution(); drawGraph(); }
+    }));
+    document.querySelectorAll('#viewSeg button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#viewSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); viewMode = b.dataset.v; if (G) drawAttribution();
+    }));
+    document.getElementById('minW').addEventListener('input', e => {
+      minW = +e.target.value; document.getElementById('minWVal').textContent = minW.toFixed(2); if (G) drawAttribution();
+    });
+    document.getElementById('btnPlay').addEventListener('click', () => {
+      if (playTimer) { stopPlay(); return; }
+      if (!G || G._preview) return;
+      if (!selected) selected = { node: G.source !== null ? G.source : 0, step: 0 };
+      document.getElementById('btnPlay').textContent = '⏸ Pause';
+      const gen = graphGen;
+      const tick = () => {
+        if (gen !== graphGen || !G) { stopPlay(); return; }   // graph was replaced: stop instantly
+        curStep = (curStep + 1) % G.length;
+        document.getElementById('stepRange').value = curStep;
+        selected = { node: selected ? selected.node : 0, step: Math.min(curStep, G.length - 2) };
+        drawGraph(); drawAttribution();
+        if (curStep === G.length - 1) { stopPlay(); return; }
+        playTimer = setTimeout(tick, 1600);  // next tick only after this frame finished (no overlap)
+      };
+      playTimer = setTimeout(tick, 1600);
+    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) maybePrefetch(); });
+  }
   initWorkers();
   await loadAlgo();
 }
+let bootWired = false;
 
-async function loadAlgo() {
-  const gen = ++algoGen, algo = curAlgo;
-  ++graphGen; ++ctxGen;
-  if (algoAbort) algoAbort.abort(); if (graphAbort) graphAbort.abort(); if (ctxAbort) ctxAbort.abort();
-  cancelSpec(); abortOtherAlgos(algo); stopPlay();
-  G = null; selected = null;                       // never show old-graph data with new-algo weights
-  if (typeof drawAttribution === 'function') drawAttribution();
-  document.getElementById('status').textContent = 'loading ' + algo + '\u2026';
-  let w, fl;
-  if (ALGO_CACHE[algo]) { w = ALGO_CACHE[algo].W; fl = ALGO_CACHE[algo].FL; }
-  else {
-    algoAbort = new AbortController();
-    try {
-      [w, fl] = await Promise.all([getJSON('/api/weights?algo=' + algo + '&v=' + BUILD, algoAbort.signal),
-                                   getJSON('/api/feature_labels?algo=' + algo + '&v=' + BUILD, algoAbort.signal)]);
-    } catch (e) { if (e.name !== 'AbortError') document.getElementById('status').textContent = 'error: ' + e.message; return; }
-    if (w.error || fl.error) { document.getElementById('status').textContent = 'error: ' + (w.error || fl.error); return; }
-    ALGO_CACHE[algo] = { W: w, FL: fl };
-  }
-  if (gen !== algoGen) return;                     // user already switched again
-  W = w; FL = fl;
-  ensureLocalModel(algo);                           // fetch the in-browser weight bundle in the background
-  document.getElementById('targetName').textContent = `${W.target} (${W.target_type})`;
-  document.getElementById('fvu').textContent = fmt(W.fvu, 4);
+function fillHeader(algo) {
+  const m = weightsFor(algo);
+  document.getElementById('targetName').textContent = `${m.target} (${m.target_type})`;
+  document.getElementById('fvu').textContent = fmt(m.fvu, 4);
   const gt = SUMMARY_V3[algo];
   document.getElementById('f1s').textContent = gt
     ? `${fmt(gt.val)} / ${fmt(gt.test)}  [${gt.cls}, gap=${fmt(gt.gap)}] (summary_v3.json)`
-    : `${fmt(W.val_f1)} / ${fmt(W.test_f1)}`;
+    : `${fmt(m.val_f1)} / ${fmt(m.test_f1)}`;
+}
+function renderLabels(algo) {
+  const fl = LABELS[algo]; if (!fl || algo !== curAlgo) return;
+  FL = fl;
   const tbody = document.querySelector('#featTable tbody'); tbody.innerHTML = '';
   FL.rows.slice(0, 15).forEach(r => {
     const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'fl:' + r.feature);
@@ -555,40 +792,83 @@ async function loadAlgo() {
     tbody.appendChild(tr);
   });
   labelByFeat = {}; FL.rows.forEach(r => labelByFeat[r.feature] = r);
+}
+
+async function loadAlgo() {
+  const gen = ++algoGen, algo = curAlgo;
+  ++graphGen; ++ctxGen;
+  if (algoAbort) algoAbort.abort(); if (graphAbort) graphAbort.abort(); if (ctxAbort) ctxAbort.abort();
+  cancelSpec(); abortOtherAlgos(algo); stopPlay(); clearProblem();
+  G = null; selected = null; W = weightsFor(algo);
+  const me = LOCAL.models[algo]; if (me) { if (me.state === 'failed') delete LOCAL.models[algo]; else me.used = Date.now(); }
+  if (typeof drawAttribution === 'function') drawAttribution();
+  showSkeleton();
+  setStatus('Loading ' + algo + '…');
+  fillHeader(algo);                                 // target, FVU and scores come from the small summary: instant
+  ensureLocalModel(algo);                           // start the model download straight away, in parallel with everything else
+  if (LABELS[algo]) renderLabels(algo);
+  else ensureLabels(algo).then(() => renderLabels(algo), e => { if (!(e instanceof StaleError)) console.warn('labels', e && e.message); });
+  if (gen !== algoGen) return;
   await loadGraph();
 }
 
-async function loadGraph(seedOverride) {
+async function loadGraph(seedOverride, attempt = 0) {
   const gen = ++graphGen, algo = curAlgo;
   ++ctxGen; if (ctxAbort) ctxAbort.abort();
   if (graphAbort) graphAbort.abort();
   clearTimeout(paramTimer);
   stopPlay();                                       // a running simulation ends the instant new parameters are requested
+  clearProblem();
   const P = readParams();
   if (!P) return;                                   // invalid/incomplete input: keep what is on screen
   const seed0 = seedOverride !== undefined ? seedOverride : P.seed;
   dropStale(gkey(algo, P.n, P.p, seed0));
+  cancelComputing(gkey(algo, P.n, P.p, seed0));
   const wasCached = isCached(algo, P.n, P.p, seed0);
   const pr = graphFor(algo, P.n, P.p, seed0, false);   // marks an in-flight prefetch of this graph as user-requested
-  if (!wasCached) cancelSpec();                        // user request outranks background prefetch (frees the server queue)
+  if (!wasCached) cancelSpec();                        // user request outranks background prefetch
   setPending(!wasCached);
-  document.getElementById('status').textContent = isCached(algo, P.n, P.p, seed0) ? 'loading\u2026' : 'running model\u2026';
+  if (!wasCached) {
+    setStatus(progressText(algo));
+    // early look: the shape of the graph is one tiny request, so show it long before the model has arrived
+    getInstance(algo, P.n, P.p, seed0).then(inst => {
+      if (gen !== graphGen || algo !== curAlgo || G || !inst || inst.error) return;
+      G = { n: inst.n, length: inst.length, adj: inst.adj, source: inst.source, target_true: inst.target_true, seed: inst.seed,
+            z: null, msgs: null, node_fts: null, _preview: true, _inst: inst };
+      document.getElementById('stepRange').max = Math.max(0, G.length - 1); document.getElementById('stepRange').value = 0; curStep = 0;
+      setPending(false); setStatus(progressText(algo));
+      drawGraph();
+    }, () => {});
+  } else setStatus('loading…');
   let res;
   try { res = await pr; }
-  catch (e) { if (e.name !== 'AbortError') document.getElementById('status').textContent = 'error: ' + e.message; return; }
+  catch (e) {
+    if (isAbort(e) || gen !== graphGen || algo !== curAlgo) return;
+    if (e instanceof StaleError) return showStale();
+    if (attempt < 2) {
+      setStatus('The connection is slow. Trying again…');
+      await sleep(1500 * (attempt + 1));
+      if (gen === graphGen && algo === curAlgo) return loadGraph(seedOverride, attempt + 1);
+      return;
+    }
+    setPending(false);
+    return showProblem('Could not load this graph just now. Check your connection, then press Retry.', () => loadGraph(seedOverride));
+  }
   if (gen !== graphGen || algo !== curAlgo) return; // a newer request superseded this one
-  if (res.error) { document.getElementById('status').textContent = 'error: ' + res.error; console.error(res.trace); setPending(false); return; }
+  if (res.error) { console.warn(res.trace); setPending(false); setStatus('This graph could not be built. Try “New random graph”.'); return; }
   G = res.g;
   const seed = res.seed;
   document.getElementById('inSeed').value = seed;
-  document.getElementById('status').textContent = `${curAlgo}: n=${G.n}, length=${G.length}, seed=${seed}` + (G._local ? ' \u00b7 in-browser model' : ' \u00b7 server model');
+  setStatus(`${curAlgo}: n=${G.n}, length=${G.length}, seed=${seed}` + (G._local ? ' · in-browser model' : ' · server model'));
   curStep = 0;
   document.getElementById('stepRange').max = Math.max(0, G.length - 1);
   document.getElementById('stepRange').value = 0;
   selected = null;
   setPending(false);
   drawGraph(); drawAttribution();
+  ensureWeights(algo).catch(e => { if (e instanceof StaleError) showStale(); });   // the large weights follow right after the graph is on screen
   speculate(algo, P.n, P.p, seed);                  // warm the likely next changes in the background
+  maybePrefetch();
 }
 
 function nodePositions(n) {
@@ -645,7 +925,7 @@ function drawGraph() {
       d.addEventListener('click', ev => { ev.stopPropagation(); AV.pinned = nd.id; avHighlight(); avInspect(AV.data.nodesById[nd.id]); drawGraph(); });
       svg.appendChild(d); });
   }
-  document.getElementById('stepLbl').textContent = `step ${curStep} of ${G.length-1}`;
+  drawStepLabel();
   let legend = G.source !== null ? `<span style="color:#f59e0b">&#9679;</span> source &nbsp;` : '';
   legend += W.target_type === 'categorical' ? 'colors = classes' :
             (W.target_type === 'scalar' ? 'blue intensity = magnitude' : '<span style="color:#34d399">&#9679;</span> true &nbsp; <span style="color:#9ca3af">&#9679;</span> false');
@@ -653,6 +933,12 @@ function drawGraph() {
   if (window.HoverCard) HoverCard.refresh();
   document.getElementById('clickHint').textContent = `Click a node to explain the model's ${W.target} prediction for it at the current step.`;
   renderNodeTable();
+}
+
+function drawStepLabel() {
+  if (!G) return;
+  const wait = !G._preview && G._computing && Math.min(curStep, G.length - 2) >= G.z.length;
+  document.getElementById('stepLbl').textContent = `step ${curStep} of ${G.length-1}` + (wait ? ' (computing\u2026)' : '');
 }
 
 function renderNodeTable() {
@@ -665,7 +951,18 @@ function renderNodeTable() {
   if (step < 0) return;
   const prevRow = G.target_true ? G.target_true[step] : null;
   const trueRow = G.target_true ? G.target_true[step+1] : null;
+  const haveStep = !G._preview && G.z && step < G.z.length;
+  const haveW = haveStep && !!W.w_enc;      // predictions need the large weights and the model's steps; until they arrive the table shows the truth only
+  G._need = !haveW;
   for (let node = 0; node < G.n; node++) {
+    if (!haveW) {
+      const tv = trueRow ? trueRow[node] : null, pv = prevRow ? prevRow[node] : null;
+      NODE_PRED[node] = '\u2026';
+      const tr0 = document.createElement('tr'); tr0.setAttribute('data-tip', 'node:' + node);
+      tr0.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(pv,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="color:var(--muted)">\u2026</td><td data-tip="cell:${node}:true">${fmt(tv,catCols?0:2)}</td>`;
+      body.appendChild(tr0);
+      continue;
+    }
     const featsCur = encode([...G.z[step][node], ...G.msgs[step][node]]);
     const featsPrev = step > 0 ? encode([...G.z[step-1][node], ...G.msgs[step-1][node]]) : new Array(W.F).fill(0);
     const H = W.hidden;
@@ -691,6 +988,7 @@ function renderNodeTable() {
 
 function selectTarget(node) {
   if (!G) return;
+  if (G._preview) { setStatus(progressText(curAlgo)); return; }   // the model is still on its way
   const step = Math.min(curStep, G.length - 2);
   if (step < 0) {
     document.getElementById('question').textContent = 'This graph has no explainable step (length=' + G.length + '). Click "New random graph".';

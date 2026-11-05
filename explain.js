@@ -138,7 +138,7 @@
                      L: has('labelByFeat') ? labelByFeat : {}, step: has('curStep') ? curStep : 0, algo: has('curAlgo') ? curAlgo : '' });
   function labelOf(f) { const r = S().L[f]; return r && r.label ? r : null; }
   function featsAt(t, j) {
-    const { G } = S(); if (!G || t < 0 || t >= G.z.length) return null;
+    const { G, W } = S(); if (!G || !G.z || !W || !W.w_enc || t < 0 || t >= G.z.length) return null;
     return encode([...G.z[t][j], ...G.msgs[t][j]]);
   }
   function topFeatures(t, j, k = 3) {

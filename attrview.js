@@ -26,13 +26,13 @@ const avLabel = f => (labelByFeat[f] && labelByFeat[f].label) || '(unlabeled)';
 // ---------- worker plumbing ----------
 function avWorker() {
   if (AV.worker || typeof Worker === 'undefined') return AV.worker;
-  AV.worker = new Worker('mpnn_worker.js');
+  AV.worker = new Worker('mpnn_worker.js' + VQ);
   AV.worker.onmessage = ev => {
     const m = ev.data;
     if (m.type === 'loaded' || m.type === 'tcloaded') { const k = m.type + ':' + m.algo; AV.ready[k] = true; (AV.waiters[k] || []).forEach(f => f()); delete AV.waiters[k]; return; }
     if (m.type === 'attrib' || (m.type === 'error' && m.id && m.id.startsWith('a'))) {
       AV.busy = false;
-      if (AV.want && m.id === AV.want.id) { if (m.type === 'error') avStatus('Could not trace this prediction: ' + m.error.split('\n')[0]); else avReceive(m); }
+      if (AV.want && m.id === AV.want.id) { if (m.type === 'error') { console.warn(m.error); avStatus('Could not trace this prediction just now. Click the node again to retry.'); } else avReceive(m); }
       avPump(); return;
     }
     if (m.type === 'intervened' || (m.type === 'error' && m.id && m.id.startsWith('i'))) avIvResult(m);
@@ -45,11 +45,16 @@ async function avEnsure(algo) {
   ensureLocalModel(algo);
   const entry = LOCAL.models[algo];
   if (!entry) throw new Error('model bundle unavailable');
+  const wp = ensureWeights(algo), lp = ensureLabels(algo);      // the large weights and the labels are needed for the first trace
+  wp.catch(() => {}); lp.catch(() => {});
   await entry.promise;
   if (entry.state === 'aborted' || algo !== curAlgo) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
+  if (entry.stale) throw new StaleError('stale');
   if (entry.state !== 'ready' || !entry.man) throw new Error('model bundle failed to load');
+  const Wfull = await wp; await lp;
+  if (algo !== curAlgo) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
   if (!AV.ready['loaded:' + algo] && !AV['sent:' + algo]) { AV['sent:' + algo] = true; w.postMessage({ type: 'load', algo, manifest: entry.man, buffer: entry.buf.slice(0) }); }
-  if (!AV.ready['tcloaded:' + algo] && !AV['tcsent:' + algo]) { AV['tcsent:' + algo] = true; w.postMessage({ type: 'tc', algo, W: ALGO_CACHE[algo].W }); }
+  if (!AV.ready['tcloaded:' + algo] && !AV['tcsent:' + algo]) { AV['tcsent:' + algo] = true; w.postMessage({ type: 'tc', algo, W: Wfull }); }
   await Promise.all([avWait('loaded:' + algo), avWait('tcloaded:' + algo)]);
 }
 function avPump() {
@@ -68,10 +73,15 @@ async function avRequest(step, node) {
   try {
     await avEnsure(curAlgo);
     let inst = G._inst;
-    if (!inst) { inst = await getJSON(`/api/instance?algo=${curAlgo}&n=${G.n}&p=${+document.getElementById('inP').value}&seed=${G.seed}`); G._inst = inst; }
+    if (!inst) { inst = await getInstance(curAlgo, G.n, +document.getElementById('inP').value, G.seed); G._inst = inst; }
     if (AV.want !== req) return;
     req.inst = inst; AV.pending = req; avPump();
-  } catch (e) { if (e && e.name === 'AbortError') return; if (AV.want === req) avStatus('The in-browser model is needed for attribution graphs and is not available: ' + e.message); }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    if (e instanceof StaleError) { showStale(); return; }
+    console.warn('attribution', e && e.message);
+    if (AV.want === req) { avStatus('Could not load what is needed for this view. Retrying\u2026'); setTimeout(() => { if (AV.want === req && G && !G._preview) { AV.want = null; drawAttribution(); } }, 2500); }
+  }
 }
 function avStatus(text, busy) {
   const s = document.getElementById('gstat'); if (s) s.textContent = text;
@@ -99,7 +109,7 @@ function drawAttribution() {
     document.getElementById('featDetail').innerHTML = '<p class="empty">Hover a node in the attribution graph to see its edges; click to pin it here.</p>';
     document.getElementById('ivPanel').innerHTML = '';
   }
-  if (!G || !W) return;
+  if (!G || !W || G._preview) return;
   if (!selected) avAutoSelect();
   if (!selected) return;
   const step = Math.min(curStep, G.length - 2);
