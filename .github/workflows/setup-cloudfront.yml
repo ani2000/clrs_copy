@@ -1,0 +1,143 @@
+name: CloudFront in front of the tracer (check / apply / disable)
+
+# Manual trigger only.
+#   check   read-only: prints what already exists and whether this key may create the pieces. Changes nothing.
+#   apply   needs confirm=confirmed. Creates, only if missing, ONLY these, all tagged Project=clrs-circuit-tracer:
+#             1 Elastic IP attached to the tagged instance (so the origin address never changes),
+#             1 CloudFront cache policy, 1 CloudFront distribution (default *.cloudfront.net domain),
+#             1 CloudWatch alarm that reboots this instance when its status checks fail.
+#   disable needs confirm=confirmed. Switches the distribution off (nothing is deleted).
+# Works on the single instance tagged Name=clrs-circuit-tracer AND Project=clrs-circuit-tracer with the expected ID.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'check, apply or disable'
+        required: true
+        default: 'check'
+      confirm:
+        description: 'Type "confirmed" for apply or disable'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  NAME: clrs-circuit-tracer
+  PROJECT: clrs-circuit-tracer
+  EXPECTED_ID: i-0877713b5583c8533
+
+jobs:
+  cloudfront:
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Find the instance (tag and ID guard)
+        run: |
+          set -euo pipefail
+          ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$NAME" "Name=tag:Project,Values=$PROJECT" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          [ "$(echo "$ids" | wc -w)" = 1 ] || { echo "Expected exactly one running tagged instance, found: '$ids'"; exit 1; }
+          [ "$ids" = "$EXPECTED_ID" ] || { echo "Instance $ids is not the expected $EXPECTED_ID"; exit 1; }
+          echo "IID=$ids" >> "$GITHUB_ENV"
+          aws ec2 describe-instances --instance-ids "$ids" --query 'Reservations[0].Instances[0].[PublicIpAddress,PublicDnsName]' --output text
+
+      - name: Check (read-only)
+        if: ${{ inputs.mode == 'check' }}
+        run: |
+          probe() { if out=$("$@" 2>&1); then echo "OK       $*"; else echo "DENIED   $* -> $(echo "$out" | tail -1 | cut -c1-160)"; fi; }
+          echo "== what exists =="
+          aws ec2 describe-addresses --filters "Name=tag:Project,Values=$PROJECT" --query 'Addresses[].[PublicIp,AllocationId,InstanceId]' --output text || true
+          aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='$NAME'].[Id,DomainName,Status]" --output text || true
+          aws cloudfront list-cache-policies --type custom --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='$NAME-versioned'].CachePolicy.Id" --output text || true
+          aws cloudwatch describe-alarms --alarm-name-prefix "$NAME" --query 'MetricAlarms[].[AlarmName,StateValue]' --output text || true
+          echo "== what this key may do =="
+          probe aws ec2 allocate-address --domain vpc --dry-run
+          probe aws cloudfront list-distributions
+          probe aws cloudfront list-cache-policies --type custom
+          probe aws cloudwatch describe-alarms --alarm-name-prefix "$NAME"
+          probe aws ec2 describe-addresses
+
+      - name: Apply
+        if: ${{ inputs.mode == 'apply' && inputs.confirm == 'confirmed' }}
+        run: |
+          set -euo pipefail
+          TAGS="Key=Project,Value=$PROJECT Key=Name,Value=$NAME"
+          # 1) Elastic IP (re-use ours if it already exists)
+          alloc=$(aws ec2 describe-addresses --filters "Name=tag:Project,Values=$PROJECT" --query 'Addresses[0].AllocationId' --output text)
+          if [ "$alloc" = "None" ]; then
+            alloc=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=$PROJECT},{Key=Name,Value=$NAME}]" --query AllocationId --output text)
+            echo "allocated $alloc"
+          fi
+          cur=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].InstanceId' --output text)
+          if [ "$cur" != "$IID" ]; then aws ec2 associate-address --allocation-id "$alloc" --instance-id "$IID" --no-allow-reassociation >/dev/null; fi
+          ip=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].PublicIp' --output text)
+          origin="ec2-${ip//./-}.compute-1.amazonaws.com"
+          echo "Elastic IP $ip, origin $origin"
+          # 2) cache policy: long cache only for answers the origin marks immutable (the versioned ?v= URLs); everything else is not stored
+          pid=$(aws cloudfront list-cache-policies --type custom --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='$NAME-versioned'].CachePolicy.Id | [0]" --output text)
+          if [ "$pid" = "None" ]; then
+            cat > policy.json <<EOF
+          {"Name":"$NAME-versioned","Comment":"$NAME: keyed on the whole query string (includes ?v=BUILD); honours the origin cache headers; nothing is cached without them",
+           "DefaultTTL":0,"MaxTTL":31536000,"MinTTL":0,
+           "ParametersInCacheKeyAndForwardedToOrigin":{"EnableAcceptEncodingGzip":true,"EnableAcceptEncodingBrotli":true,
+             "HeadersConfig":{"HeaderBehavior":"none"},"CookiesConfig":{"CookieBehavior":"none"},"QueryStringsConfig":{"QueryStringBehavior":"all"}}}
+          EOF
+            pid=$(aws cloudfront create-cache-policy --cache-policy-config file://policy.json --query CachePolicy.Id --output text)
+            echo "created cache policy $pid"
+          fi
+          # 3) distribution
+          did=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='$NAME'].Id | [0]" --output text)
+          if [ "$did" = "None" ]; then
+            NOCACHE=4135ea2d-6df8-44a3-9df3-4b5a84be39ad      # managed CachingDisabled
+            ALLVIEW=b689b0a8-53d0-40ab-baf2-68738e2966ac      # managed AllViewerExceptHostHeader
+            beh() { printf '{"PathPattern":"%s","TargetOriginId":"tracer","ViewerProtocolPolicy":"redirect-to-https","AllowedMethods":{"Quantity":2,"Items":["GET","HEAD"],"CachedMethods":{"Quantity":2,"Items":["GET","HEAD"]}},"CachePolicyId":"%s","Compress":true}' "$1" "$pid"; }
+            cat > dist.json <<EOF
+          {"DistributionConfig":{"CallerReference":"$NAME-$(date +%s)","Comment":"$NAME","Enabled":true,"HttpVersion":"http2and3","IsIPV6Enabled":true,"PriceClass":"PriceClass_All",
+            "Origins":{"Quantity":1,"Items":[{"Id":"tracer","DomainName":"$origin","CustomOriginConfig":{"HTTPPort":80,"HTTPSPort":443,"OriginProtocolPolicy":"http-only","OriginReadTimeout":60,"OriginKeepaliveTimeout":10}}]},
+            "DefaultCacheBehavior":{"TargetOriginId":"tracer","ViewerProtocolPolicy":"redirect-to-https","AllowedMethods":{"Quantity":2,"Items":["GET","HEAD"],"CachedMethods":{"Quantity":2,"Items":["GET","HEAD"]}},"CachePolicyId":"$NOCACHE","OriginRequestPolicyId":"$ALLVIEW","Compress":true},
+            "CacheBehaviors":{"Quantity":6,"Items":[$(beh '/models/*'),$(beh '/api/weights'),$(beh '/api/feature_labels'),$(beh '/api/instance'),$(beh '/api/algos'),$(beh '*.js')]}},
+           "Tags":{"Items":[{"Key":"Project","Value":"$PROJECT"},{"Key":"Name","Value":"$NAME"}]}}
+          EOF
+            did=$(aws cloudfront create-distribution-with-tags --distribution-config-with-tags file://dist.json --query Distribution.Id --output text)
+            echo "created distribution $did"
+          fi
+          # 4) alarm: reboot this instance (only) when its status checks fail for 3 minutes
+          aws cloudwatch put-metric-alarm --alarm-name "$NAME-status-reboot" \
+            --alarm-description "Reboot $IID if its EC2 status checks fail" \
+            --namespace AWS/EC2 --metric-name StatusCheckFailed --dimensions Name=InstanceId,Value="$IID" \
+            --statistic Maximum --period 60 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold \
+            --treat-missing-data notBreaching --alarm-actions arn:aws:automate:us-east-1:ec2:reboot \
+            --tags Key=Project,Value=$PROJECT Key=Name,Value=$NAME
+          echo "waiting for the distribution to deploy (up to ~15 minutes)"
+          aws cloudfront wait distribution-deployed --id "$did"
+          dom=$(aws cloudfront get-distribution --id "$did" --query Distribution.DomainName --output text)
+          echo "ELASTIC_IP=$ip"; echo "DISTRIBUTION_ID=$did"; echo "URL=https://$dom/viewer3.html"
+
+      - name: Disable (nothing is deleted)
+        if: ${{ inputs.mode == 'disable' && inputs.confirm == 'confirmed' }}
+        run: |
+          set -euo pipefail
+          did=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='$NAME'].Id | [0]" --output text)
+          [ "$did" != "None" ] || { echo "no distribution"; exit 0; }
+          aws cloudfront get-distribution-config --id "$did" > cur.json
+          etag=$(jq -r .ETag cur.json)
+          jq '.DistributionConfig | .Enabled=false' cur.json > off.json
+          aws cloudfront update-distribution --id "$did" --if-match "$etag" --distribution-config file://off.json --query Distribution.Status --output text

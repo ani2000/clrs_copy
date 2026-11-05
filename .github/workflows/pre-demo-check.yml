@@ -1,0 +1,30 @@
+name: Pre-demo check (opens the public address and loads all 12 algorithms)
+
+# Manual trigger only. Reads only: opens the address you give it in a headless browser on a GitHub runner, loads all 12
+# algorithms one after the other and prints pass/fail with timings. Touches nothing in AWS.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Public address to check, e.g. https://dxxxxxxxx.cloudfront.net'
+        required: true
+        default: ''
+      max_seconds:
+        description: 'Longest allowed time for each step'
+        required: false
+        default: '30'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check all 12 algorithms
+        env:
+          URL: ${{ inputs.url }}
+          MAXS: ${{ inputs.max_seconds }}
+        run: node --experimental-websocket tools/predemo_check.mjs "$URL" "$MAXS"

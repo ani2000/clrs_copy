@@ -1,0 +1,33 @@
+name: Cross-browser check (Chromium, Firefox, WebKit/Safari engine)
+
+# Manual trigger only. Reads only: on a GitHub runner, opens the address you give it in Chromium, Firefox and WebKit
+# (the Safari engine, also at phone size), loads five algorithms in each and prints pass/fail with timings.
+# The browsers are installed on the runner for this run only. Touches nothing in AWS.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Public address to check, e.g. http://98.86.163.27 or https://dxxxxxxxx.cloudfront.net'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Playwright and its browsers (runner only)
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null && npm install playwright@1.49.1 >/dev/null
+          npx playwright install --with-deps chromium firefox webkit >/dev/null
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
+          cp "$GITHUB_WORKSPACE/tools/browsers_check.mjs" "$RUNNER_TEMP/pw/"
+      - name: Check
+        env:
+          URL: ${{ inputs.url }}
+        run: cd "$RUNNER_TEMP/pw" && node browsers_check.mjs "$URL"
