@@ -1,0 +1,67 @@
+name: Tune instance network (BBR congestion control)
+
+# Manual trigger only; does nothing unless you type "confirmed". Uses SSM Run
+# Command on the single instance tagged Name=clrs-circuit-tracer AND
+# Project=clrs-circuit-tracer. It only changes two kernel network settings on
+# that host (TCP congestion control -> bbr, qdisc -> fq), persisted in
+# /etc/sysctl.d/99-bbr.conf. mode=revert restores the defaults (cubic).
+# Creates no AWS resources and touches nothing else.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "confirmed" to change the instance network settings'
+        required: true
+        default: ''
+      mode:
+        description: 'apply (bbr) or revert (cubic)'
+        type: choice
+        options: [apply, revert]
+        default: apply
+
+permissions:
+  contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  NAME: clrs-circuit-tracer
+  PROJECT: clrs-circuit-tracer
+  EXPECTED_ID: i-0877713b5583c8533
+  MODE: ${{ inputs.mode }}
+
+jobs:
+  tune:
+    if: ${{ inputs.confirm == 'confirmed' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Apply on the tagged instance
+        run: |
+          set -euo pipefail
+          ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$NAME" "Name=tag:Project,Values=$PROJECT" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          [ "$(echo "$ids" | wc -w)" = 1 ] || { echo "Expected exactly one running tagged instance, found: '$ids'"; exit 1; }
+          [ "$ids" = "$EXPECTED_ID" ] || { echo "Refusing: instance $ids is not the expected $EXPECTED_ID"; exit 1; }
+          if [ "$MODE" = "apply" ]; then
+            cmds='["echo before: $(sysctl -n net.ipv4.tcp_congestion_control) $(sysctl -n net.core.default_qdisc)","modprobe tcp_bbr || true","grep -qw bbr /proc/sys/net/ipv4/tcp_available_congestion_control || { echo bbr-not-available; exit 1; }","printf \"net.core.default_qdisc=fq\\nnet.ipv4.tcp_congestion_control=bbr\\n\" > /etc/sysctl.d/99-bbr.conf","sysctl --system >/dev/null","echo after: $(sysctl -n net.ipv4.tcp_congestion_control) $(sysctl -n net.core.default_qdisc)"]'
+          else
+            cmds='["echo before: $(sysctl -n net.ipv4.tcp_congestion_control)","rm -f /etc/sysctl.d/99-bbr.conf","sysctl -w net.ipv4.tcp_congestion_control=cubic","sysctl -w net.core.default_qdisc=fq_codel","echo after: $(sysctl -n net.ipv4.tcp_congestion_control) $(sysctl -n net.core.default_qdisc)"]'
+          fi
+          cmd=$(aws ssm send-command --instance-ids "$ids" --document-name AWS-RunShellScript \
+            --parameters "commands=$cmds" --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$cmd" --instance-id "$ids" || true
+          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$ids" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text
