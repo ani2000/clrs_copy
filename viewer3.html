@@ -135,12 +135,24 @@ window.__early = {};
   .stage { display:grid; grid-template-columns: minmax(270px, 1fr) minmax(0, 1.7fr) minmax(260px, 1fr); gap:14px; padding:14px 14px 0; align-items:start; }
   .stage > .panel { min-width:0; }
   .pcname { font-family:var(--mono); font-size:12px; color:var(--ink-3); margin:-4px 0 6px; }
-  .pccode { font-family:var(--mono); font-size:12px; line-height:1.55; border:1px solid var(--line); border-radius:6px; background:var(--surface); max-height:300px; overflow:auto; padding:4px 0; -webkit-overflow-scrolling:touch; }
+  .pccode { font-family:var(--mono); font-size:12px; line-height:1.55; border:1px solid var(--line); border-radius:6px; background:var(--surface); max-height:430px; overflow:auto; padding:4px 0; -webkit-overflow-scrolling:touch; }
   .pccode .pl { display:flex; gap:8px; padding:0 8px 0 4px; border-left:3px solid transparent; white-space:pre-wrap; overflow-wrap:anywhere; }
   .pccode .pl .ln { flex:none; width:1.6em; text-align:right; color:var(--ink-3); user-select:none; }
   .pccode .pl.proc .tx { font-weight:600; }
-  .pccode .pl.on { background:#fff4d6; border-left-color:var(--accent); }
-  .pccode .pl.on .ln { color:var(--ink); }
+  .pccode .pl { border-left-width:4px; }
+  .pccode .pl.cx { border-left-color:var(--lc); background:linear-gradient(90deg, var(--lb) 0, transparent 38px); }
+  .pccode .pl.on { background:var(--lb); border-left-color:var(--lc); box-shadow:inset 0 0 0 1px var(--lc); border-radius:0 4px 4px 0; font-weight:600; }
+  .pccode .pl.on .ln, .pccode .pl.cx .ln { color:var(--lc); font-weight:700; }
+  .pccode .pl .bd { flex:none; margin-left:auto; align-self:flex-start; font-size:10.5px; font-weight:700; color:var(--lc); background:#fff; border:1px solid var(--lc); border-radius:999px; padding:0 7px; line-height:1.5; white-space:nowrap; }
+  .pccode .pl .bd[hidden] { display:none; }
+  .pcpath { display:flex; flex-wrap:wrap; align-items:center; gap:3px 2px; margin:8px 0 0; font-size:11px; }
+  .pcpath:empty { display:none; }
+  .pcpath .pp { font-family:var(--mono); border:1px solid var(--lc); border-left-width:4px; border-radius:4px; background:#fff; padding:0 6px; color:var(--ink-3); }
+  .pcpath .pp.now { background:var(--lb); color:var(--ink); font-weight:600; }
+  .pcpath .pp b { color:var(--lc); }
+  .pcpath .pa { color:var(--ink-3); margin:0 2px; }
+  .pclegend { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:6px; }
+  .pclegend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:3px; vertical-align:-1px; }
   .pccode .kw { color:#6d28d9; }
   .pcnow { margin-top:10px; }
   .pchead { display:inline-block; font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:#92400e; background:#fff4d6; border:1px solid #fcd34d; border-radius:999px; padding:1px 9px; margin-bottom:5px; }
@@ -260,12 +272,15 @@ window.__early = {};
     <h2><span title="The steps of the algorithm, in plain pseudo-code. The highlighted line is the one the simulation has just executed.">Pseudo-code</span></h2>
     <div id="pcName" class="pcname"></div>
     <div id="pcCode" class="pccode" role="list" aria-label="Algorithm pseudo-code"></div>
+    <div id="pcPath" class="pcpath" aria-label="Where this step sits in the loops"></div>
     <div class="pcnow">
       <div id="pcHead" class="pchead"></div>
       <div id="pcNote" class="note"></div>
     </div>
     <dl id="pcState" class="ikv"></dl>
-    <div class="small pcfoot">Follows the recorded steps of the simulation. Some algorithms record several steps for one line, so a line can stay highlighted for a few steps.</div>
+    <div class="small pcfoot">Bright line: what is executing now. Thin bar: the loops and tests around it. Small tags: the current loop values. The colour shows how deeply a line is nested:
+      <span class="pclegend"><span><i style="background:#2563eb"></i>level 1</span><span><i style="background:#059669"></i>level 2</span><span><i style="background:#d97706"></i>level 3</span><span><i style="background:#7c3aed"></i>level 4</span><span><i style="background:#db2777"></i>level 5</span></span>
+      Some algorithms record several steps for one line, so a line can stay highlighted for a few steps.</div>
   </div>
 </div>
 
@@ -300,37 +315,172 @@ window.__early = {};
    The model's trace gives, for every step, one "hint" row (reached set, DFS colours, distances, keys, current edge or
    intermediate vertex ...). Comparing a row with the previous one tells what the algorithm just did, so each step can
    be mapped to a pseudo-code line plus a one-sentence description and the main variables. Where the row alone is not
-   enough (Dijkstra, Prim, Kruskal, bridges) the missing detail is rebuilt from the graph and used only if it agrees
-   with the recorded trace; otherwise the plain version is shown. Nothing here touches the model or the attribution. */
+   enough (Dijkstra, Prim, Kruskal, bridges, articulation points) the missing detail is rebuilt from the graph and used
+   only if it agrees with the recorded trace; otherwise the plain version is shown. Nothing here touches the model.
+   Every step reports three things:
+     cur  - the innermost line(s) being executed (shown in full colour; the colour is the nesting depth of that line)
+     ctx  - the enclosing loops / tests and the call chain (shown only as a thin bar in their own depth colour)
+     bind - the value each loop currently has (u = 3, v = 5, k = 2 ...), shown as a small tag on that line */
 const PSEUDO = (function () {
   const EPS = 1e-6;
-  const L = (...a) => a.map(s => { const m = /^( *)(.*)$/.exec(s); return [m[1].length >> 1, m[2]]; });
+  const TAGS = {};
+  // a line ends with "@tag" to give it a name; the narrators below refer to lines by name, never by number
+  const L = (algo, ...a) => {
+    const tags = {};
+    const rows = a.map((s, i) => { const m = /^( *)(.*?)(?:\s+@(\w+))?$/.exec(s); if (m[3]) tags[m[3]] = i; return [m[1].length >> 1, m[2]]; });
+    TAGS[algo] = tags; return rows;
+  };
   const CODE = {
-    bfs: L('BFS(G, s)', '  reach[v] ← 0 for all v;  reach[s] ← 1;  π[s] ← s', '  repeat', '    prev ← reach',
-      '    for each edge (u, v) with prev[u] = 1', '      if π[v] is unset:  π[v] ← u', '      reach[v] ← 1', '  until reach = prev'),
-    dfs: L('DFS(G)', '  for each vertex u:  color[u] ← WHITE,  π[u] ← NIL', '  time ← 0', '  for each vertex u',
-      '    if color[u] = WHITE:  DFS-VISIT(G, u)', 'DFS-VISIT(G, u)', '  time ← time + 1;  d[u] ← time;  color[u] ← GRAY',
-      '  for each v in Adj[u]', '    if color[v] = WHITE:  π[v] ← u;  DFS-VISIT(G, v)', '  color[u] ← BLACK;  time ← time + 1;  f[u] ← time'),
-    bellman_ford: L('BELLMAN-FORD(G, w, s)', '  for each vertex v:  d[v] ← ∞,  π[v] ← NIL', '  d[s] ← 0', '  for round ← 1 to |V| − 1',
-      '    for each edge (u, v) in E', '      if d[v] > d[u] + w(u, v)', '        d[v] ← d[u] + w(u, v);  π[v] ← u'),
-    dijkstra: L('DIJKSTRA(G, w, s)', '  for each vertex v:  d[v] ← ∞,  π[v] ← NIL;   d[s] ← 0', '  Q ← all vertices', '  while Q is not empty',
-      '    u ← EXTRACT-MIN(Q)', '    for each v in Adj[u]', '      if d[v] > d[u] + w(u, v)', '        d[v] ← d[u] + w(u, v);  π[v] ← u'),
-    dag_shortest_paths: L('DAG-SHORTEST-PATHS(G, w, s)', '  topologically sort the vertices of G', '  d[v] ← ∞ for all v;  d[s] ← 0',
-      '  for each vertex u, in topological order', '    for each v in Adj[u]', '      RELAX(u, v, w):  if d[v] > d[u] + w(u, v) then d[v] ← d[u] + w(u, v)'),
-    mst_prim: L('MST-PRIM(G, w, r)', '  for each vertex v:  key[v] ← ∞,  π[v] ← NIL;   key[r] ← 0', '  Q ← all vertices', '  while Q is not empty',
-      '    u ← EXTRACT-MIN(Q)          // u joins the tree', '    for each v in Adj[u]', '      if v is in Q and w(u, v) < key[v]', '        π[v] ← u;  key[v] ← w(u, v)'),
-    mst_kruskal: L('MST-KRUSKAL(G, w)', '  A ← empty set;  MAKE-SET(v) for each vertex v', '  sort the edges of E by weight', '  for each edge (u, v), lightest first',
-      '    if FIND-SET(u) ≠ FIND-SET(v)', '      A ← A ∪ {(u, v)};  UNION(u, v)'),
-    topological_sort: L('TOPOLOGICAL-SORT(G)', '  run DFS(G) to compute the finishing time f[v] of each vertex',
-      '  as each vertex finishes, insert it at the front of a list', '  return the list'),
-    articulation_points: L('ARTICULATION-POINTS(G)', '  run DFS; record the discovery time d[u] of each vertex',
-      '  low[u] ← earliest discovery time reachable from the subtree of u', '  u is an articulation point if',
-      '      u is the root and has 2 or more DFS children, or', '      u is not the root and some child v has low[v] ≥ d[u]'),
-    bridges: L('BRIDGES(G)', '  run DFS; record d[u] and low[u]', '  for each DFS tree edge (u, v)', '    if low[v] > d[u]', '      (u, v) is a bridge'),
-    strongly_connected_components: L('SCC(G)', '  run DFS(G) to compute the finishing times f[u]', '  compute the reversed graph Gᵀ',
-      '  run DFS(Gᵀ), taking vertices in decreasing f[u]', '  each tree of the second DFS is one component'),
-    floyd_warshall: L('FLOYD-WARSHALL(W)', '  D ← W', '  for k ← 1 to n', '    for i ← 1 to n', '      for j ← 1 to n',
-      '        D[i][j] ← min(D[i][j], D[i][k] + D[k][j])'),
+    bfs: L('bfs',
+      'BFS(G, s) @h',
+      '  for each vertex v:  reach[v] ← 0,  π[v] ← NIL @init',
+      '  reach[s] ← 1;  π[s] ← s @src',
+      '  repeat @rep',
+      '    prev ← reach @prev',
+      '    for each edge (u, v) in E @edge',
+      '      if prev[u] = 1 @cond',
+      '        if π[v] is unset:  π[v] ← u @par',
+      '        reach[v] ← 1 @mark',
+      '  until reach = prev @until'),
+    dfs: L('dfs',
+      'DFS(G) @h',
+      '  for each vertex u:  color[u] ← WHITE,  π[u] ← NIL @init',
+      '  time ← 0 @time0',
+      '  for each vertex u @outer',
+      '    if color[u] = WHITE @outerif',
+      '      DFS-VISIT(G, u) @callroot',
+      'DFS-VISIT(G, u) @vh',
+      '  time ← time + 1;  d[u] ← time;  color[u] ← GRAY @disc',
+      '  for each v in Adj[u] @adj',
+      '    if color[v] = WHITE @white',
+      '      π[v] ← u @par',
+      '      DFS-VISIT(G, v) @callv',
+      '  color[u] ← BLACK @black',
+      '  time ← time + 1;  f[u] ← time @fin'),
+    bellman_ford: L('bellman_ford',
+      'BELLMAN-FORD(G, w, s) @h',
+      '  for each vertex v:  d[v] ← ∞,  π[v] ← NIL @init',
+      '  d[s] ← 0 @src',
+      '  for round ← 1 to |V| − 1 @round',
+      '    for each edge (u, v) in E @edge',
+      '      if d[v] > d[u] + w(u, v) @cond',
+      '        d[v] ← d[u] + w(u, v) @upd',
+      '        π[v] ← u @par'),
+    dijkstra: L('dijkstra',
+      'DIJKSTRA(G, w, s) @h',
+      '  for each vertex v:  d[v] ← ∞,  π[v] ← NIL @init',
+      '  d[s] ← 0 @src',
+      '  Q ← all vertices @q',
+      '  while Q is not empty @while',
+      '    u ← EXTRACT-MIN(Q) @ext',
+      '    for each v in Adj[u] @adj',
+      '      if d[v] > d[u] + w(u, v) @cond',
+      '        d[v] ← d[u] + w(u, v) @upd',
+      '        π[v] ← u @par'),
+    dag_shortest_paths: L('dag_shortest_paths',
+      'DAG-SHORTEST-PATHS(G, w, s) @h',
+      '  topologically sort the vertices of G @topo',
+      '  for each vertex v:  d[v] ← ∞;   d[s] ← 0 @init',
+      '  for each vertex u, in topological order @outer',
+      '    for each v in Adj[u] @adj',
+      '      if d[v] > d[u] + w(u, v) @cond',
+      '        d[v] ← d[u] + w(u, v);  π[v] ← u @upd'),
+    mst_prim: L('mst_prim',
+      'MST-PRIM(G, w, r) @h',
+      '  for each vertex v:  key[v] ← ∞,  π[v] ← NIL @init',
+      '  key[r] ← 0 @src',
+      '  Q ← all vertices @q',
+      '  while Q is not empty @while',
+      '    u ← EXTRACT-MIN(Q)          // u joins the tree @ext',
+      '    for each v in Adj[u] @adj',
+      '      if v ∈ Q and w(u, v) < key[v] @cond',
+      '        π[v] ← u @par',
+      '        key[v] ← w(u, v) @upd'),
+    mst_kruskal: L('mst_kruskal',
+      'MST-KRUSKAL(G, w) @h',
+      '  A ← ∅ @a',
+      '  for each vertex v:  MAKE-SET(v) @make',
+      '  sort the edges of E by weight @sort',
+      '  for each edge (u, v) in E, lightest first @edge',
+      '    if FIND-SET(u) ≠ FIND-SET(v) @cond',
+      '      A ← A ∪ {(u, v)} @add',
+      '      UNION(u, v) @union',
+      '  return A @ret'),
+    topological_sort: L('topological_sort',
+      'TOPOLOGICAL-SORT(G) @h',
+      '  list ← empty @l',
+      '  for each vertex u @outer',
+      '    if u is not visited yet @outerif',
+      '      VISIT(u) @call',
+      '  return list @ret',
+      'VISIT(u) @vh',
+      '  mark u as visited @vis',
+      '  for each v in Adj[u] @adj',
+      '    if v is not visited yet @white',
+      '      VISIT(v) @callv',
+      '  insert u at the front of list      // u has finished @ins'),
+    articulation_points: L('articulation_points',
+      'ARTICULATION-POINTS(G) @h',
+      '  time ← 0;   visited[u] ← false for all u @init',
+      '  for each vertex u @outer',
+      '    if not visited[u] @outerif',
+      '      DFS-AP(u, NIL) @call',
+      'DFS-AP(u, p) @vh',
+      '  visited[u] ← true;  d[u] ← low[u] ← ++time;  children ← 0 @disc',
+      '  for each v in Adj[u] @adj',
+      '    if v is not visited @tree',
+      '      children ← children + 1 @kids',
+      '      DFS-AP(v, u) @rec',
+      '      low[u] ← min(low[u], low[v]) @lowupd',
+      '      if p ≠ NIL and low[v] ≥ d[u] @cond1',
+      '        u is an articulation point @found1',
+      '    else if v ≠ p @back',
+      '      low[u] ← min(low[u], d[v]) @backupd',
+      '  if p = NIL and children ≥ 2 @cond2',
+      '    u is an articulation point @found2'),
+    bridges: L('bridges',
+      'BRIDGES(G) @h',
+      '  time ← 0;   visited[u] ← false for all u @init',
+      '  for each vertex u @outer',
+      '    if not visited[u] @outerif',
+      '      DFS-BR(u, NIL) @callroot',
+      'DFS-BR(u, p) @vh',
+      '  visited[u] ← true;  d[u] ← low[u] ← ++time @disc',
+      '  for each v in Adj[u] @adj',
+      '    if v is not visited @tree',
+      '      DFS-BR(v, u) @callv',
+      '      low[u] ← min(low[u], low[v]) @lowupd',
+      '      if low[v] > d[u] @cond',
+      '        (u, v) is a bridge @found',
+      '    else if v ≠ p @back',
+      '      low[u] ← min(low[u], d[v]) @backupd'),
+    strongly_connected_components: L('strongly_connected_components',
+      'SCC(G) @h',
+      '  for each vertex u:  color[u] ← WHITE @init',
+      '  for each vertex u                       // pass 1 on G @outer',
+      '    if color[u] = WHITE @outerif',
+      '      DFS-VISIT(G, u) @callroot',
+      '  Gᵀ ← G with every edge reversed @rev',
+      '  for each vertex u:  color[u] ← WHITE @reset',
+      '  for each u, in decreasing order of f[u]  // pass 2 on Gᵀ @outer2',
+      '    if color[u] = WHITE @if2',
+      '      comp ← new empty component @newc',
+      '      DFS-VISIT(Gᵀ, u), adding every vertex it reaches to comp @call2',
+      '  return the components @ret',
+      'DFS-VISIT(H, u) @vh',
+      '  color[u] ← GRAY @disc',
+      '  for each v in Adj_H[u] @adj',
+      '    if color[v] = WHITE @white',
+      '      DFS-VISIT(H, v) @callv',
+      '  color[u] ← BLACK @black',
+      '  f[u] ← ++time                           // pass 1 only @fin'),
+    floyd_warshall: L('floyd_warshall',
+      'FLOYD-WARSHALL(W) @h',
+      '  n ← rows(W);   D ← W @init',
+      '  for k ← 1 to n @k',
+      '    for i ← 1 to n @i',
+      '      for j ← 1 to n @j',
+      '        D[i][j] ← min(D[i][j],  D[i][k] + D[k][j]) @upd'),
   };
 
   const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
@@ -341,63 +491,92 @@ const PSEUDO = (function () {
     const R = inst.target_true, n = inst.n, adj = inst.adj, src = inst.source;
     const A = (inst.inputs && inst.inputs.A) || adj;
     const T = R ? R.length : 0, out = [];
+    const code = CODE[algo], tg = TAGS[algo];
+    const ix = nm => { if (!(nm in tg)) throw new Error('unknown line ' + nm); return tg[nm]; };
     const diff = t => { const o = []; if (t < 1) return o; for (let i = 0; i < n; i++) if (Math.abs(R[t][i] - R[t - 1][i]) > EPS) o.push({ i, a: R[t - 1][i], b: R[t][i] }); return o; };
-    const S = (lines, head, note, state, nodes) => ({ lines, head, note, state: state || [], nodes: nodes || [] });
+    // cur: names of the innermost executing lines; x.ctx: extra enclosing lines; x.bind: {line name: 'u = 3'}
+    const S = (cur, head, note, state, nodes, x) => {
+      x = x || {};
+      const c = [...new Set(cur.map(ix))].sort((a, b) => a - b), ctx = new Set((x.ctx || []).map(ix));
+      for (const i of c) {                                  // every enclosing loop / test of a current line
+        let d = code[i][0];
+        for (let j = i - 1; j >= 0 && d > 0; j--) { const dj = code[j][0]; if (dj < d) { if (dj > 0) ctx.add(j); d = dj; } }
+      }
+      for (const i of c) ctx.delete(i);
+      const bind = {}; for (const [k, v] of Object.entries(x.bind || {})) bind[ix(k)] = v;
+      return { lines: c, cur: c, ctx: [...ctx].sort((a, b) => a - b), bind, head, note, state: state || [], nodes: nodes || [] };
+    };
     const edge = (u, v) => adj[u][v] > 0;
 
     // ---- DFS-style walk shared by dfs, bridges, scc (replays the colour changes: gives the stack, times, parents)
     function colourWalk(mode) {
-      const st = { stack: [], time: 0, d: {}, par: {}, low: {}, fin: [], bridges: [], comps: [], comp: null, phase: 1, rootsSeen: 0 };
+      const st = { stack: [], time: 0, d: {}, par: {}, low: {}, fin: [], bridges: [], comps: [], comp: null, phase: 1 };
+      const rootNames = () => mode === 'scc' && st.phase === 2 ? ['outer2', 'if2', 'newc', 'call2'] : mode === 'dfs' || mode === 'scc' ? ['outer', 'outerif', 'callroot'] : ['outer', 'outerif', 'callroot'];
       for (let t = 0; t < T; t++) {
-        if (t === 0) { out.push(S(mode === 'dfs' ? [0, 1, 2] : [0], 'Start', mode === 'scc' ? 'Start the first depth-first search on the original graph.' : 'Every vertex starts WHITE (not seen yet).', [['time', 0]], [])); continue; }
+        if (t === 0) { out.push(S(mode === 'dfs' ? ['init', 'time0'] : ['init'], 'Start', mode === 'scc' ? 'Start the first depth-first search on the original graph (pass 1).' : 'Every vertex starts WHITE (not seen yet).', [['time', 0]], [])); continue; }
         const prev = R[t - 1], cur = R[t];
         if (mode === 'scc' && cur.every(v => v === 0) && prev.some(v => v !== 0)) {
           st.phase = 2; st.stack = []; st.comp = null;
-          out.push(S([2, 3], 'Second pass', 'First pass done. Reverse every edge, then search again, taking vertices in decreasing finishing time. Each new tree will be one component.',
+          out.push(S(['rev', 'reset'], 'Second pass', 'First pass done. Reverse every edge and reset the colours; the second search takes vertices in decreasing finishing time f[u]. Each new tree will be one component.',
             [['finishing order (pass 1)', list(st.fin)], ['components', 0]], [])); continue;
         }
         const disc = [], fin = [];
         for (let i = 0; i < n; i++) { if (prev[i] === 0 && cur[i] >= 1) disc.push(i); if (prev[i] <= 1 && cur[i] === 2 && (prev[i] === 1 || cur[i] === 2)) fin.push(i); }
-        const notes = [], lines = new Set(), nodes = [];
+        const notes = [], curN = new Set(), ctxN = new Set(), bind = {}, nodes = [];
+        const depth0 = st.stack.length;
         for (const v of fin) {
+          const depth = st.stack.length;
           const k = st.stack.lastIndexOf(v); if (k >= 0) st.stack.splice(k, 1);
           st.time++; nodes.push(v);
+          if (depth >= 2) ctxN.add('callv');
           if (mode === 'scc' && st.phase === 1) st.fin.push(v);
           if (mode === 'bridges') {
             let low = st.d[v]; const p = st.par[v];
             for (let w = 0; w < n; w++) if (edge(v, w) && w !== p && st.d[w] !== undefined) low = Math.min(low, st.d[w]);
             for (const c of Object.keys(st.par)) if (st.par[c] === v && st.low[c] !== undefined) low = Math.min(low, st.low[c]);
-            st.low[v] = low; lines.add(2); lines.add(3);
+            st.low[v] = low;
             if (p !== undefined && p !== null) {
-              const isB = low > st.d[p]; lines.add(3); if (isB) { lines.add(4); st.bridges.push(`${p}–${v}`); }
-              notes.push(`Vertex ${v} is finished. low[${v}] = ${low}, d[${p}] = ${st.d[p]}, so the edge ${p}–${v} ${isB ? 'is a bridge (nothing below reaches back above it)' : 'is not a bridge (there is another way around)'}.`);
-            } else notes.push(`Root ${v} is finished; it has no parent edge to test.`);
-          } else if (mode === 'dfs') { lines.add(9); notes.push(`Vertex ${v} has no unvisited neighbours left: it turns BLACK (finished), f[${v}] = ${st.time}.`); }
-          else if (st.phase === 1) { lines.add(1); notes.push(`Vertex ${v} is finished (pass 1), f[${v}] = ${st.time}.`); }
+              const isB = low > st.d[p];
+              if (isB) { curN.add('found'); st.bridges.push(`${p}–${v}`); bind.found = `(u, v) = (${p}, ${v})`; } else { curN.add('lowupd'); curN.add('cond'); bind.cond = `low[${v}] = ${low}, d[${p}] = ${st.d[p]}`; }
+              bind.adj = `u = ${p}, v = ${v}`;
+              notes.push(`Vertex ${v} is finished and control returns to its parent ${p}. low[${v}] = ${low}, d[${p}] = ${st.d[p]}, so the edge ${p}–${v} ${isB ? 'is a bridge (nothing below it reaches back above it)' : 'is not a bridge (there is another way around)'}.`);
+            } else { curN.add('outer'); bind.outer = `u = ${v}`; notes.push(`Root ${v} is finished; it has no parent edge to test, so the outer loop moves on.`); }
+          } else if (mode === 'dfs') { curN.add('black'); curN.add('fin'); bind.black = `u = ${v}`; notes.push(`Vertex ${v} has no unvisited neighbours left: it turns BLACK (finished), f[${v}] = ${st.time}.`); }
+          else if (st.phase === 1) { curN.add('black'); curN.add('fin'); bind.black = `u = ${v}`; notes.push(`Vertex ${v} is finished (pass 1), f[${v}] = ${st.time}.`); }
           else {
-            lines.add(3);
-            if (!st.stack.length && st.comp) { st.comps.push(st.comp.slice()); lines.add(4); notes.push(`The search tree is complete: vertices {${st.comp.join(', ')}} form one strongly connected component.`); st.comp = null; }
-            else notes.push(`Vertex ${v} is finished (pass 2).`);
+            if (!st.stack.length && st.comp) { st.comps.push(st.comp.slice()); curN.add('call2'); ctxN.add('newc'); bind.call2 = `component {${st.comp.join(', ')}}`; notes.push(`The search tree is complete: vertices {${st.comp.join(', ')}} form one strongly connected component.`); st.comp = null; }
+            else { curN.add('black'); bind.black = `u = ${v}`; notes.push(`Vertex ${v} is finished (pass 2).`); }
           }
+          if (mode !== 'bridges' && depth >= 1) for (const r of rootNames()) ctxN.add(r);
+          if (mode === 'bridges' && depth >= 2) ctxN.add('callv');
         }
         for (const v of disc) {
           const parent = st.stack.length ? st.stack[st.stack.length - 1] : null;
           st.time++; st.d[v] = mode === 'bridges' ? Object.keys(st.d).length + 1 : st.time; st.par[v] = parent; st.stack.push(v); nodes.push(v);
-          if (mode === 'dfs') { if (parent === null) { lines.add(3); lines.add(4); } else { lines.add(7); lines.add(8); } lines.add(6); }
-          else if (mode === 'bridges') lines.add(1); else if (st.phase === 1) lines.add(1); else lines.add(3);
-          if (mode === 'scc' && st.phase === 2) { if (parent === null) { st.comp = [v]; lines.add(4); } else if (st.comp) st.comp.push(v); }
+          curN.add('disc'); bind.disc = `u = ${v}`;
+          for (const r of rootNames()) ctxN.add(r);
+          if (parent === null) bind[mode === 'scc' && st.phase === 2 ? 'outer2' : 'outer'] = `u = ${v}`;
+          else { for (const nm of [mode === 'bridges' ? 'tree' : 'white', 'adj', 'callv']) ctxN.add(nm); if (mode === 'dfs') ctxN.add('par'); bind.adj = `u = ${parent}, v = ${v}`; }
+          if (mode === 'scc' && st.phase === 2) { if (parent === null) st.comp = [v]; else if (st.comp) st.comp.push(v); }
           notes.push(parent === null ? `Start a new search tree at vertex ${v}: it turns GRAY (discovered), d[${v}] = ${st.d[v]}.` :
-            `Follow the edge ${parent}→${v}: vertex ${v} was WHITE, so π[${v}] ← ${parent}; it turns GRAY, d[${v}] = ${st.d[v]}.`);
+            `Follow the edge ${parent}→${v}: vertex ${v} was WHITE${mode === 'dfs' ? `, so π[${v}] ← ${parent}` : ''}; the call DFS-VISIT(${v}) starts and ${v} turns GRAY, d[${v}] = ${st.d[v]}.`);
         }
         if (!disc.length && !fin.length) {
           const top = st.stack.length ? st.stack[st.stack.length - 1] : null;
-          lines.add(mode === 'scc' ? (st.phase === 1 ? 1 : 3) : mode === 'bridges' ? 1 : 7); if (mode === 'dfs') lines.add(8);
-          notes.push(top === null ? 'Looking for the next WHITE vertex to start from.' : `Checking the next neighbour of vertex ${top}: nothing changes yet (it was already seen, or the scan moves on).`);
+          if (top === null) { curN.add(mode === 'scc' && st.phase === 2 ? 'if2' : 'outerif'); notes.push('Looking for the next WHITE vertex to start a new search from.'); }
+          else {
+            curN.add(mode === 'bridges' ? 'back' : 'white'); bind.adj = `u = ${top}`;
+            if (st.stack.length >= 2) ctxN.add('callv');
+            for (const r of rootNames()) ctxN.add(r);
+            notes.push(`Checking the next neighbour of vertex ${top}: nothing changes (it was already seen, or the scan moves on).`);
+          }
         }
         const state = [['search path (gray, top last)', st.stack.length ? st.stack.join(' → ') : 'empty'], ['time', st.time]];
         if (mode === 'bridges') state.push(['bridges found', list(st.bridges)]);
         if (mode === 'scc') state.push(st.phase === 1 ? ['finished so far (pass 1)', list(st.fin)] : ['components found', st.comps.length ? st.comps.map(c => '{' + c.join(',') + '}').join(' ') : 'none']);
-        out.push(S([...lines].sort((a, b) => a - b), disc.length || fin.length ? (disc.length ? 'Discover' : 'Finish') : 'Scan', notes.join(' '), state, nodes));
+        // bridges has no separate call-site lines for the root test; keep only names that exist in this algorithm
+        const okN = nm => nm in tg;
+        out.push(S([...curN].filter(okN), disc.length || fin.length ? (disc.length ? 'Discover' : 'Finish') : 'Scan', notes.join(' '), state, nodes, { ctx: [...ctxN].filter(okN), bind: Object.fromEntries(Object.entries(bind).filter(([k]) => okN(k))) }));
       }
     }
 
@@ -410,10 +589,9 @@ const PSEUDO = (function () {
 
     function relax(kind) {
       const marked = new Set(), par = {}, treeEdges = [];
-      const keyName = kind === 'prim' ? 'key' : 'd';
       for (let t = 0; t < T; t++) {
-        if (t === 0) { out.push(S(kind === 'prim' ? [0, 1, 2] : kind === 'dag' ? [0, 1, 2] : [0, 1, 2], 'Start',
-          kind === 'bf' || kind === 'dag' || kind === 'dij' ? `Every distance is ∞ except d[${src}] = 0 (the source).` : `Every key is ∞ except key[${src}] = 0 (the start vertex).`, [], src !== null ? [src] : [])); continue; }
+        if (t === 0) { out.push(S(kind === 'dag' ? ['topo', 'init'] : ['init', 'src'], 'Start',
+          kind === 'bf' || kind === 'dag' || kind === 'dij' ? `Every distance is ∞ except d[${src}] = 0 (the source).` : `Every key is ∞ except key[${src}] = 0 (the start vertex).`, [], src !== null ? [src] : [], { bind: { [kind === 'dag' ? 'init' : 'src']: `s = ${src}` } })); continue; }
         const ch = diff(t), prev = R[t - 1];
         let u = null, silently = [];
         if (kind === 'dij' || kind === 'prim') {
@@ -428,27 +606,32 @@ const PSEUDO = (function () {
           if (ch.length) for (let c = 0; c < n && u === null; c++) if (reached(prev, c) && explainFrom(c, ch, prev, false)) u = c;
         }
         if (kind === 'prim' && ch.length) for (const c of ch) par[c.i] = u;
-        let state = [], lines, head, note;
+        let state = [], cur, head, note, ctx = [], bind = {};
         const ids = ch.map(c => c.i); const nodes = ids.slice(); if (u !== null) nodes.unshift(u);
+        const idList = ids.join(', ');
         if (kind === 'bf') {
-          if (ch.length) { lines = [3, 4, 5, 6]; head = `Round ${t}`; note = `Round ${t}: every edge is checked. Improved: ${relaxText(ch, u === null || ch.length > 1 ? null : u)}.`; }
-          else { lines = [3, 4, 5]; head = `Round ${t}`; note = `Round ${t}: every edge is checked and no distance improves, so the distances are final.`; }
+          bind.round = `round = ${t}`;
+          if (ch.length) { cur = ['upd', 'par']; head = `Round ${t}`; note = `Round ${t}: every edge is checked. Improved: ${relaxText(ch, u === null || ch.length > 1 ? null : u)}.`; bind.edge = u !== null && ch.length === 1 ? `(u, v) = (${u}, ${ids[0]})` : `improving v = ${idList}`; }
+          else { cur = ['cond']; head = `Round ${t}`; note = `Round ${t}: every edge is checked and the test d[v] > d[u] + w(u, v) never succeeds, so the distances are final.`; }
           state = [['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n], ['improved this round', list(ids)]];
         } else if (kind === 'dag') {
-          if (ch.length) { lines = [3, 4, 5]; head = 'Relax'; note = `Next vertex in topological order${u !== null ? ' is ' + u : ''}: its outgoing edges improve ${relaxText(ch, null)}.`; }
-          else { lines = [3]; head = 'Next vertex'; note = 'Take the next vertex in topological order; none of its outgoing edges improves a distance yet.'; }
+          if (u !== null) bind.outer = `u = ${u}`;
+          if (ch.length) { cur = ['upd']; head = 'Relax'; note = `Next vertex in topological order${u !== null ? ' is ' + u : ''}: its outgoing edges improve ${relaxText(ch, null)}.`; bind.adj = `v = ${idList}`; }
+          else { cur = ['cond']; head = 'Next vertex'; note = 'Take the next vertex in topological order; none of its outgoing edges improves a distance.'; }
           state = [['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n]];
         } else if (kind === 'dij') {
-          if (ch.length) { lines = [3, 4, 5, 6, 7]; head = 'Extract & relax'; note = u !== null ? `Take the closest unfinished vertex, ${u} (d = ${f2(prev[u])}), and relax its edges: ${relaxText(ch, null)}.` : `Take the closest unfinished vertex and relax its edges: ${relaxText(ch, null)}.`; }
-          else { lines = [3, 4, 5]; head = 'Extract'; note = 'Take the closest unfinished vertex; none of its edges gives a shorter path.'; }
+          if (u !== null) bind.while = `u = ${u}`;
+          if (ch.length) { cur = ['upd', 'par']; ctx = ['ext']; head = 'Extract & relax'; note = u !== null ? `Take the closest unfinished vertex, ${u} (d = ${f2(prev[u])}), and relax its edges: ${relaxText(ch, null)}.` : `Take the closest unfinished vertex and relax its edges: ${relaxText(ch, null)}.`; bind.adj = `v = ${idList}`; }
+          else { cur = ['cond']; ctx = ['ext']; head = 'Extract'; note = 'Take the closest unfinished vertex; the test d[v] > d[u] + w(u, v) fails for every neighbour, so nothing improves.'; }
           state = [['finished (extracted)', list([...marked])], ['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n]];
         } else {
           for (const c of [...silently, u].filter(x => x !== null && x !== undefined)) if (par[c] !== undefined && par[c] !== null) treeEdges.push(`${par[c]}–${c}`);
-          if (ch.length) { lines = [3, 4, 5, 6, 7]; head = 'Extract & update'; note = u !== null ? `Take the vertex with the smallest key, ${u}, into the tree and update its neighbours: ${ch.map(c => `key[${c.i}] ← ${f2(c.b)}`).join(', ')}.` : `Update neighbour keys: ${ch.map(c => `key[${c.i}] ← ${f2(c.b)}`).join(', ')}.`; }
-          else { lines = [3, 4, 5]; head = 'Extract'; note = 'Take the vertex with the smallest key into the tree; none of its neighbours gets a smaller key.'; }
+          if (u !== null) bind.while = `u = ${u}`;
+          if (ch.length) { cur = ['par', 'upd']; ctx = ['ext']; head = 'Extract & update'; note = u !== null ? `Take the vertex with the smallest key, ${u}, into the tree and update its neighbours: ${ch.map(c => `key[${c.i}] ← ${f2(c.b)}`).join(', ')}.` : `Update neighbours' keys: ${ch.map(c => `key[${c.i}] ← ${f2(c.b)}`).join(', ')}.`; bind.adj = `v = ${idList}`; }
+          else { cur = ['cond']; ctx = ['ext']; head = 'Extract'; note = 'Take the vertex with the smallest key into the tree; no neighbour gets a smaller key, so the test w(u, v) < key[v] fails everywhere.'; }
           state = [['tree edges so far', list(treeEdges)], ['in tree', list([...marked])]];
         }
-        out.push(S(lines, head, note, state, nodes));
+        out.push(S(cur, head, note, state, nodes, { ctx, bind }));
       }
     }
 
@@ -465,18 +648,18 @@ const PSEUDO = (function () {
       const name = e => `${e.u}–${e.v}`; const added = []; const rowBlock = {};
       rb.forEach((b, k) => b.rows.forEach((t, q) => { rowBlock[t] = { k, q, len: b.rows.length }; }));
       for (let t = 0; t < T; t++) {
-        if (t === 0) { out.push(S([0, 1, 2], 'Start', 'The tree A is empty; every vertex is in its own set. The edges are sorted by weight.', [['edges in tree', 'none']], [])); continue; }
+        if (t === 0) { out.push(S(['a', 'make', 'sort'], 'Start', 'The tree A is empty; every vertex is in its own set. The edges are sorted by weight.', [['edges in tree', 'none']], [])); continue; }
         const u = argmax(R[t]), { k, q, len } = rowBlock[t];
-        if (k >= ok) { out.push(S(q === 0 ? [3, 4] : [4, 5], 'Edge', `Look at the next lightest edge: it starts at vertex ${u}.`, [['edges in tree', list(added)]], [u])); continue; }
+        if (k >= ok) { out.push(S(q === 0 ? ['edge'] : ['cond'], 'Edge', `Look at the next lightest edge: it starts at vertex ${u}.`, [['edges in tree', list(added)]], [u], { bind: { edge: `(u, v) starts at ${u}` } })); continue; }
         const es = sb[k].edges;
         if (es.length === 1) {
           const e = es[0];
-          if (q === 0) out.push(S([3, 4], 'Next edge', `Next lightest edge: ${name(e)} (weight ${f2(e.w)}). Are its two ends already in the same set?`, [['edges in tree', list(added)]], [e.u, e.v]));
+          if (q === 0) out.push(S(['edge'], 'Next edge', `Next lightest edge: ${name(e)} (weight ${f2(e.w)}). Are its two ends already in the same set?`, [['edges in tree', list(added)]], [e.u, e.v], { bind: { edge: `(u, v) = (${e.u}, ${e.v}),  w = ${f2(e.w)}` } }));
           else { if (e.acc && q === len - 1 && !added.includes(name(e))) added.push(name(e));
-            out.push(S(e.acc ? [5] : [4], e.acc ? 'Add edge' : 'Skip edge', e.acc ? `Different sets, so edge ${name(e)} joins the tree and the two sets are merged.` : `Same set already, so edge ${name(e)} would close a cycle and is skipped.`, [['edges in tree', list(added)]], [e.u, e.v])); }
+            out.push(S(e.acc ? ['add', 'union'] : ['cond'], e.acc ? 'Add edge' : 'Skip edge', e.acc ? `Different sets, so edge ${name(e)} joins the tree and the two sets are merged.` : `Same set already, so edge ${name(e)} would close a cycle and is skipped.`, [['edges in tree', list(added)]], [e.u, e.v], { ctx: ['edge'], bind: e.acc ? { add: `(${e.u}, ${e.v})`, edge: `(u, v) = (${e.u}, ${e.v})` } : { cond: `FIND-SET(${e.u}) = FIND-SET(${e.v})`, edge: `(u, v) = (${e.u}, ${e.v})` } })); }
         } else {
           if (q === len - 1) for (const e of es) if (e.acc && !added.includes(name(e))) added.push(name(e));
-          out.push(S([3, 4, 5], 'Edges', `The next lightest edges all start at vertex ${u}: ${es.map(e => `${name(e)} (${e.acc ? 'added' : 'skipped'})`).join(', ')}.`, [['edges in tree', list(added)]], [...new Set(es.flatMap(e => [e.u, e.v]))]));
+          out.push(S(['cond'], 'Edges', `The next lightest edges all start at vertex ${u}: ${es.map(e => `${name(e)} (${e.acc ? 'added' : 'skipped'})`).join(', ')}.`, [['edges in tree', list(added)]], [...new Set(es.flatMap(e => [e.u, e.v]))], { ctx: ['edge'], bind: { edge: `${es.length} edges from ${u}` } }));
         }
       }
     }
@@ -485,43 +668,60 @@ const PSEUDO = (function () {
       // the trace has one row per stop-over vertex k = 0, 1, 2, ... (row t belongs to k = t)
       for (let t = 0; t < T; t++) {
         const k = argmax(R[t]);
-        out.push(S(t === 0 ? [0, 1, 2, 3, 4, 5] : [2, 3, 4, 5], `k = ${k}`,
-          (t === 0 ? 'D starts as the table of direct edge weights. ' : '') + `Stop-over vertex ${k}: every pair (i, j) keeps the shorter of "direct" and "through ${k}".`,
-          [['stop-overs allowed so far', k === 0 ? 'vertex 0' : 'vertices 0 … ' + k]], [k]));
+        out.push(S(t === 0 ? ['init', 'upd'] : ['upd'], `k = ${k}`,
+          (t === 0 ? 'D starts as the table of direct edge weights. ' : '') + `Stop-over vertex ${k}: for every pair (i, j) keep the shorter of "direct" and "through ${k}".`,
+          [['stop-overs allowed so far', k === 0 ? 'vertex 0' : 'vertices 0 … ' + k]], [k],
+          { bind: { k: `k = ${k}`, i: 'every i', j: 'every j', upd: `via vertex ${k}` } }));
       }
     }
 
     function topo() {
       const order = [];
       for (let t = 0; t < T; t++) {
-        if (t === 0) { out.push(S([0, 1], 'Start', 'Depth-first search begins; vertices are added to the list as they finish.', [['list (front → back)', 'empty']], [])); continue; }
+        if (t === 0) { out.push(S(['l'], 'Start', 'The list is empty. Depth-first search begins; vertices are added to the front of the list as they finish.', [['list (front → back)', 'empty']], [])); continue; }
         const h = argmax(R[t]);
         if (h !== argmax(R[t - 1])) {
           order.unshift(h);
-          out.push(S([2], 'Finish', `Vertex ${h} just finished, so it goes to the front of the list.`, [['list (front → back)', order.join(' → ')]], [h]));
-        } else out.push(S(t === T - 1 ? [3] : [1], t === T - 1 ? 'Done' : 'Searching', t === T - 1 ? 'Every vertex has finished: the list is the topological order.' : 'The depth-first search is exploring; no vertex finished at this step.', [['list (front → back)', order.length ? order.join(' → ') : 'empty']], []));
+          out.push(S(['ins'], 'Finish', `Vertex ${h} just finished, so it goes to the front of the list.`, [['list (front → back)', order.join(' → ')]], [h], { bind: { ins: `u = ${h}` } }));
+        } else out.push(S(t === T - 1 ? ['ret'] : ['white'], t === T - 1 ? 'Done' : 'Searching', t === T - 1 ? 'Every vertex has finished: the list is the topological order.' : 'The depth-first search is exploring (checking neighbours, going deeper); no vertex finished at this step.', [['list (front → back)', order.join(' → ')]], []));
       }
     }
 
     function artic() {
+      // replay a DFS from vertex 0 (neighbours in index order) to learn why each vertex is a cut vertex; used only if the
+      // replay finds exactly the same vertices as the recorded trace
+      const kind = {}; { const d = Array(n).fill(-1), low = Array(n).fill(0); let time = 0;
+        const go = (u, p) => { d[u] = low[u] = ++time; let kids = 0, cut1 = false;
+          for (let v = 0; v < n; v++) if (edge(u, v) || edge(v, u)) { if (d[v] < 0) { kids++; go(v, u); low[u] = Math.min(low[u], low[v]); if (p >= 0 && low[v] >= d[u]) cut1 = true; } else if (v !== p) low[u] = Math.min(low[u], d[v]); }
+          if (cut1) kind[u] = 'found1'; if (p < 0 && kids >= 2) kind[u] = 'found2'; };
+        for (let u = 0; u < n; u++) if (d[u] < 0) go(u, -1); }
+      const last = R[T - 1], truth = []; for (let i = 0; i < n; i++) if (last[i] > 0) truth.push(i);
+      const known = truth.length === Object.keys(kind).length && truth.every(i => kind[i]);
       const found = [];
       for (let t = 0; t < T; t++) {
-        if (t === 0) { out.push(S([0], 'Start', 'No vertex is marked yet.', [['articulation points', 'none']], [])); continue; }
+        if (t === 0) { out.push(S(['init'], 'Start', 'No vertex is marked yet.', [['articulation points', 'none']], [])); continue; }
         const nw = diff(t).filter(c => c.b > c.a).map(c => c.i);
-        if (nw.length) { found.push(...nw); out.push(S([3, 4, 5], 'Found', `Vertex ${list(nw)} is an articulation point: removing it would split the graph into separate pieces.`, [['articulation points', list(found)]], nw)); }
-        else out.push(S([1, 2], 'Searching', 'The depth-first search keeps computing discovery times and low values; no new articulation point yet.', [['articulation points', list(found)]], []));
+        if (nw.length) {
+          found.push(...nw);
+          const cur = known ? [...new Set(nw.map(v => kind[v]))] : ['found1', 'found2'];
+          const bind = {}; for (const v of nw) if (known) bind[kind[v]] = `u = ${v}`;
+          const why = known ? nw.map(v => kind[v] === 'found2' ? `${v} is the root of the search and has two or more DFS children` : `a child of ${v} cannot reach above ${v} (low[child] ≥ d[${v}])`).join('; ') : '';
+          out.push(S(cur, 'Found', `Vertex ${list(nw)} is an articulation point: removing it would split the graph into separate pieces${why ? ` (${why})` : ''}.`, [['articulation points', list(found)]], nw, { bind }));
+        } else out.push(S(['adj'], 'Searching', 'The depth-first search keeps computing discovery times d[u] and low values; no new articulation point yet.', [['articulation points', list(found)]], []));
       }
     }
 
     function bfs() {
       for (let t = 0; t < T; t++) {
         const cur = R[t]; const cnt = cur.filter(v => v > 0).length;
-        if (t === 0) { out.push(S([0, 1], 'Start', `Only the source ${src} is reached.`, [['reached', cnt + ' of ' + n]], src !== null ? [src] : [])); continue; }
+        if (t === 0) { out.push(S(['init', 'src'], 'Start', `Only the source ${src} is reached.`, [['reached', cnt + ' of ' + n]], src !== null ? [src] : [], { bind: { src: `s = ${src}` } })); continue; }
         const nw = diff(t).filter(c => c.b > c.a).map(c => c.i);
         if (nw.length) {
-          const via = nw.map(v => { for (let u = 0; u < n; u++) if (R[t - 1][u] > 0 && adj[u][v] > 0) return `${v} (from ${u})`; return String(v); });
-          out.push(S([3, 4, 5, 6], 'Expand', `Every already-reached vertex passes on to its neighbours. Newly reached: ${via.join(', ')}.`, [['reached', cnt + ' of ' + n], ['new this step', list(nw)]], nw));
-        } else out.push(S([3, 4, 7], 'Stop', 'Nothing new was reached, so reach equals prev and the search stops.', [['reached', cnt + ' of ' + n]], []));
+          const pairs = nw.map(v => { for (let u = 0; u < n; u++) if (R[t - 1][u] > 0 && adj[u][v] > 0) return [u, v]; return [null, v]; });
+          const via = pairs.map(([u, v]) => u === null ? String(v) : `${v} (from ${u})`);
+          out.push(S(['par', 'mark'], 'Expand', `Every already-reached vertex passes on to its neighbours. Newly reached: ${via.join(', ')}.`, [['reached', cnt + ' of ' + n], ['new this step', list(nw)]], nw,
+            { ctx: ['prev'], bind: { edge: pairs.map(([u, v]) => `(${u === null ? '?' : u}, ${v})`).join(' '), mark: `v = ${nw.join(', ')}` } }));
+        } else out.push(S(['until'], 'Stop', 'Every edge was scanned and nothing new was reached, so reach equals prev and the loop stops.', [['reached', cnt + ' of ' + n]], [], { ctx: ['edge'] }));
       }
     }
 
@@ -1209,7 +1409,9 @@ async function loadGraph(seedOverride, attempt = 0) {
 
 // ---------- pseudo-code pane ----------
 const PC = { algo: null };
-const PC_KW = /\b(for|each|if|while|repeat|until|return|then|and|or|is|not|in|to|do|run|take)\b/g;
+const PC_KW = /\b(for|each|if|else|while|repeat|until|return|then|and|or|is|not|in|to|do|run|take|call)\b/g;
+const PC_LV = ['#64748b', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777', '#0891b2'];       // colour = nesting depth of the line
+const PC_BG = ['#f1f5f9', '#dbeafe', '#d1fae5', '#fef3c7', '#ede9fe', '#fce7f3', '#cffafe'];
 const escHtml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 function pseudoNow() {
   if (!G || !G.target_true) return null;
@@ -1222,15 +1424,24 @@ function renderPseudo(P) {
   if (PC.algo !== curAlgo) {
     PC.algo = curAlgo;
     document.getElementById('pcName').textContent = curAlgo;
-    box.innerHTML = code ? code.map(([ind, txt], i) => `<div class="pl${ind === 0 && i === 0 ? ' proc' : ''}" data-i="${i}" role="listitem"><span class="ln">${i + 1}</span><span class="tx" style="padding-left:${ind * 1.4}em">${escHtml(txt).replace(PC_KW, '<span class="kw">$1</span>')}</span></div>`).join('') : '';
+    box.innerHTML = code ? code.map(([ind, txt], i) => { const lv = Math.min(ind, 6);
+      return `<div class="pl${ind === 0 ? ' proc' : ''}" data-i="${i}" role="listitem" style="--lc:${PC_LV[lv]};--lb:${PC_BG[lv]}"><span class="ln">${i + 1}</span><span class="tx" style="padding-left:${ind * 1.4}em">${escHtml(txt).replace(PC_KW, '<span class="kw">$1</span>')}</span><span class="bd" hidden></span></div>`; }).join('') : '';
     box.scrollTop = 0;
   }
-  const head = document.getElementById('pcHead'), note = document.getElementById('pcNote'), st = document.getElementById('pcState');
-  if (!code) { head.textContent = ''; note.textContent = 'No pseudo-code is available for this algorithm.'; st.innerHTML = ''; return; }
-  const on = new Set(P ? P.lines : []);
+  const head = document.getElementById('pcHead'), note = document.getElementById('pcNote'), st = document.getElementById('pcState'), path = document.getElementById('pcPath');
+  if (!code) { head.textContent = ''; note.textContent = 'No pseudo-code is available for this algorithm.'; st.innerHTML = ''; path.innerHTML = ''; return; }
+  const cur = new Set(P ? P.cur : []), ctx = new Set(P ? P.ctx : []), bind = P ? P.bind : {};
   let first = null;
-  box.querySelectorAll('.pl').forEach(el => { const hit = on.has(+el.dataset.i); el.classList.toggle('on', hit); if (hit && first === null) first = el; });
-  if (first) { const top = first.offsetTop - box.offsetTop; if (top < box.scrollTop + 4 || top + first.offsetHeight > box.scrollTop + box.clientHeight - 4) box.scrollTop = Math.max(0, top - 24); }
+  box.querySelectorAll('.pl').forEach(el => {
+    const i = +el.dataset.i, on = cur.has(i), cx = !on && ctx.has(i), b = bind[i];
+    el.classList.toggle('on', on); el.classList.toggle('cx', cx);
+    const bd = el.querySelector('.bd'); if (b && (on || cx)) { bd.textContent = b; bd.hidden = false; } else bd.hidden = true;
+    if (on && first === null) first = el;
+  });
+  if (first) { const top = first.offsetTop - box.offsetTop; if (top < box.scrollTop + 4 || top + first.offsetHeight > box.scrollTop + box.clientHeight - 4) box.scrollTop = Math.max(0, top - 60); }
+  // where the step sits: the enclosing loops/tests (outermost first), then the executing line
+  path.innerHTML = P ? [...P.ctx, ...P.cur].filter(i => cur.has(i) || bind[i]).sort((a, b) => a - b).map(i => { const lv = Math.min(code[i][0], 6), on = cur.has(i);
+    return `<span class="pp${on ? ' now' : ''}" style="--lc:${PC_LV[lv]};--lb:${PC_BG[lv]}">${escHtml(code[i][1].replace(/\s{2,}\/\/.*$/, ''))}${bind[i] ? ` <b>${escHtml(bind[i])}</b>` : ''}</span>`; }).join('<span class="pa">›</span>') : '';
   head.textContent = P ? `Step ${curStep}: ${P.head}` : '';
   note.textContent = P ? P.note : 'Waiting for the first steps…';
   st.innerHTML = P ? P.state.map(([k, v]) => `<dt>${escHtml(String(k))}</dt><dd>${escHtml(String(v))}</dd>`).join('') : '';
