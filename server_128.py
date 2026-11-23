@@ -281,6 +281,7 @@ ALGOS_JSON = json.dumps({a: dict(target=META[a]['target'], target_type=META[a]['
                                  val_f1=META[a]['val_f1'], test_f1=META[a]['test_f1']) for a in ALGOS}).encode()
 
 
+GZ_STATIC = {}        # (file, content hash) -> gzip bytes, compressed once
 MODEL_RE = re.compile(r'^models/([a-z_]+)\.(json|bin)$')
 
 
@@ -402,14 +403,26 @@ class Handler(BaseHTTPRequestHandler):
                 if path == 'viewer3.html':
                     data = data.replace(b'__BUILD__', BUILD.encode())
                     data = data.replace(b'__ALGOS_JSON__', ALGOS_JSON.replace(b'<', b'\\u003c'))
+                # pages and scripts are text: send them gzip-compressed (about 3x smaller; model bundles are floats and barely shrink)
+                gz = path in STATIC_FILES and 'gzip' in self.headers.get('Accept-Encoding', '')
                 tag = None
                 if m or path == 'viewer3.html':
-                    tag = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
+                    tag = '"' + hashlib.sha1(data).hexdigest()[:20] + ('-gz' if gz else '') + '"'
                     if self.headers.get('If-None-Match') == tag:
-                        self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache); self.end_headers(); return
+                        self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache)
+                        if path in STATIC_FILES: self.send_header('Vary', 'Accept-Encoding')
+                        self.end_headers(); return
+                if gz:
+                    key = (path, hashlib.sha1(data).digest())
+                    if key not in GZ_STATIC:
+                        GZ_STATIC.clear() if len(GZ_STATIC) > 64 else None     # the page changes only per build; keep the cache tiny
+                        GZ_STATIC[key] = gzip.compress(data, compresslevel=9)
+                    data = GZ_STATIC[key]
                 self.send_response(200); self.send_header('Content-Type', ctype)
                 self.send_header('Cache-Control', cache)
                 if tag: self.send_header('ETag', tag)
+                if path in STATIC_FILES: self.send_header('Vary', 'Accept-Encoding')
+                if gz: self.send_header('Content-Encoding', 'gzip')
                 self.send_header('Content-Length', str(len(data))); self.end_headers()
                 self._write(data)
         except OSError:
