@@ -1,0 +1,123 @@
+name: HTTPS on the instance itself (check / apply / disable)
+
+# Manual trigger only. Gives the site an https:// address without any new AWS resource and without extra cost:
+# a small Caddy container runs next to the tracer and gets a free certificate for <ip-with-dashes>.sslip.io
+# (a free public name that points at the instance's IP). The tracer container and its port 80 are not touched.
+#   check    read-only: shows the instance, its security group and whether port 443 is open. Changes nothing.
+#   apply    needs confirm=confirmed. Opens TCP 443 on the instance's own security group (only if that group is tagged
+#            Project=clrs-circuit-tracer), then starts the "caddy" container on the instance (through SSM) and tests the address.
+#   disable  needs confirm=confirmed. Removes the "caddy" container (the 443 rule stays; nothing else is deleted).
+# Works on the single instance tagged Name=clrs-circuit-tracer AND Project=clrs-circuit-tracer with the expected ID.
+# Note: the name is built from the instance's public IP. If the instance is stopped and started (a reboot keeps it),
+# the IP changes and this workflow has to be run again to get the new address.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'check, apply or disable'
+        required: true
+        default: 'check'
+      confirm:
+        description: 'Type "confirmed" for apply or disable'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write # only used when the AWS_ROLE_ARN repo variable is set (OIDC)
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  NAME: clrs-circuit-tracer
+  PROJECT: clrs-circuit-tracer
+  EXPECTED_ID: i-0877713b5583c8533
+  CADDY_IMAGE: caddy:2.8.4-alpine
+
+jobs:
+  https:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: AWS credentials (OIDC role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: AWS credentials (access keys)
+        if: ${{ vars.AWS_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Find the instance (tag and ID guard)
+        run: |
+          set -euo pipefail
+          ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=$NAME" "Name=tag:Project,Values=$PROJECT" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          [ "$(echo "$ids" | wc -w)" = 1 ] || { echo "Expected exactly one running tagged instance, found: '$ids'"; exit 1; }
+          [ "$ids" = "$EXPECTED_ID" ] || { echo "Instance $ids is not the expected $EXPECTED_ID"; exit 1; }
+          ip=$(aws ec2 describe-instances --instance-ids "$ids" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          sgs=$(aws ec2 describe-instances --instance-ids "$ids" --query 'Reservations[0].Instances[0].SecurityGroups[].GroupId' --output text)
+          [ "$(echo "$sgs" | wc -w)" = 1 ] || { echo "Expected exactly one security group, found: '$sgs'"; exit 1; }
+          sgtag=$(aws ec2 describe-security-groups --group-ids "$sgs" --query "SecurityGroups[0].Tags[?Key=='Project'].Value | [0]" --output text)
+          [ "$sgtag" = "$PROJECT" ] || { echo "Security group $sgs is not tagged Project=$PROJECT (tag: $sgtag); refusing to touch it"; exit 1; }
+          { echo "IID=$ids"; echo "IP=$ip"; echo "SG=$sgs"; echo "HOST=${ip//./-}.sslip.io"; } >> "$GITHUB_ENV"
+          echo "instance $ids, public IP $ip, security group $sgs (tagged), name ${ip//./-}.sslip.io"
+
+      - name: Check (read-only)
+        if: ${{ inputs.mode == 'check' }}
+        run: |
+          echo "== inbound rules on $SG =="
+          aws ec2 describe-security-groups --group-ids "$SG" --query 'SecurityGroups[0].IpPermissions[].[IpProtocol,FromPort,ToPort,IpRanges[0].CidrIp]' --output text
+          echo "== would the key be allowed to open 443? (dry run, changes nothing) =="
+          out=$(aws ec2 authorize-security-group-ingress --group-id "$SG" --protocol tcp --port 443 --cidr 0.0.0.0/0 --dry-run 2>&1 || true)
+          echo "$out" | tail -1 | cut -c1-200
+          echo "== name resolves to the instance? =="
+          getent hosts "$HOST" || echo "(does not resolve yet)"
+
+      - name: Apply
+        if: ${{ inputs.mode == 'apply' && inputs.confirm == 'confirmed' }}
+        run: |
+          set -euo pipefail
+          # 1) open TCP 443 on the instance's own (tagged) security group, only if it is not open yet
+          open=$(aws ec2 describe-security-groups --group-ids "$SG" --query "SecurityGroups[0].IpPermissions[?FromPort==\`443\` && ToPort==\`443\` && IpProtocol=='tcp'] | length(@)" --output text)
+          if [ "$open" = "0" ]; then
+            aws ec2 authorize-security-group-ingress --group-id "$SG" --protocol tcp --port 443 --cidr 0.0.0.0/0 >/dev/null
+            echo "opened TCP 443 on $SG"
+          else echo "TCP 443 already open on $SG"; fi
+          # 2) start Caddy next to the tracer (host network: it reaches the tracer on 127.0.0.1:80).
+          #    Certificate by the TLS-ALPN challenge on port 443 only, so nothing needs port 80 (the tracer keeps it).
+          jq -n --arg host "$HOST" --arg img "$CADDY_IMAGE" '{commands: [
+            "mkdir -p /opt/caddy",
+            ("cat > /opt/caddy/Caddyfile <<'"'"'EOF'"'"'\n{\n  auto_https disable_redirects\n}\nhttps://" + $host + " {\n  tls {\n    issuer acme {\n      disable_http_challenge\n    }\n  }\n  encode zstd gzip\n  reverse_proxy 127.0.0.1:80\n}\nEOF"),
+            ("docker pull " + $img),
+            "docker rm -f caddy 2>/dev/null || true",
+            ("docker run -d --restart always --name caddy --network host --memory 200m --log-opt max-size=10m --log-opt max-file=3 -v /opt/caddy/Caddyfile:/etc/caddy/Caddyfile:ro -v caddy_data:/data -v caddy_config:/config " + $img),
+            "sleep 3",
+            "docker ps --filter name=caddy --format \"{{.Names}} {{.Status}}\""
+          ]}' > params.json
+          cmd=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters file://params.json --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$cmd" --instance-id "$IID" || true
+          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$IID" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text | tail -12
+          # 3) wait for the certificate and test the address
+          ok=0
+          for i in $(seq 1 24); do
+            code=$(curl -s -m 15 -o /dev/null -w '%{http_code}' "https://$HOST/api/algos" || true)
+            echo "try $i: https://$HOST/api/algos -> $code"
+            [ "$code" = "200" ] && { ok=1; break; }
+            sleep 10
+          done
+          [ "$ok" = 1 ] || { echo "HTTPS did not come up; the plain http address is unchanged and still works"; exit 1; }
+          echo "URL=https://$HOST/viewer3.html"
+
+      - name: Disable (removes only the caddy container)
+        if: ${{ inputs.mode == 'disable' && inputs.confirm == 'confirmed' }}
+        run: |
+          set -euo pipefail
+          cmd=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript \
+            --parameters 'commands=["docker rm -f caddy","docker ps"]' --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$cmd" --instance-id "$IID" || true
+          aws ssm get-command-invocation --command-id "$cmd" --instance-id "$IID" --query '[Status,StandardOutputContent,StandardErrorContent]' --output text
