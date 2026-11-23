@@ -158,6 +158,24 @@ window.__early = {};
     #pnlAttr { grid-column:auto; }
     .pccode { font-size:11.5px; max-height:240px; }
   }
+
+  /* ---------- algorithm info card ---------- */
+  #algoInfo { margin:0; padding:6px 20px; background:var(--panel); border-bottom:1px solid var(--line); font-size:12.5px; }
+  #algoInfo > summary { cursor:pointer; font-weight:600; color:var(--ink); }
+  #algoInfo p { margin:6px 0; max-width:92ch; line-height:1.5; }
+  .aiHead { margin:6px 0; font-size:14px; }
+  .aiTag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.04em; padding:1px 8px; border-radius:999px; vertical-align:1px; }
+  .aiTag.ok { background:#dcfce7; color:#166534; } .aiTag.bad { background:#fee2e2; color:#991b1b; }
+  .aiGrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:6px 14px; margin:6px 0; }
+  .aiGrid div { border:1px solid var(--line); border-radius:6px; padding:5px 9px; background:var(--bg); }
+  .aiGrid span { display:block; font-size:11px; color:var(--muted); } .aiGrid b { font-size:14px; }
+  #algoAll { margin:6px 0 2px; } #algoAll > summary { cursor:pointer; color:var(--muted); }
+  .aiScroll { overflow-x:auto; }
+  #algoInfoTable { border-collapse:collapse; margin-top:6px; min-width:460px; }
+  #algoInfoTable th, #algoInfoTable td { text-align:left; padding:3px 12px 3px 0; border-bottom:1px solid var(--line); white-space:nowrap; }
+  #algoInfoTable th { font-size:11px; color:var(--muted); font-weight:600; }
+  #algoInfoTable tr[data-a] { cursor:pointer; } #algoInfoTable tr[data-a]:hover, #algoInfoTable tr.cur { background:#fff4d6; }
+  @media (max-width:760px) { #algoInfo { padding:6px 12px; } }
   @media (hover: none) { .tt { border-bottom-style:dashed; } }
   /* hover preview cards (explain.js) */
   .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
@@ -202,6 +220,14 @@ window.__early = {};
   <button id="btnRetry" hidden>Retry</button>
 </header>
 <script type="application/json" id="algosData">__ALGOS_JSON__</script>
+<details id="algoInfo" open>
+  <summary>About this algorithm: training scores and why its output type</summary>
+  <div id="algoInfoBody"></div>
+  <details id="algoAll"><summary>All 12 algorithms side by side (click a row to switch)</summary>
+    <div class="aiScroll"><table id="algoInfoTable"></table></div>
+    <p class="small" style="color:var(--muted)">Scores come from the training run (MPNN, 128 hidden units, 10,000 steps, batch 32, seed 42). Validation is on 16-node graphs, test on 64-node graphs. CLEAN means the drop is under 10 pp, SEVERE means over 40 pp; every one of the 12 falls on one side or the other.</p>
+  </details>
+</details>
 <div class="intro">The trained 128-hidden MPNN executes a CLRS-30 algorithm on a random graph, one message-passing step at a time. Click a node to trace the circuit behind its prediction. Hover any <span class="tt" data-tip="g:howItWorks">dotted term</span>, number or box for an explanation of what it is and why it is there. The pseudo-code pane follows the same steps.</div>
 <div class="stage">
   <div class="panel" id="pnlSim">
@@ -535,6 +561,7 @@ const fmt = (x, d=3) => (x===null||x===undefined||Number.isNaN(x)) ? '-' : Numbe
 // authoritative; cross-checked to agree with the per-algo checkpoints to 4
 // decimal places). gap<0.10=CLEAN, gap>0.40=SEVERE (bimodal split, confirmed:
 // max clean gap 0.074 mst_prim, min severe gap 0.460 mst_kruskal).
+const TRAIN_V3 = {"articulation_points":{"val":0.9852,"test":0.9487,"steps":10000,"min":67.2,"first":0.259,"at90":5300,"tail":0.9456,"tmin":0.775,"tmax":0.985},"bellman_ford":{"val":0.998,"test":0.9478,"steps":10000,"min":10.9,"first":0.383,"at90":300,"tail":0.9895,"tmin":0.975,"tmax":0.996},"bfs":{"val":1.0,"test":0.998,"steps":10000,"min":10.1,"first":0.415,"at90":100,"tail":0.9997,"tmin":0.998,"tmax":1.0},"bridges":{"val":0.994,"test":0.9676,"steps":10000,"min":69.3,"first":0.0,"at90":1100,"tail":0.9743,"tmin":0.958,"tmax":0.986},"dag_shortest_paths":{"val":1.0,"test":0.9844,"steps":10000,"min":32.1,"first":0.516,"at90":200,"tail":0.9952,"tmin":0.989,"tmax":1.0},"dfs":{"val":1.0,"test":0.4814,"steps":10000,"min":29.0,"first":0.261,"at90":500,"tail":0.9895,"tmin":0.964,"tmax":1.0},"dijkstra":{"val":1.0,"test":0.9771,"steps":10000,"min":11.9,"first":0.347,"at90":200,"tail":0.9913,"tmin":0.986,"tmax":1.0},"floyd_warshall":{"val":0.931,"test":0.3852,"steps":10000,"min":25.6,"first":0.063,"at90":4200,"tail":0.9115,"tmin":0.885,"tmax":0.931},"mst_kruskal":{"val":0.9055,"test":0.4454,"steps":10000,"min":53.2,"first":0.122,"at90":9200,"tail":0.863,"tmin":0.733,"tmax":0.905},"mst_prim":{"val":1.0,"test":0.9263,"steps":10000,"min":11.9,"first":0.268,"at90":400,"tail":0.9875,"tmin":0.974,"tmax":1.0},"strongly_connected_components":{"val":1.0,"test":0.2734,"steps":10000,"min":59.5,"first":0.255,"at90":600,"tail":0.9899,"tmin":0.978,"tmax":1.0},"topological_sort":{"val":1.0,"test":0.5168,"steps":10000,"min":27.5,"first":0.33,"at90":200,"tail":0.9924,"tmin":0.973,"tmax":1.0}};
 const SUMMARY_V3 = {
   bfs: {val:1.0000, test:0.9980, gap:0.0020, cls:'CLEAN'},
   dag_shortest_paths: {val:1.0000, test:0.9844, gap:0.0156, cls:'CLEAN'},
@@ -1017,13 +1044,14 @@ async function boot() {
   Object.keys(ALGOS).forEach(a => {
     const o = document.createElement('option'); o.value = a;
     const gt = SUMMARY_V3[a];
-    o.textContent = `${a} (${ALGOS[a].target_type})` + (gt ? ` [${gt.cls}]` : '');
+    o.textContent = algoLabel(a);
     sel.appendChild(o);
   });
   sel.value = 'bfs';
+  renderAlgoInfo();
   if (!bootWired) {
     bootWired = true;
-    sel.addEventListener('change', () => { curAlgo = sel.value; loadAlgo(); });
+    sel.addEventListener('change', () => { curAlgo = sel.value; renderAlgoInfo(); loadAlgo(); });
     document.getElementById('btnNew').addEventListener('click', () => {
       const P = readParams() || { n: +document.getElementById('inN').value, p: +document.getElementById('inP').value };
       let seed;
@@ -1206,6 +1234,63 @@ function renderPseudo(P) {
   head.textContent = P ? `Step ${curStep}: ${P.head}` : '';
   note.textContent = P ? P.note : 'Waiting for the first steps…';
   st.innerHTML = P ? P.state.map(([k, v]) => `<dt>${escHtml(String(k))}</dt><dd>${escHtml(String(v))}</dd>`).join('') : '';
+}
+
+// ---------- algorithm info card: training scores + why each target type / CLEAN / SEVERE ----------
+const TYPE_INFO = {
+  mask: ['mask', 'one true/false answer per node (any number of nodes can be true)'],
+  mask_one: ['mask_one', 'one true/false answer per node, but exactly one node is true at a time (the model picks one node)'],
+  categorical: ['categorical', 'one class per node, chosen from a small fixed set of labels'],
+  scalar: ['scalar', 'one number per node (a distance or a cost, not a yes/no)']
+};
+const ALGO_WHY = {
+  bfs: 'Output is "has the search reached this node?", a yes/no per node, and many nodes can be reached, so it is a mask.',
+  dfs: 'Each node is in one of three states while the search runs (not seen yet, being explored, finished). That is a class per node, so it is categorical.',
+  bellman_ford: 'The answer is the shortest distance from the source to each node: a number, so scalar.',
+  dijkstra: 'Same as Bellman-Ford: the shortest distance to each node is a number, so scalar.',
+  dag_shortest_paths: 'Also a shortest distance per node, a number, so scalar.',
+  mst_prim: 'The tracked quantity is each node’s cheapest connecting edge weight (its key), a number, so scalar.',
+  mst_kruskal: 'Each round the algorithm looks at exactly one edge, so one node is marked at a time (the start of that edge): mask_one.',
+  topological_sort: 'Each round exactly one node is placed next in the order (the head of the order so far): mask_one.',
+  articulation_points: 'Each node is either a cut vertex (removing it splits the graph) or it is not. Several can be cut vertices at once, so it is a mask.',
+  bridges: 'The search keeps a state per node while it looks for edges whose removal disconnects the graph. A class per node, so categorical.',
+  strongly_connected_components: 'The search keeps a state per node while it groups nodes into components. A class per node, so categorical.',
+  floyd_warshall: 'Each round one intermediate node k is tried for all pairs, so exactly one node is marked at a time: mask_one.'
+};
+const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
+function algoLabel(a) {
+  const gt = SUMMARY_V3[a]; return gt ? `${a} (${ALGOS[a].target_type}) · test ${pct(gt.test)} [${gt.cls}]` : a;
+}
+function renderAlgoInfo() {
+  const box = document.getElementById('algoInfoBody'); if (!box || !ALGOS || !ALGOS[curAlgo]) return;
+  const a = curAlgo, gt = SUMMARY_V3[a], tr = TRAIN_V3[a], ty = ALGOS[a].target_type, ti = TYPE_INFO[ty];
+  const clean = gt && gt.cls === 'CLEAN';
+  let h = `<div class="aiHead"><b>${escHtml(a)}</b> <span class="aiTag ${clean ? 'ok' : 'bad'}">${gt ? gt.cls : ''}</span></div>`;
+  if (gt && tr) {
+    h += `<div class="aiGrid">
+      <div><span>Best validation (16-node graphs)</span><b>${pct(gt.val)}</b></div>
+      <div><span>Test (64-node graphs, never seen)</span><b>${pct(gt.test)}</b></div>
+      <div><span>Drop from validation to test</span><b>${(gt.gap * 100).toFixed(1)} pp</b></div>
+      <div><span>Training</span><b>${tr.steps.toLocaleString()} steps, ${tr.min} min</b></div>
+      <div><span>Reached 90% on validation at</span><b>${tr.at90 === null ? 'never' : 'step ' + tr.at90.toLocaleString()}</b></div>
+      <div><span>Validation, last 1,000 steps</span><b>${pct(tr.tmin, 0)}–${pct(tr.tmax, 0)} (avg ${pct(tr.tail)})</b></div>
+    </div>`;
+    h += `<p><b>${clean ? 'CLEAN' : 'SEVERE'}:</b> ` + (clean
+      ? `the test score stays close to the validation score (drop ${(gt.gap * 100).toFixed(1)} pp, below the 10 pp line), so what the model learned still works on graphs four times bigger than the ones it trained on.`
+      : `it does very well on the 16-node graphs it trained on, but on 64-node graphs the score falls by ${(gt.gap * 100).toFixed(1)} pp (above the 40 pp line). The model learned something tied to the training size instead of the general procedure. This site runs it on small graphs, where its score is high.`) + '</p>';
+  }
+  h += `<p><b>Why ${ty}:</b> ${escHtml(ALGO_WHY[a] || '')} A <i>${ti[0]}</i> target means ${ti[1]}.</p>`;
+  box.innerHTML = h;
+  const rows = document.getElementById('algoInfoTable');
+  if (rows && !rows.dataset.done) {
+    rows.dataset.done = 1;
+    rows.innerHTML = '<tr><th>algorithm</th><th>target type</th><th>validation</th><th>test</th><th>drop</th><th></th></tr>' + Object.keys(ALGOS).map(k => {
+      const g = SUMMARY_V3[k]; return `<tr data-a="${k}"><td>${k}</td><td>${ALGOS[k].target_type}</td><td>${g ? pct(g.val) : '-'}</td><td>${g ? pct(g.test) : '-'}</td><td>${g ? (g.gap * 100).toFixed(1) + ' pp' : '-'}</td><td><span class="aiTag ${g && g.cls === 'CLEAN' ? 'ok' : 'bad'}">${g ? g.cls : ''}</span></td></tr>`;
+    }).join('');
+    rows.addEventListener('click', e => { const tr = e.target.closest('tr[data-a]'); if (!tr) return; const sel = document.getElementById('inAlgo'); sel.value = tr.dataset.a; sel.dispatchEvent(new Event('change')); });
+  }
+  if (!renderAlgoInfo.seen) { renderAlgoInfo.seen = 1; document.getElementById('algoInfo').open = innerWidth >= 1181 && innerHeight >= 860; }   // small or short screens start collapsed so the three views stay in sight
+  document.querySelectorAll('#algoInfoTable tr[data-a]').forEach(r => r.classList.toggle('cur', r.dataset.a === a));
 }
 
 function nodePositions(n) {
