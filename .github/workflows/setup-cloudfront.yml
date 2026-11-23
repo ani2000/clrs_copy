@@ -2,10 +2,10 @@ name: CloudFront in front of the tracer (check / apply / disable)
 
 # Manual trigger only.
 #   check   read-only: prints what already exists and whether this key may create the pieces. Changes nothing.
-#   apply   needs confirm=confirmed. Creates, only if missing, ONLY these, all tagged Project=clrs-circuit-tracer:
-#             1 Elastic IP attached to the tagged instance (so the origin address never changes),
-#             1 CloudFront cache policy, 1 CloudFront distribution (default *.cloudfront.net domain),
-#             1 CloudWatch alarm that reboots this instance when its status checks fail.
+#   apply   needs confirm=confirmed. Creates, only if missing, ONLY these, both tagged Project=clrs-circuit-tracer:
+#             1 CloudFront cache policy (free), 1 CloudFront distribution on the default *.cloudfront.net domain.
+#           The origin is the instance's current public DNS name. No Elastic IP and no alarm are created (no extra cost).
+#           Note: the public address of an instance changes if it is STOPPED and started again (a reboot keeps it).
 #   disable needs confirm=confirmed. Switches the distribution off (nothing is deleted).
 # Works on the single instance tagged Name=clrs-circuit-tracer AND Project=clrs-circuit-tracer with the expected ID.
 on:
@@ -69,19 +69,15 @@ jobs:
           aws cloudfront list-cache-policies --type custom --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='$NAME-versioned'].CachePolicy.Id" --output text || true
           aws cloudwatch describe-alarms --alarm-name-prefix "$NAME" --query 'MetricAlarms[].[AlarmName,StateValue]' --output text || true
           echo "== what this key may do =="
-          probe aws ec2 allocate-address --domain vpc --dry-run
           probe aws cloudfront list-distributions
           probe aws cloudfront list-cache-policies --type custom
-          probe aws cloudwatch describe-alarms --alarm-name-prefix "$NAME"
-          probe aws ec2 describe-addresses
 
       - name: Apply
         if: ${{ inputs.mode == 'apply' && inputs.confirm == 'confirmed' }}
         run: |
           set -euo pipefail
           TAGS="Key=Project,Value=$PROJECT Key=Name,Value=$NAME"
-          # Order: cache policy and alarm first (if this key may not create them, nothing about the instance has changed yet),
-          # then the Elastic IP (the instance's public address changes here), then the distribution that points at it.
+          # Nothing about the instance is changed: only a cache policy and a distribution are created.
           # a) cache policy: long cache only for answers the origin marks immutable (the versioned ?v= URLs); everything else is not stored
           pid=$(aws cloudfront list-cache-policies --type custom --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='$NAME-versioned'].CachePolicy.Id | [0]" --output text)
           if [ "$pid" = "None" ]; then
@@ -94,25 +90,11 @@ jobs:
             pid=$(aws cloudfront create-cache-policy --cache-policy-config file://policy.json --query CachePolicy.Id --output text)
             echo "created cache policy $pid"
           fi
-          # b) alarm: reboot this instance (only) when its status checks fail for 3 minutes
-          aws cloudwatch put-metric-alarm --alarm-name "$NAME-status-reboot" \
-            --alarm-description "Reboot $IID if its EC2 status checks fail" \
-            --namespace AWS/EC2 --metric-name StatusCheckFailed --dimensions Name=InstanceId,Value="$IID" \
-            --statistic Maximum --period 60 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold \
-            --treat-missing-data notBreaching --alarm-actions arn:aws:automate:us-east-1:ec2:reboot \
-            --tags Key=Project,Value=$PROJECT Key=Name,Value=$NAME
-          # c) Elastic IP (re-use ours if it already exists)
-          alloc=$(aws ec2 describe-addresses --filters "Name=tag:Project,Values=$PROJECT" --query 'Addresses[0].AllocationId' --output text)
-          if [ "$alloc" = "None" ]; then
-            alloc=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=$PROJECT},{Key=Name,Value=$NAME}]" --query AllocationId --output text)
-            echo "allocated $alloc"
-          fi
-          cur=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].InstanceId' --output text)
-          if [ "$cur" != "$IID" ]; then aws ec2 associate-address --allocation-id "$alloc" --instance-id "$IID" --no-allow-reassociation >/dev/null; fi
-          ip=$(aws ec2 describe-addresses --allocation-ids "$alloc" --query 'Addresses[0].PublicIp' --output text)
-          origin="ec2-${ip//./-}.compute-1.amazonaws.com"
-          echo "Elastic IP $ip, origin $origin"
-          # d) distribution
+          # b) origin: the instance's current public DNS name (stays the same across reboots)
+          origin=$(aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
+          [ -n "$origin" ] && [ "$origin" != "None" ] || { echo "instance has no public DNS name"; exit 1; }
+          echo "origin $origin"
+          # c) distribution
           did=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='$NAME'].Id | [0]" --output text)
           if [ "$did" = "None" ]; then
             NOCACHE=4135ea2d-6df8-44a3-9df3-4b5a84be39ad      # managed CachingDisabled
@@ -131,7 +113,7 @@ jobs:
           echo "waiting for the distribution to deploy (up to ~15 minutes)"
           aws cloudfront wait distribution-deployed --id "$did"
           dom=$(aws cloudfront get-distribution --id "$did" --query Distribution.DomainName --output text)
-          echo "ELASTIC_IP=$ip"; echo "DISTRIBUTION_ID=$did"; echo "URL=https://$dom/viewer3.html"
+          echo "ORIGIN=$origin"; echo "DISTRIBUTION_ID=$did"; echo "URL=https://$dom/viewer3.html"
 
       - name: Disable (nothing is deleted)
         if: ${{ inputs.mode == 'disable' && inputs.confirm == 'confirmed' }}
