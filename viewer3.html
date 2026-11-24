@@ -206,6 +206,22 @@ window.__early = {};
   button.avex { font-size:10.5px; padding:0 6px; margin-left:4px; cursor:pointer; }
   @media (max-width:1180px) { .wide { grid-template-columns:minmax(0, 1fr); } }
   @media (max-width:760px) { .wide { padding:0 10px 10px; gap:10px; } }
+
+  /* ---------- the lower sections: collapsible blocks (same arrow as "About this algorithm") ---------- */
+  .lower { display:grid; grid-template-columns:minmax(0, 1.45fr) minmax(320px, 1fr); gap:14px; padding:0 14px 14px; align-items:start; }
+  .lcol { display:flex; flex-direction:column; gap:10px; min-width:0; }
+  @media (min-width:1181px) { .lower .side { position:sticky; top:8px; max-height:calc(100vh - 16px); overflow:auto; } }
+  details.sec { background:var(--panel); border:1px solid var(--line); border-radius:8px; min-width:0; }
+  details.sec > summary { cursor:pointer; padding:10px 14px; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; }
+  details.sec[open] > summary { color:var(--ink); border-bottom:1px solid var(--line); }
+  details.sec > summary .secmeta { text-transform:none; letter-spacing:0; font-weight:400; margin-left:10px; color:var(--muted); font-size:12px; }
+  details.sec > .secbody { padding:10px 14px 14px; }
+  details.sec h3 { font-size:12px; margin:10px 0 4px; }
+  details.isecd { border-top:1px solid var(--line); margin-top:8px; padding-top:6px; }
+  details.isecd > summary { cursor:pointer; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600; }
+  details.isecd[open] > summary { color:var(--ink); margin-bottom:6px; }
+  @media (max-width:1180px) { .lower { grid-template-columns:minmax(0, 1fr); } }
+  @media (max-width:760px) { .lower { padding:0 10px 10px; gap:10px; } details.sec > summary { padding:9px 12px; } details.sec > .secbody { padding:8px 12px 12px; } }
   @media (hover: none) { .tt { border-bottom-style:dashed; } }
   /* hover preview cards (explain.js) */
   .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
@@ -304,31 +320,30 @@ window.__early = {};
   </div>
 </div>
 
-<div class="wide">
-  <div class="panel" id="pnlTop">
-    <h2><span class="tt" data-tip="g:topLatents">Top latents at each step</span></h2>
-    <div id="topLatents" class="small">Click a node in the simulation to trace a prediction.</div>
-  </div>
-  <div class="panel" id="pnlDict">
-    <h2><span class="tt" data-tip="g:latDict">Latent dictionary: what the best-understood latents mean</span></h2>
-    <div id="latDict" class="small">Loading…</div>
-  </div>
-</div>
-
-<div class="layout">
-  <div class="panel" id="pnlModel">
-    <h2><span class="tt" data-tip="g:etcPanel">Model &amp; edge-site transcoder</span></h2>
-    <div class="kv"><span class="tt" data-tip="g:hidden">hidden_dim</span><span data-tip="g:hidden">128</span></div>
+<div class="lower">
+  <div class="lcol main">
+    <details class="sec" id="secTop" open>
+      <summary><span class="tt" data-tip="g:topLatents">Top latents at each step</span><span class="secmeta" id="meta_secTop"></span></summary>
+      <div class="secbody"><div id="topLatents" class="small">Click a node in the simulation to trace a prediction.</div></div>
+    </details>
+    <details class="sec" id="secDict">
+      <summary><span class="tt" data-tip="g:latDict">Latent dictionary: what the best-understood latents mean</span><span class="secmeta" id="meta_secDict"></span></summary>
+      <div class="secbody"><div id="latDict" class="small">Loading…</div></div>
+    </details>
+    <details class="sec" id="secNodes">
+      <summary>Per-node predictions<span class="secmeta" id="meta_secNodes"></span></summary>
+      <div class="secbody"><div class="tscroll"><table id="nodeTable"><thead><tr id="nodeTableHead"></tr></thead><tbody id="nodeTableBody"></tbody></table></div></div>
+    </details>
+    <details class="sec" id="secModel">
+      <summary><span class="tt" data-tip="g:etcPanel">Model &amp; edge-site transcoder</span><span class="secmeta" id="meta_secModel"></span></summary>
+      <div class="secbody"><div class="kv"><span class="tt" data-tip="g:hidden">hidden_dim</span><span data-tip="g:hidden">128</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:target">target</span><span id="targetName" data-tip="dyn:target">-</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:f1">val / test score (OOD)</span><span id="f1s" data-tip="dyn:f1">-</span></div>
-    <div id="etcFacts" class="etcfacts"></div>
-    <h2 style="margin-top:16px">Per-node predictions</h2>
-    <div class="tscroll"><table id="nodeTable"><thead><tr id="nodeTableHead"></tr></thead><tbody id="nodeTableBody"></tbody></table></div>
-  </div>
-
-  <div class="panel" id="pnlRead">
-    <h2>How to read the attribution graph</h2>
-    <ul class="readlist">
+    <div id="etcFacts" class="etcfacts"></div></div>
+    </details>
+    <details class="sec" id="secRead">
+      <summary>How to read the attribution graph</summary>
+      <div class="secbody"><ul class="readlist">
       <li><b>Latent (circle).</b> One of the 8 active entries of a sparse code (out of 1,280) that rebuilds the <i>message</i> one node sends to another at one step. It sits in the column of the receiver; its label is <i>sender : latent</i>. Size grows with the activation.</li>
       <li><b>Colour.</b> What the pair is in the input graph: a real edge, a non-edge or a self pair. It is not a meaning of the latent (the latents have no names yet). The MPNN computes a message for every ordered pair, so every pair has latents.</li>
       <li><b>Error node (hatched).</b> What the latents of a pair did not rebuild. It is added back, so the graph is exact for the real run.</li>
@@ -338,14 +353,18 @@ window.__early = {};
       <li><b>Pruned / All.</b> Pruned keeps the nodes carrying 80% of the influence on the predictions and the edges carrying 98% of it among them. All shows the strongest 6,000 edges.</li>
       <li><b>Supernodes.</b> All latents of one sender &rarr; receiver pair at one step are merged into one box; their edges are summed.</li>
       <li><b>Clamp.</b> Pin a latent and clamp it. The real model is re-run and compared with the graph&rsquo;s first-order prediction; the graph freezes &sigma;, winners and TopK sets, so it is a guide, not a guarantee.</li>
-    </ul>
+    </ul></div>
+    </details>
   </div>
-
-  <div class="panel">
-    <h2><span class="tt" data-tip="g:featdetail">Inspector</span></h2>
-    <div id="featDetail" class="small">Hover a node in the attribution graph to see its edges; click to pin it here.</div>
-    <h2 style="margin-top:18px"><span class="tt" data-tip="g:intervention">Intervention</span></h2>
-    <div id="ivPanel" class="small">Click a latent, then try clamping it.</div>
+  <div class="lcol side">
+    <details class="sec" id="secInsp" open>
+      <summary><span class="tt" data-tip="g:featdetail">Inspector</span><span class="secmeta" id="meta_secInsp"></span></summary>
+      <div class="secbody"><div id="featDetail" class="small">Hover a node in the attribution graph to see its edges; click to pin it here.</div></div>
+    </details>
+    <details class="sec" id="secIv" open>
+      <summary><span class="tt" data-tip="g:intervention">Intervention</span></summary>
+      <div class="secbody"><div id="ivPanel" class="small">Click a latent, then try clamping it.</div></div>
+    </details>
   </div>
 </div>
 
@@ -821,6 +840,12 @@ let pruneMode = 'pruned', minW = 0, viewMode = 'bynode';
 // which transcoder the attribution graph is built from: 'edge' = the new edge-site transcoders (latents on sender->receiver pairs), 'node' = the previous node-site transcoder
 const ATTR = { mode: 'edge', summary: null };      // this page is the edge-site version; the node-site version is at /demo
 window.AV_EDGE_ON = () => ATTR.mode === 'edge';
+// open / closed state of the collapsible sections, remembered in this browser
+const SECSTATE = (() => { try { return JSON.parse(localStorage.getItem('clrs-sec-open') || '{}') || {}; } catch (e) { return {}; } })();
+const secSave = () => { try { localStorage.setItem('clrs-sec-open', JSON.stringify(SECSTATE)); } catch (e) {} };
+const secMeta = (id, text) => { const el = document.getElementById('meta_' + id); if (el) el.textContent = text ? ' \u00b7 ' + text : ''; };
+document.addEventListener('toggle', ev => { const d = ev.target; if (d.tagName === 'DETAILS' && d.id && d.classList.contains('sec')) { SECSTATE[d.id] = d.open; secSave(); } }, true);
+document.querySelectorAll('details.sec[id]').forEach(d => { if (SECSTATE[d.id] !== undefined) d.open = !!SECSTATE[d.id]; });
 let NODE_PRED = {}, SHOWN_EDGES = [], LAST_IV = null;   // read by explain.js hover cards
 // Race-condition guards: every async load takes a generation number; a response is applied only
 // if it is still the newest request, and superseded fetches are aborted.
@@ -1380,6 +1405,7 @@ function renderEtcPanel(algo) {          // everything measured about the edge-s
   const sm = ATTR.summary && ATTR.summary[algo];
   if (!sm) { el.innerHTML = '<div class="small">Loading the transcoder’s measured quality…</div>'; return; }
   const row = (k, v, tip) => `<div class="kv"><span class="tt" ${tip ? `data-tip="g:${tip}"` : ''}>${k}</span><span ${tip ? `data-tip="g:${tip}"` : ''}>${v}</span></div>`;
+  secMeta('secModel', `tier ${sm.tier}, replacement keeps ${pc1(sm.retention_val)} of the F1 at 16 nodes`);
   const e = sm.nmse_per_step_val, mx = Math.max(...e), pts = e.map((v, i) => `${(i * 100 / Math.max(1, e.length - 1)).toFixed(1)},${(22 - 20 * v / mx).toFixed(1)}`).join(' ');
   const spark = `<svg width="104" height="24" viewBox="0 0 100 24" role="img" aria-label="reconstruction error by step"><polyline fill="none" stroke="#2563eb" stroke-width="1.6" points="${pts}"/></svg>`;
   const hm = sm.hidden_rel_error_direct.reduce((a, b) => a + b, 0) / sm.hidden_rel_error_direct.length;
@@ -1644,6 +1670,7 @@ function drawStepLabel() {
 
 function renderNodeTable() {             // per node: the true hint now, the REAL model's prediction (shown once the step has been traced), and the true next value
   const step = Math.min(curStep, G.length - 2);
+  secMeta('secNodes', `${G.n} nodes, step ${step}`);
   const head = document.getElementById('nodeTableHead'), body = document.getElementById('nodeTableBody');
   const catCols = W.target_type === 'categorical';
   head.innerHTML = `<th><span class="tt" data-tip="cell:0:node">node</span></th><th><span class="tt" data-tip="cell:0:prev">${W.target}(${step})</span></th>${step>=0?`<th><span class="tt" data-tip="cell:0:pred">pred ${W.target}(${step+1})</span></th>`:''}<th><span class="tt" data-tip="cell:0:true">true(${step+1})</span></th>`;

@@ -25,6 +25,7 @@ const AV_GROUP = { state: ['--g-state', 'target state'], class: ['--g-class', 'c
 const avEdge = () => !!(AV.data ? AV.data.mode === 'edge' : (typeof ATTR !== 'undefined' && ATTR.mode === 'edge'));
 function avReset() {                         // the graph model changed: drop every trace of the old one at once
   AV.data = null; AV.gr = null; AV.pinned = null; AV.hovered = null; AV.edgeEls = []; AV.nodeEls = {}; AV.want = null;
+  avMeta('secInsp', ''); avMeta('secTop', '');
   const g = id => document.getElementById(id); if (g('attribSvg')) g('attribSvg').innerHTML = ''; if (g('avLegend')) g('avLegend').innerHTML = '';
   if (g('featDetail')) g('featDetail').innerHTML = '<p class="empty">Hover a node in the attribution graph to see its edges; click to pin it here.</p>'; if (g('ivPanel')) g('ivPanel').innerHTML = '';
 }
@@ -352,6 +353,16 @@ function avStat(Gr) {
 }
 
 
+const AV_SEC = {};                           // remembered open / closed state of the inspector's sections (also kept in this browser)
+const avMeta = (id, t) => { if (typeof secMeta === 'function') secMeta(id, t); };
+function avSec(title, body, tip, dflt) {
+  if (!(AV.data && AV.data.mode === 'edge')) return `<div class="isec"><h3${tip ? ` data-tip="${tip}"` : ''}>${title}</h3>${body}</div>`;
+  let o = dflt !== false; const key = 'i:' + title;
+  if (typeof SECSTATE !== 'undefined' && SECSTATE[key] !== undefined) o = !!SECSTATE[key];
+  return `<details class="isec isecd" data-k="${avEsc(key)}"${o ? ' open' : ''}><summary${tip ? ` data-tip="${tip}"` : ''}>${title}</summary><div class="isecbody">${body}</div></details>`;
+}
+document.addEventListener('toggle', ev => { const d = ev.target; if (d.classList && d.classList.contains('isecd') && typeof SECSTATE !== 'undefined') { SECSTATE[d.dataset.k] = d.open; if (typeof secSave === 'function') secSave(); } }, true);
+
 // ---------- what the edge-site latents mean (edge_tc/<algo>.latents.json, measured by verification/clrs-edge/clrs_edge_latents.js) ----------
 // Per latent: how often it fires and on which pairs, its effect on the receiver's main target logit, and its best-matching conditions scored on held-out graphs.
 const LATS = {}, LAT_REQ = {};
@@ -380,8 +391,9 @@ function avMeaningHtml(nd) {                  // the "what does this latent mean
   else h += `<p class="note"><b>Unnamed:</b> no simple condition matches this latent well (best held-out F1 ${v.best.length ? v.best[0][3].toFixed(2) : '0.00'}). The facts below are all that is known about it.</p>`;
   h += `<dl class="ikv"><dt>effect</dt><dd>${avEffectText(J, v)}</dd><dt>fires on</dt><dd>${(v.rate * 100).toFixed(1)}% of pairs (mean activation ${v.act}, max ${v.max})</dd>
     <dt>on which pairs</dt><dd>${pct0(e[0])} real edges (${pct0(base('edge') || 0)} of all pairs), ${pct0(e[1])} non-edges (${pct0(base('nonedge') || 0)}), ${pct0(e[2])} self pairs (${pct0(base('self') || 0)})</dd></dl>`;
-  if (v.best.length) h += `<div class="isec"><h3>Best-matching conditions (held-out graphs)</h3><table class="ivtab condtab"><tr><th>condition</th><th>P</th><th>R</th><th>F1</th></tr>${v.best.map(b => `<tr><td>${avEsc(J.conditions[b[0]].text)}</td><td>${b[1].toFixed(2)}</td><td>${b[2].toFixed(2)}</td><td>${b[3].toFixed(2)}</td></tr>`).join('')}</table></div>`;
-  if (v.ex && v.ex.length) h += `<div class="isec"><h3>Strongest activations (sampler n = 16, p = 0.4)</h3>${v.ex.map(x => `<div class="small"><span class="mono">seed ${x[0]}, step ${x[1]}, ${x[2]} → ${x[3]}</span> activation ${x[4]} <button class="avex" data-seed="${x[0]}" data-t="${x[1]}" data-r="${x[3]}">show</button></div>`).join('')}</div>`;
+  h = avSec('What it means', h, null, true);
+  if (v.best.length) h += avSec('Best-matching conditions (held-out graphs)', `<table class="ivtab condtab"><tr><th>condition</th><th>P</th><th>R</th><th>F1</th></tr>${v.best.map(b => `<tr><td>${avEsc(J.conditions[b[0]].text)}</td><td>${b[1].toFixed(2)}</td><td>${b[2].toFixed(2)}</td><td>${b[3].toFixed(2)}</td></tr>`).join('')}</table>`, null, false);
+  if (v.ex && v.ex.length) h += avSec('Strongest activations (sampler n = 16, p = 0.4)', v.ex.map(x => `<div class="small"><span class="mono">seed ${x[0]}, step ${x[1]}, ${x[2]} \u2192 ${x[3]}</span> activation ${x[4]} <button class="avex" data-seed="${x[0]}" data-t="${x[1]}" data-r="${x[3]}">show</button></div>`).join(''), null, false);
   h += `<p class="small" style="color:var(--muted)">Measured on ${J.graphs} graphs (${J.rows_fit + J.rows_held} pair rows${J.max_steps_per_graph ? ', up to ' + J.max_steps_per_graph + ' evenly spaced steps per graph' : ''}): conditions chosen on ${J.graphs_fit} graphs, scored on the other ${J.graphs - J.graphs_fit}.</p>`;
   return h;
 }
@@ -399,21 +411,23 @@ function avInfl(id) { return AV.data.influence[id] || 0; }
 function renderTopLatents() {                 // top latents of the pruned graph at every step of the window, with what they mean
   const box = document.getElementById('topLatents'); if (!box) return;
   const d = AV.data; if (!d || d.mode !== 'edge') { box.innerHTML = '<p class="small">Click a node in the simulation to trace a prediction.</p>'; return; }
-  const J = avJ(); let h = '';
+  const J = avJ(); let h = '', shown = 0;
   for (let ts = d.t; ts >= d.tLo; ts--) {
     const feats = d.pruned.nodes.map(id => d.nodesById[id]).filter(nd => nd && nd.type === 'feature' && nd.t === ts).sort((a, b) => avInfl(b.id) - avInfl(a.id)).slice(0, 6);
+    shown += feats.length;
     h += `<h3>Step ${ts}${ts === d.t ? ' (the step being explained)' : ' (feeds the next step)'}</h3>`;
     if (!feats.length) { h += '<p class="small">No latent of this step is in the pruned graph.</p>'; continue; }
     h += `<table class="toptab"><tr><th>latent</th><th>pair</th><th>activation</th><th>influence</th><th>meaning</th><th>effect on the receiver</th></tr>` + feats.map(nd => {
       const v = J && J.latents[nd.f], nm = J ? (avShortName(J, v) || 'unnamed') : '…', ef = v && v.eff ? `${v.eff[0] >= 0 ? '+' : ''}${v.eff[0].toFixed(3)}${v.eff[3] >= 0.9 ? ' (raises)' : v.eff[3] >= 0.65 ? ' (mostly raises)' : v.eff[3] <= 0.1 ? ' (lowers)' : v.eff[3] <= 0.35 ? ' (mostly lowers)' : ' (mixed)'}` : '-';
       return `<tr data-id="${avEsc(nd.id)}" tabindex="0"><td>f${nd.f}</td><td>${nd.s} → ${nd.i}</td><td>${nd.act.toFixed(2)}</td><td>${avInfl(nd.id).toFixed(4)}</td><td>${v && v.tier !== '-' ? `<b>${avEsc(nm)}</b> <span class="mono">${v.tier}</span>` : '<span style="color:var(--muted)">unnamed</span>'}</td><td>${ef}</td></tr>`; }).join('') + '</table>';
   }
-  box.innerHTML = h;
+  box.innerHTML = h; avMeta('secTop', `${shown} latents over ${d.t - d.tLo + 1} steps, explaining node ${d.i} at step ${d.t}`);
 }
 document.addEventListener('click', ev => { const tr = ev.target.closest && ev.target.closest('#topLatents tr[data-id]'); if (!tr || !AV.data) return; const nd = AV.data.nodesById[tr.dataset.id]; if (!nd || !AV.nodeEls[nd.id]) return; AV.pinned = nd.id; avHighlight(); avInspect(nd, AV.gr); });
 function renderDictionary() {                 // the best-named latents of the algorithm, with the measured evidence
   const box = document.getElementById('latDict'); if (!box) return; const J = avJ();
-  if (!J) { box.innerHTML = '<p class="small">Loading…</p>'; return; }
+  if (!J) { box.innerHTML = '<p class="small">Loading…</p>'; avMeta('secDict', ''); return; }
+  avMeta('secDict', `${J.named} named of ${J.fired} that fire`);
   const rows = Object.entries(J.latents).filter(([f, v]) => v.tier !== '-').sort((a, b) => b[1].best[0][3] - a[1].best[0][3] || b[1].n - a[1].n).slice(0, 20);
   box.innerHTML = `<p class="small">${J.fired} of ${J.fired + J.never_fired} latents fired in ${J.graphs} graphs (${J.rows_fit + J.rows_held} pair rows); <b>${J.named}</b> can be named (tier A: ${J.tier_a}); ${J.never_fired} never fired. The rest have no simple description that holds on held-out graphs.</p>` +
     (rows.length ? `<div class="tscroll"><table class="toptab"><tr><th>latent</th><th>meaning</th><th>tier</th><th>P</th><th>R</th><th>F1</th><th>fires on</th><th>effect on the receiver</th></tr>${rows.map(([f, v]) => { const b = v.best[0];
@@ -472,8 +486,9 @@ function avInspect(nd, Gr) {
       ${avMeaningHtml(nd)}`;
     const te = d.totalEffect[nd.id] || {};
     const rows = Object.entries(te).filter(([id]) => d.targets.some(x => x.id === id && (x.prob >= 0.01 || x.always))).map(([id, w]) => ({ id, w, tip: 'an:' + id })).sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, 6);
-    h += `<div class="isec"><h3 data-tip="g:avTotalEffect">Total effect on the targets (per unit activation)</h3>${avBars(rows, x => avTargetName(x.id))}</div>`;
-    h += `<div class="isec"><h3>Incoming edges</h3>${avEdgeList(nd.id, 'in', Gr)}</div><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+    h += avSec('Total effect on the targets (per unit activation)', avBars(rows, x => avTargetName(x.id)), 'g:avTotalEffect', true);
+    h += avSec('Incoming edges', avEdgeList(nd.id, 'in', Gr), null, true) + avSec('Outgoing edges', avEdgeList(nd.id, 'out', Gr), null, false);
+    avMeta('secInsp', `f${nd.f} \u00b7 ${nd.s}\u2192${nd.i} \u00b7 step ${nd.t}`);
     iv.innerHTML = `<div class="small">Clamp <b>f${nd.f}@${nd.t}:${nd.s}→${nd.i}</b> (its message changes by (factor − 1) × activation × decoder vector) and re-run the real model (its own hint feedback included):</div>
       <div class="ivbtns"><button id="ivNeg" data-tip="g:ivNeg">Clamp to −1×</button> <button id="ivZero" data-tip="g:ivZero">Ablate (×0)</button> <button id="ivDbl" data-tip="g:ivDbl">Amplify (×2)</button></div><div id="ivResult"></div>`;
     [['ivNeg', -1], ['ivZero', 0], ['ivDbl', 2]].forEach(([id, f]) => document.getElementById(id).addEventListener('click', () => avIntervene(nd, f)));
@@ -497,20 +512,20 @@ function avInspect(nd, Gr) {
   } else if (nd.type === 'feature') {
     h += `<div class="ititle">Supernode · ${avEsc(nd.label)} · step ${nd.t}</div><div class="chips"><span class="chip grp" style="background:var(${AV_GROUP[nd.group || avGroup(nd.label)][0]})">${nd.members.length} features</span></div>
       <p class="note">Members: ${nd.members.map(id => { const m = d.nodesById[id]; return d.mode === 'edge' ? `f${m.f}@${m.s}→${m.i}` : `f${m.f}@${m.i}`; }).join(', ')}</p>
-      <div class="isec"><h3>Incoming edges (summed)</h3>${avEdgeList(nd.id, 'in', Gr)}</div><div class="isec"><h3>Outgoing edges (summed)</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+      ${avSec('Incoming edges (summed)', avEdgeList(nd.id, 'in', Gr), null, true)}${avSec('Outgoing edges (summed)', avEdgeList(nd.id, 'out', Gr), null, false)}`;
   } else if (nd.type === 'leaf') {
     const desc = nd.probe === 'state' ? `The node's hidden state from before step ${d.tLo} (the window shown starts at step ${d.tLo}); its effect is exact but not traced further back.`
       : `${nd.stage === 'hint' ? 'Hint' : 'Input'} <span class="mono">${avEsc(nd.probe)}</span> (${nd.stage} · ${nd.loc} · ${nd.ftype}), read by its linear encoder at step ${nd.t}.` + (nd.stage === 'hint' ? ' Hints are the model’s own previous prediction, fed back in: here it is an observed value (a leaf).' : '') + ' Edge weight = value × (encoder direction · frozen path · destination).';
     h += `<div class="ititle">${Gr.super ? avEsc(nd.label) + ' leaves' : avEsc(avNodeText(nd, Gr)) + (nd.value !== null && nd.value !== undefined ? ' = ' + (typeof nd.value === 'number' ? +nd.value.toFixed(3) : nd.value) : '')}</div>
-      <p class="note">${Gr.super ? `${nd.members.length} values encoded at step ${nd.t}.` : desc}</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+      <p class="note">${Gr.super ? `${nd.members.length} values encoded at step ${nd.t}.` : desc}</p>${avSec('Outgoing edges', avEdgeList(nd.id, 'out', Gr), null, false)}`;
   } else if (nd.type === 'logit') {
     h += `<div class="ititle">${nd.kind === 'pointer' ? 'Pointer hint logit' : 'Hint logit'} · ${avEsc(avTargetText(nd, d.t))}</div>
       <dl class="ikv"><dt>logit</dt><dd>${nd.logit.toFixed(3)}</dd><dt>probability</dt><dd>${nd.ftype === 'scalar' ? 'n/a (scalar)' : (nd.kind === 'pointer' || nd.ftype === 'categorical' ? nd.prob : nd.p1).toFixed(4)}</dd></dl>
-      <div class="isec"><h3>Incoming edges</h3>${avEdgeList(nd.id, 'in', Gr)}</div>`;
+      ${avSec('Incoming edges', avEdgeList(nd.id, 'in', Gr), null, true)}`;
   } else if (nd.type === 'error') {
-    h += `<div class="ititle">Error node · ${Gr.super ? `step ${nd.t}` : `step ${nd.t}, node ${nd.i}`}</div><p class="note">${d.mode === 'edge' ? 'The part of the pair’s message that the transcoder did not reconstruct' : 'The part of the new hidden state the transcoder did not reconstruct'}${Gr.super ? '' : ` (${d.mode === 'edge' ? '‖y − ŷ‖' : '‖h − ĥ‖'} = ${nd.norm.toFixed(3)})`}. Included so the replacement model reproduces the real network exactly; its outgoing weight is how much of the explanation is not captured by features.</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+    h += `<div class="ititle">Error node · ${Gr.super ? `step ${nd.t}` : `step ${nd.t}, node ${nd.i}`}</div><p class="note">${d.mode === 'edge' ? 'The part of the pair’s message that the transcoder did not reconstruct' : 'The part of the new hidden state the transcoder did not reconstruct'}${Gr.super ? '' : ` (${d.mode === 'edge' ? '‖y − ŷ‖' : '‖h − ĥ‖'} = ${nd.norm.toFixed(3)})`}. Included so the replacement model reproduces the real network exactly; its outgoing weight is how much of the explanation is not captured by features.</p>${avSec('Outgoing edges', avEdgeList(nd.id, 'out', Gr), null, false)}`;
   } else {
-    h += `<div class="ititle">Bias · ${nd.t > d.t ? 'into the predictions' : 'into step ' + nd.t}</div><p class="note">${d.mode === 'edge' ? 'All constant terms on the frozen path (encoder, message-site, node-update, hidden-state-decoder and transcoder biases and offsets), added up from their parts. Every value equals the sum of its incoming edges plus this term; the page checks that for every node.' : 'All constant terms on the frozen path (encoder, message, node-update, transcoder and decoder biases), summed, so every value is exactly the sum of its incoming edges.'}</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+    h += `<div class="ititle">Bias · ${nd.t > d.t ? 'into the predictions' : 'into step ' + nd.t}</div><p class="note">${d.mode === 'edge' ? 'All constant terms on the frozen path (encoder, message-site, node-update, hidden-state-decoder and transcoder biases and offsets), added up from their parts. Every value equals the sum of its incoming edges plus this term; the page checks that for every node.' : 'All constant terms on the frozen path (encoder, message, node-update, transcoder and decoder biases), summed, so every value is exactly the sum of its incoming edges.'}</p>${avSec('Outgoing edges', avEdgeList(nd.id, 'out', Gr), null, false)}`;
   }
   document.getElementById('featDetail').innerHTML = h;
   if (nd.type === 'feature' && !Gr.super) loadContexts(nd.f);
