@@ -372,5 +372,5 @@
       const spec = current.getAttribute('data-tip');           // element was re-rendered: follow its replacement
       const twin = [...document.querySelectorAll('[data-tip]')].find(e => e.getAttribute('data-tip') === spec);
       if (twin) show(twin); else hide();
-    }, hide, GL };
+    }, hide, GL, GL_EDGE };
 })();
