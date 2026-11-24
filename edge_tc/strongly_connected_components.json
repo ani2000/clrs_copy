@@ -1,0 +1,1 @@
+{"algo":"strongly_connected_components","H":128,"D":1280,"k":8,"offsets":{"s_mu":[0,128],"y_mu":[128,128],"b_pre":[256,128],"b_dec":[384,128],"b_enc":[512,1280],"scales":[1792,2],"W_enc":[1794,163840],"W_dec":[165634,163840]},"sha256":"2426c11aa10c5f3a84a46e382f6d74198eafe049309d85523e0e2f18cc23e6a3","floats":329474}

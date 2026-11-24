@@ -1,0 +1,1 @@
+{"algo":"topological_sort","H":128,"D":1280,"k":8,"offsets":{"s_mu":[0,128],"y_mu":[128,128],"b_pre":[256,128],"b_dec":[384,128],"b_enc":[512,1280],"scales":[1792,2],"W_enc":[1794,163840],"W_dec":[165634,163840]},"sha256":"4ee7e5329de9af073df587f93c97ce8e0bdca7eb0fd9ef549c4bb4174a1d9ec4","floats":329474}
