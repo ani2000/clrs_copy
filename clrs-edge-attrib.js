@@ -75,7 +75,7 @@
   // opts: {t, i, main, pointerField, window}. AT = attrib.js (only targetsFor is used).
   function explain(MP, AT, M, T, inst, opts) {
     const t = opts.t, tLo = Math.max(0, t - (opts.window || 3) + 1), N = inst.n, H = M.H, P = M.proc, D = T.D, ys = T.y_scale;
-    const run = MP.runRecord(M, inst, { record: { from: tLo, to: t }, stopAt: t });
+    const run = opts.run || MP.runRecord(M, inst, { record: { from: tLo, to: t }, stopAt: t });      // opts.run: an already recorded run covering [tLo, t]
     const targets = AT.targetsFor(MP, M, run, t, opts.i, opts.main, opts.pointerField);
     const fieldsAt = M.fields.filter(f => f.stage === 'input' || f.stage === 'hint');
     const valuesAt = ts => { const v = {}; for (const f of fieldsAt) v[f.name] = f.stage === 'input' ? run.inputs[f.name] : run.hintsRead[ts][f.name]; return v; };
@@ -182,7 +182,7 @@
     };
     const latCache = new Map();
     const mb = new Float64Array(H); for (let c = 0; c < H; c++) mb[c] = P.m1.b[c] + P.m2.b[c] + P.me.b[c] + P.mg.b[c];
-    for (let ts = tLo; ts <= t; ts++) {
+    for (let ts = tLo; ts <= t && !opts.lite; ts++) {                                // opts.lite: only the edges into the target logits (effects of the last step's latents)
       for (let p = 0; p < N * N; p++) {
         const j2 = p % N, i2 = Math.floor(p / N);
         const L = St[ts].lat[p]; if (!L) continue;                                    // at the last step only latents that can reach the targets exist
@@ -292,9 +292,11 @@
       out.push(nd); influence[nd.id] = pr.infl[k];
       const te = {}; for (const [l, r] of pr.effects) if (l !== k && Math.abs(r[k]) > 1e-9) te[nodes[l].id] = r[k]; if (Object.keys(te).length) totalEffect[nd.id] = te;
     }
+    let wAll = 0, wErr = 0;                                                             // share of the absolute weight arriving at the target logits that comes from error nodes
+    for (let e = 0; e < E; e++) if (nodes[eD[e]].type === 'logit') { wAll += pr.A[e]; if (nodes[eS[e]].type === 'error') wErr += pr.A[e]; }
     const id = k => nodes[k].id;
     return { nodes: out, pruned: { nodes: pr.prunedNodes.map(id), edges: pr.fin.map(e => ({ s: id(eS[e]), d: id(eD[e]), w: eW[e] })) },
-             top: topE.map(e => ({ s: id(eS[e]), d: id(eD[e]), w: eW[e] })), influence, totalEffect, keptInfluence: pr.keptInfluence,
+             top: topE.map(e => ({ s: id(eS[e]), d: id(eD[e]), w: eW[e] })), influence, totalEffect, keptInfluence: pr.keptInfluence, errorShare: wAll > 0 ? wErr / wAll : 0,
              nAll: nodes.length, eAll: E, targets: ex.targets.map(tg => { const o = Object.assign({}, tg); delete o.sel; return o; }), tLo, checks: ex.checks };
   }
 

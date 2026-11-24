@@ -122,6 +122,9 @@ n = 16 graphs per algorithm from `/api/instance`, the reference file `clrs-trans
 | `test4_fd.js` | (E0) an independent replay of the replacement model (transcoder output + error node, winners / σ / ReLU pattern frozen) reproduces the real hidden states and target logits; (FD) nudging one latent in the replay changes later pre-activations by exactly the edge weight / activation, and every target logit by exactly the total effect; (SUM) for every latent and target the sum of incoming edges plus the explicit bias equals its value | all 12 algorithms: E0 ≤ 1.4e-14, edge weights vs finite differences ≤ 5.5e-14 (about 15–40 thousand comparisons each), total effects ≤ 1.1e-13, sums ≤ 1e-13. The bias is computed from the constant terms, not chosen to make the sums work |
 | `test6_regression.js` | the previous (node-site) graph, now served at `/demo`, is unchanged by this change | byte-identical nodes, edges, pruned graph and total effects for bfs, bellman_ford, dijkstra (n = 8, p = 0.4, seed = 42) |
 | `test7_intervene.js` | the clamp panel runs for every algorithm and a factor of 1 changes nothing | 12/12 |
+| `test8_replacement.js` | the transcoder works as planned INSIDE the network: the message MLP is replaced by the transcoder at every step (winners and hints recomputed), on the site's own graphs, and the predictions are compared with the unmodified network | all 12 algorithms: the network keeps 94–102% of its accuracy against the truth (the training report's retention is 97–100%; 3 graphs per algorithm here), prediction agreement 85–100% (dijkstra and mst_prim are the lowest) |
+| `clrs_edge_latents.js` (+ `fetch_graphs.sh`) | measures what every latent does and writes `edge_tc/<algo>.latents.json` (see below) | 60 graphs per algorithm, 720 in total, no duplicates; deterministic (a second run gives identical tables); the sum test holds on every one of the ~85 thousand effect computations (worst 7e-14) |
+| `test9_labels.js` | a second, simple implementation reproduces the stored precision / recall / F1 of the best named latents on the held-out graphs | all 12 algorithms, 40 latents checked: identical to 3 decimals |
 | `report_interventions.js` | **not a gate**: how well does the graph's linear prediction of a clamp match the real model? | direction matched in 223 of 325 comparisons (69%), 44–77% depending on the algorithm. Holding the fed-back hints fixed makes no difference. The graph freezes the LayerNorm σ, the max-routing winners and the TopK sets, so it is a first-order guide only; the page says so next to every result |
 
 Known limits (also stated in the page): the edge-site latents have no names (the hint predicates the node-site features use fit pair latents
@@ -129,3 +132,15 @@ poorly); the faithfulness of the replacement is measured at n = 16 for all algor
 (bridges 0.54, articulation_points 0.89, dijkstra 0.90 at n = 64); with k = 8 the replacement changes the max-winner in 9–20% of channels when it
 runs on its own (the graph uses the real winners, so it is exact for the real run regardless); cost: about 0.4 s at n = 16, 0.8 s at n = 24 and
 1.5 s at n = 32 in the browser worker.
+
+
+### What each latent means (`edge_tc/<algo>.latents.json`, shown in the inspector, the "Top latents at each step" panel and the dictionary)
+
+For every latent that fires, over 60 fresh n = 16 graphs per algorithm (seeds 2000–2059 of the sampler; up to 20 evenly spaced steps per graph):
+
+* how often it fires, with what activation, and on which kind of pair (real edge / non-edge / self pair) compared with the share of such pairs;
+* its **effect**: the change of the receiver's main target logit per unit of the latent's activation (for categorical targets the logit of the predicted class), mean, standard deviation and the share of activations where it is positive. This is the graph's own edge weight into the logit divided by the activation, so it inherits the finite-difference and sum checks above;
+* its best-matching **conditions** on the pair (for example "the sender is already reached", "the receiver turns 1 next step", "real edge from a reached sender to an unreached receiver") with precision, recall and F1. The conditions use the reference algorithm's true hints and the input graph. They are **chosen on the 30 even-seed graphs and scored on the 30 odd-seed graphs the choice never saw**; a latent is named only if its held-out F1 is at least 0.5 (tier B) or 0.8 (tier A);
+* its three strongest activations as (seed, step, sender, receiver), which the page can load.
+
+Result: only a small share of the latents can be named (per algorithm 3–18 of the 650–1,190 that fire; tier A 0–3), which matches the training report's warning that pair latents are poorly described by simple conditions. The rest are shown as "unnamed", with the facts above and their best held-out match, not a guessed name. Examples of named latents: in bfs, f64 fires exactly when the sender is the source node (held-out F1 1.00), f573 on real edges (0.88), f551 on edges from a reached to an unreached node, where it raises the receiver's reach logit in 99% of its activations.

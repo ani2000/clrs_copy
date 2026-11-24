@@ -106,6 +106,7 @@ function avReceive(m) {
   const nodes = {}; m.nodes.forEach(nd => { nodes[nd.id] = nd; if (nd.type === 'feature') { if (m.mode === 'edge') { nd.label = `${nd.s}→${nd.i}`; nd.group = nd.ptype === 'edge' ? 'pe' : nd.ptype === 'self' ? 'ps' : 'pn'; } else { nd.label = avLabel(nd.f); nd.group = avGroup(nd.label); } } });
   AV.data = Object.assign(m, { nodesById: nodes, t: AV.want.t, i: AV.want.i, key: AV.want.key, mode: m.mode || 'node' });
   AV.pinned = null; AV.hovered = null; AV.scrolled = null;
+  if (m.mode === 'edge') ensureLatents(curAlgo).catch(() => {});
   avRender();
   const top = m.pruned.nodes.filter(id => nodes[id] && nodes[id].type === 'feature').sort((a, b) => (m.influence[b] || 0) - (m.influence[a] || 0))[0];
   if (top) avInspect(nodes[top]);
@@ -184,11 +185,12 @@ function avCurrent() {
   else { edges = d.top; const ids = new Set(); edges.forEach(e => { ids.add(e.s); ids.add(e.d); }); d.targets.forEach(tg => ids.add(tg.id)); nodes = [...ids].map(id => N[id]).filter(Boolean); }
   nodes = nodes.filter(nd => nd.type !== 'logit' || nd.prob >= 0.01 || nd.always);
   edges = edges.filter(e => Math.abs(e.w) >= minW);
-  if (viewMode === 'supernodes') {
-    const key = nd => nd.type === 'feature' ? `S:F${nd.t}:${nd.label}` : nd.type === 'leaf' ? `S:L${nd.t}:${nd.probe}` : nd.type === 'error' ? `S:E${nd.t}` : nd.id;
+  if (viewMode === 'supernodes' || viewMode === 'meaning') {
+    const flab = nd => (viewMode === 'meaning' && d.mode === 'edge') ? avMeaningOf(nd) : nd.label;                 // 'By meaning' groups latents by what they were found to mean
+    const key = nd => nd.type === 'feature' ? `S:F${nd.t}:${flab(nd)}` : nd.type === 'leaf' ? `S:L${nd.t}:${nd.probe}` : nd.type === 'error' ? `S:E${nd.t}` : nd.id;
     const sup = {}, memberOf = {};
     nodes.forEach(nd => { const k = key(nd); memberOf[nd.id] = k;
-      if (!sup[k]) sup[k] = Object.assign({}, nd, { id: k, members: [], act: 0, label: nd.type === 'feature' ? nd.label : nd.type === 'leaf' ? nd.probe : nd.type === 'error' ? 'error' : nd.label });
+      if (!sup[k]) sup[k] = Object.assign({}, nd, { id: k, members: [], act: 0, label: nd.type === 'feature' ? flab(nd) : nd.type === 'leaf' ? nd.probe : nd.type === 'error' ? 'error' : nd.label });
       sup[k].members.push(nd.id); sup[k].act += (nd.act || 0); });
     const agg = {}; edges.forEach(e => { const s = memberOf[e.s], dd = memberOf[e.d]; if (!s || !dd || s === dd) return; agg[s + '\u0001' + dd] = (agg[s + '\u0001' + dd] || 0) + e.w; });
     return { nodes: Object.values(sup), edges: Object.entries(agg).map(([k, w]) => { const [s, dd] = k.split('\u0001'); return { s, d: dd, w }; }), super: true };
@@ -281,7 +283,7 @@ function avRender() {
     const tip = r === 'O' ? 'g:avRowO' : r[0] === 'F' ? 'g:avRowF' : 'g:avRowL'; tx.setAttribute('data-tip', tip);
   });
   L.cols.forEach(c => { const tx = avEl('text', { x: L.colX(c), y: 22, class: 'collab', 'text-anchor': 'middle' }, svg);
-    tx.textContent = Gr.super ? c : (c === 'bias' ? 'bias' : `${AV.data.mode === 'edge' ? 'to ' : ''}node ${c}${+c === G.source ? ' (src)' : ''}${+c === AV.data.i ? ' ★' : ''}`);
+    tx.textContent = Gr.super ? c : (c === 'bias' ? 'bias' : (AV.data.mode === 'edge' ? `→ ${c}${+c === G.source ? ' src' : ''}${+c === AV.data.i ? ' ★' : ''}` : `node ${c}${+c === G.source ? ' (src)' : ''}${+c === AV.data.i ? ' ★' : ''}`));
     if (!Gr.super && c !== 'bias') tx.setAttribute('data-tip', 'node:' + c); });
   const wmax = Math.max(1e-6, ...Gr.edges.map(e => Math.abs(e.w)));
   const eg = avEl('g', {}, svg), hitg = avEl('g', {}, svg);
@@ -317,6 +319,7 @@ function avRender() {
     AV.nodeEls[nd.id] = g;
   });
   avHighlight(); avLegend(Gr); avStat(Gr);
+  if (AV.data.mode === 'edge') { renderTopLatents(); renderMessageMap(); renderDictionary(); }
   if (AV.data.mode === 'edge' && !Gr.super && !AV.scrolled) {          // edge-site graphs are wide: bring the explained node's column into view the first time
     const host = document.getElementById('attribScroll'), c = String(AV.data.i); if (host && L.cols.includes(c)) host.scrollLeft = Math.max(0, L.colX(c) - host.clientWidth / 2); AV.scrolled = AV.data.key;
   }
@@ -345,8 +348,97 @@ function avStat(Gr) {
   const d = AV.data;
   const shown = pruneMode === 'pruned' ? '' : ` Showing the ${d.top.length.toLocaleString()} strongest of ${d.eAll.toLocaleString()} edges${minW > 0 ? `, |w| ≥ ${minW.toFixed(2)}` : ''}.`;
   const ek = d.mode === 'edge', ck = d.checks;
-  document.getElementById('gstat').textContent = ek ? `Attribution graph (edge-site transcoder): ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Every latent's pre-activation and every target logit equals the sum of its incoming edges plus a bias computed from the constant terms (max-routing winners, LayerNorm σ, the node update's ReLU pattern and the pointer max frozen). Checked on this graph: ${ck.n.toLocaleString()} nodes, largest difference ${ck.maxAbs.toExponential(1)}. Edge weights and total effects were checked against finite differences in the test suite (verification/clrs-edge). Traced in your browser in ${d.ms} ms.` : `Attribution graph: ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Every feature's pre-activation and every target logit equals the sum of its incoming edges (ReLU masks, max-routing, top-k and pointer max frozen; edge weights verified against finite differences). Traced in your browser in ${d.ms} ms.`;
+  document.getElementById('gstat').textContent = ek ? `Attribution graph (edge-site transcoder): ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Error nodes supply ${((d.errorShare || 0) * 100).toFixed(d.errorShare < 0.1 ? 1 : 0)}% of the absolute weight arriving at the predictions (the part the latents do not explain). Every latent's pre-activation and every target logit equals the sum of its incoming edges plus a bias computed from the constant terms (max-routing winners, LayerNorm σ, the node update's ReLU pattern and the pointer max frozen). Checked on this graph: ${ck.n.toLocaleString()} nodes, largest difference ${ck.maxAbs.toExponential(1)}. Edge weights and total effects were checked against finite differences in the test suite (verification/clrs-edge). Traced in your browser in ${d.ms} ms.` : `Attribution graph: ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Every feature's pre-activation and every target logit equals the sum of its incoming edges (ReLU masks, max-routing, top-k and pointer max frozen; edge weights verified against finite differences). Traced in your browser in ${d.ms} ms.`;
 }
+
+
+// ---------- what the edge-site latents mean (edge_tc/<algo>.latents.json, measured by verification/clrs-edge/clrs_edge_latents.js) ----------
+// Per latent: how often it fires and on which pairs, its effect on the receiver's main target logit, and its best-matching conditions scored on held-out graphs.
+const LATS = {}, LAT_REQ = {};
+function ensureLatents(a) {
+  if (LATS[a]) return Promise.resolve(LATS[a]);
+  if (!LAT_REQ[a]) LAT_REQ[a] = withRetry(() => getJSON('/edge_tc/' + a + '.latents.json?v=' + BUILD)).then(j => { LATS[a] = j; delete LAT_REQ[a]; if (a === curAlgo) avLatentsReady(); return j; }, e => { delete LAT_REQ[a]; throw e; });
+  return LAT_REQ[a];
+}
+const avJ = () => (typeof LATS !== 'undefined' && LATS[curAlgo]) || null;
+const avMeaning = f => { const J = avJ(); return J && J.latents[f] ? J.latents[f] : null; };
+const avShortName = (J, v) => v && v.tier !== '-' ? J.conditions[v.best[0][0]].id.replace(/_/g, ' ') : null;
+function avMeaningOf(nd) { const J = avJ(); if (!J) return 'loading…'; return avShortName(J, J.latents[nd.f]) || 'unnamed'; }
+const pct0 = x => (x * 100).toFixed(0) + '%';
+function avEffectText(J, v) {                 // effect on the receiver's main target logit per unit of activation (the graph's own edge weight, averaged over the activations measured)
+  if (!v || !v.eff) return 'not measured (it never fired at a step that was used for effects)';
+  const [m, sd, n, pos] = v.eff, word = pos >= 0.9 ? 'raises' : pos >= 0.65 ? 'mostly raises' : pos <= 0.1 ? 'lowers' : pos <= 0.35 ? 'mostly lowers' : 'has a mixed effect on';
+  return `${word} the ${avEsc(J.effect_of || 'receiver’s ' + J.target + ' logit')}: ${m >= 0 ? '+' : ''}${m.toFixed(3)} per unit of activation on average (sd ${sd.toFixed(3)}, positive in ${pct0(pos)} of ${n.toLocaleString()} activations)`;
+}
+function avMeaningHtml(nd) {                  // the "what does this latent mean" block of the inspector
+  const J = avJ(); if (!J) return '<p class="note">Loading what this latent means…</p>';
+  const v = J.latents[nd.f];
+  if (!v) return `<p class="note">This latent never fired in the ${J.graphs} measurement graphs, so nothing is known about what it does.</p>`;
+  const base = c => (J.conditions.find(x => x.id === c) || {}).base_rate_held, e = v.kind;
+  let h = '';
+  if (v.tier !== '-') { const b = v.best[0]; h += `<p class="note"><b>Meaning:</b> ${avEsc(J.conditions[b[0]].text)}. <span class="mono">tier ${v.tier}</span>: held-out precision ${b[1].toFixed(2)}, recall ${b[2].toFixed(2)}, F1 ${b[3].toFixed(2)}.</p>`; }
+  else h += `<p class="note"><b>Unnamed:</b> no simple condition matches this latent well (best held-out F1 ${v.best.length ? v.best[0][3].toFixed(2) : '0.00'}). The facts below are all that is known about it.</p>`;
+  h += `<dl class="ikv"><dt>effect</dt><dd>${avEffectText(J, v)}</dd><dt>fires on</dt><dd>${(v.rate * 100).toFixed(1)}% of pairs (mean activation ${v.act}, max ${v.max})</dd>
+    <dt>on which pairs</dt><dd>${pct0(e[0])} real edges (${pct0(base('edge') || 0)} of all pairs), ${pct0(e[1])} non-edges (${pct0(base('nonedge') || 0)}), ${pct0(e[2])} self pairs (${pct0(base('self') || 0)})</dd></dl>`;
+  if (v.best.length) h += `<div class="isec"><h3>Best-matching conditions (held-out graphs)</h3><table class="ivtab condtab"><tr><th>condition</th><th>P</th><th>R</th><th>F1</th></tr>${v.best.map(b => `<tr><td>${avEsc(J.conditions[b[0]].text)}</td><td>${b[1].toFixed(2)}</td><td>${b[2].toFixed(2)}</td><td>${b[3].toFixed(2)}</td></tr>`).join('')}</table></div>`;
+  if (v.ex && v.ex.length) h += `<div class="isec"><h3>Strongest activations (sampler n = 16, p = 0.4)</h3>${v.ex.map(x => `<div class="small"><span class="mono">seed ${x[0]}, step ${x[1]}, ${x[2]} → ${x[3]}</span> activation ${x[4]} <button class="avex" data-seed="${x[0]}" data-t="${x[1]}" data-r="${x[3]}">show</button></div>`).join('')}</div>`;
+  h += `<p class="small" style="color:var(--muted)">Measured on ${J.graphs} graphs (${J.rows_fit + J.rows_held} pair rows${J.max_steps_per_graph ? ', up to ' + J.max_steps_per_graph + ' evenly spaced steps per graph' : ''}): conditions chosen on ${J.graphs_fit} graphs, scored on the other ${J.graphs - J.graphs_fit}.</p>`;
+  return h;
+}
+async function avOpenExample(seed, t, r) {      // load one of the measured graphs and explain the receiver at that step
+  document.getElementById('inN').value = 16; document.getElementById('inP').value = 0.4; document.getElementById('inSeed').value = seed;
+  await loadGraph(seed); if (!G || G._preview) return;
+  curStep = Math.min(t, G.length - 2); const rg = document.getElementById('stepRange'); if (rg) rg.value = curStep;
+  selected = { node: r, step: curStep }; drawGraph(); drawAttribution();
+}
+document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('button.avex'); if (b) avOpenExample(+b.dataset.seed, +b.dataset.t, +b.dataset.r); });
+function avLatentsReady() { renderDictionary(); if (!AV.data || AV.data.mode !== 'edge') return; avRender(); if (AV.pinned && AV.data.nodesById[AV.pinned]) avInspect(AV.data.nodesById[AV.pinned], AV.gr); }
+
+// ---------- panels that summarise the current graph (edge-site) ----------
+function avInfl(id) { return AV.data.influence[id] || 0; }
+function renderTopLatents() {                 // top latents of the pruned graph at every step of the window, with what they mean
+  const box = document.getElementById('topLatents'); if (!box) return;
+  const d = AV.data; if (!d || d.mode !== 'edge') { box.innerHTML = '<p class="small">Click a node in the simulation to trace a prediction.</p>'; return; }
+  const J = avJ(); let h = '';
+  for (let ts = d.t; ts >= d.tLo; ts--) {
+    const feats = d.pruned.nodes.map(id => d.nodesById[id]).filter(nd => nd && nd.type === 'feature' && nd.t === ts).sort((a, b) => avInfl(b.id) - avInfl(a.id)).slice(0, 6);
+    h += `<h3>Step ${ts}${ts === d.t ? ' (the step being explained)' : ' (feeds the next step)'}</h3>`;
+    if (!feats.length) { h += '<p class="small">No latent of this step is in the pruned graph.</p>'; continue; }
+    h += `<table class="toptab"><tr><th>latent</th><th>pair</th><th>activation</th><th>influence</th><th>meaning</th><th>effect on the receiver</th></tr>` + feats.map(nd => {
+      const v = J && J.latents[nd.f], nm = J ? (avShortName(J, v) || 'unnamed') : '…', ef = v && v.eff ? `${v.eff[0] >= 0 ? '+' : ''}${v.eff[0].toFixed(3)}${v.eff[3] >= 0.9 ? ' (raises)' : v.eff[3] >= 0.65 ? ' (mostly raises)' : v.eff[3] <= 0.1 ? ' (lowers)' : v.eff[3] <= 0.35 ? ' (mostly lowers)' : ' (mixed)'}` : '-';
+      return `<tr data-id="${avEsc(nd.id)}" tabindex="0"><td>f${nd.f}</td><td>${nd.s} → ${nd.i}</td><td>${nd.act.toFixed(2)}</td><td>${avInfl(nd.id).toFixed(4)}</td><td>${v && v.tier !== '-' ? `<b>${avEsc(nm)}</b> <span class="mono">${v.tier}</span>` : '<span style="color:var(--muted)">unnamed</span>'}</td><td>${ef}</td></tr>`; }).join('') + '</table>';
+  }
+  box.innerHTML = h;
+}
+document.addEventListener('click', ev => { const tr = ev.target.closest && ev.target.closest('#topLatents tr[data-id]'); if (!tr || !AV.data) return; const nd = AV.data.nodesById[tr.dataset.id]; if (!nd || !AV.nodeEls[nd.id]) return; AV.pinned = nd.id; avHighlight(); avInspect(nd, AV.gr); });
+function renderDictionary() {                 // the best-named latents of the algorithm, with the measured evidence
+  const box = document.getElementById('latDict'); if (!box) return; const J = avJ();
+  if (!J) { box.innerHTML = '<p class="small">Loading…</p>'; return; }
+  const rows = Object.entries(J.latents).filter(([f, v]) => v.tier !== '-').sort((a, b) => b[1].best[0][3] - a[1].best[0][3] || b[1].n - a[1].n).slice(0, 20);
+  box.innerHTML = `<p class="small">${J.fired} of ${J.fired + J.never_fired} latents fired in ${J.graphs} graphs (${J.rows_fit + J.rows_held} pair rows); <b>${J.named}</b> can be named (tier A: ${J.tier_a}); ${J.never_fired} never fired. The rest have no simple description that holds on held-out graphs.</p>` +
+    (rows.length ? `<div class="tscroll"><table class="toptab"><tr><th>latent</th><th>meaning</th><th>tier</th><th>P</th><th>R</th><th>F1</th><th>fires on</th><th>effect on the receiver</th></tr>${rows.map(([f, v]) => { const b = v.best[0];
+      return `<tr><td>f${f}</td><td>${avEsc(J.conditions[b[0]].text)}</td><td>${v.tier}</td><td>${b[1].toFixed(2)}</td><td>${b[2].toFixed(2)}</td><td>${b[3].toFixed(2)}</td><td>${(v.rate * 100).toFixed(1)}%</td><td>${v.eff ? (v.eff[0] >= 0 ? '+' : '') + v.eff[0].toFixed(3) : '-'}</td></tr>`; }).join('')}</table></div>` : '<p class="small">No latent reached a held-out F1 of 0.5 for any condition.</p>');
+}
+let MSG_STEP = null;
+function renderMessageMap() {                 // sender x receiver: how much influence the pruned latents of each message carry at one step
+  const box = document.getElementById('msgMap'); if (!box) return; const d = AV.data;
+  if (!d || d.mode !== 'edge') { box.innerHTML = ''; return; }
+  if (MSG_STEP === null || MSG_STEP < d.tLo || MSG_STEP > d.t || AV.msgKey !== d.key) { MSG_STEP = d.t; AV.msgKey = d.key; }
+  const N = G.n, cell = Math.max(8, Math.min(16, Math.floor(260 / N))), m = Array.from({ length: N }, () => new Float64Array(N)), best = {};
+  d.pruned.nodes.map(id => d.nodesById[id]).filter(nd => nd && nd.type === 'feature' && nd.t === MSG_STEP).forEach(nd => { const v = avInfl(nd.id); m[nd.s][nd.i] += v; const k = nd.s + ',' + nd.i; if (!best[k] || v > avInfl(best[k])) best[k] = nd.id; });
+  let mx = 1e-12; for (const r of m) for (const v of r) if (v > mx) mx = v;
+  const o = 22; let svg = `<svg width="${o + N * cell + 4}" height="${o + N * cell + 4}" role="img" aria-label="influence of each sender to receiver message">`;
+  for (let i = 0; i < N; i++) { svg += `<text x="${o + i * cell + cell / 2}" y="${o - 8}" font-size="8" text-anchor="middle" fill="#6b7280">${i}</text><text x="${o - 4}" y="${o + i * cell + cell * 0.7}" font-size="8" text-anchor="end" fill="#6b7280">${i}</text>`; }
+  for (let s2 = 0; s2 < N; s2++) for (let r = 0; r < N; r++) { const v = m[s2][r], real = s2 !== r && G.adj[s2][r] > 0, a = v > 0 ? 0.12 + 0.88 * Math.sqrt(v / mx) : 0;
+    svg += `<rect x="${o + r * cell}" y="${o + s2 * cell}" width="${cell - 1}" height="${cell - 1}" fill="${v > 0 ? `rgba(37,99,235,${a.toFixed(2)})` : '#f3f4f6'}" ${real ? 'stroke="#111827" stroke-width="0.6"' : ''} ${best[s2 + ',' + r] ? `data-id="${avEsc(best[s2 + ',' + r])}" style="cursor:pointer"` : ''}><title>${s2} → ${r}: influence ${v.toFixed(4)}${real ? ' (real edge)' : ''}</title></rect>`; }
+  svg += '</svg>';
+  const tabs = []; for (let ts = d.t; ts >= d.tLo; ts--) tabs.push(`<button data-t="${ts}" class="${ts === MSG_STEP ? 'active' : ''}">step ${ts}</button>`);
+  box.innerHTML = `<h3>Message map <span class="small" style="font-weight:400">rows = senders, columns = receivers; shade = influence of the pruned latents on that message; outlined = real edge</span></h3><div class="seg msgtabs">${tabs.join('')}</div>${svg}`;
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('#msgMap .msgtabs button'); if (b) { MSG_STEP = +b.dataset.t; renderMessageMap(); return; }
+  const r = ev.target.closest && ev.target.closest('#msgMap rect[data-id]'); if (r && AV.data) { const nd = AV.data.nodesById[r.dataset.id]; if (nd && AV.nodeEls[nd.id]) { AV.pinned = nd.id; avHighlight(); avInspect(nd, AV.gr); } }
+});
 
 // ---------- inspector ----------
 function avName(id, Gr) {
@@ -377,7 +469,7 @@ function avInspect(nd, Gr) {
       <div class="chips"><span class="chip grp" style="background:var(${AV_GROUP[nd.group][0]})">${AV_GROUP[nd.group][1]}</span></div>
       <dl class="ikv"><dt data-tip="g:avAct">activation</dt><dd>${nd.act.toFixed(3)}</dd><dt data-tip="g:avInfluence">influence on targets</dt><dd>${(d.influence[nd.id] || 0).toFixed(4)}</dd>
       <dt>active in this graph</dt><dd>${fi.n} of ${G.n * G.n} pairs at step ${nd.t}: ${fi.real} real edges, ${fi.self} self pairs${fi.pairs.length ? ' (e.g. ' + fi.pairs.slice(0, 5).map(p => p[0] + '→' + p[1]).join(', ') + (fi.n > 5 ? ', …' : '') + ')' : ''}</dd></dl>
-      <p class="note">This latent has no name: the edge-site transcoders have no label set yet, so only facts measured on this graph are shown.</p>`;
+      ${avMeaningHtml(nd)}`;
     const te = d.totalEffect[nd.id] || {};
     const rows = Object.entries(te).filter(([id]) => d.targets.some(x => x.id === id && (x.prob >= 0.01 || x.always))).map(([id, w]) => ({ id, w, tip: 'an:' + id })).sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, 6);
     h += `<div class="isec"><h3 data-tip="g:avTotalEffect">Total effect on the targets (per unit activation)</h3>${avBars(rows, x => avTargetName(x.id))}</div>`;
@@ -468,6 +560,7 @@ window.avCard = function (id) {
     const te = d.totalEffect[id] || {};
     return `<div class="hc-title">Latent ${nd.f} · step ${nd.t} · pair ${nd.s} → ${nd.i}</div><div class="hc-body"><b>${avEsc(AV_GROUP[nd.group][1])}</b> <span class="hc-muted">unnamed</span></div>
       <table class="hc-kv">${row('activation', nd.act.toFixed(3))}${row('influence on targets', (d.influence[id] || 0).toFixed(4))}${d.targets.filter(t => t.always).map(t => row('total effect → ' + avEsc(avTargetName(t.id)), ((te[t.id] || 0) >= 0 ? '+' : '') + (te[t.id] || 0).toFixed(3))).join('')}${row('edges in / out (view)', `${inW} / ${outW}`)}</table>
+      ${(() => { const J = avJ(), v = J && J.latents[nd.f]; return J ? `<div class="hc-how"><b>${v && v.tier !== '-' ? avEsc(J.conditions[v.best[0][0]].text) + ' (tier ' + v.tier + ')' : 'Unnamed'}</b>${v && v.eff ? '<br>' + avEffectText(J, v) : ''}</div>` : ''; })()}
       <div class="hc-why"><b>Why:</b> one of the 8 transcoder latents active on the pair ${nd.s} → ${nd.i} in step ${nd.t}. It writes into the message that node ${nd.s} sends to node ${nd.i}; that message reaches node ${nd.i}’s new state only through the channels where ${nd.s} is the max-routing winner.</div><div class="hc-how">Click to pin it: highlights its edges, opens the inspector and lets you clamp it.</div>`;
   }
   if (nd.type === 'feature' && !Gr.super) {

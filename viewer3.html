@@ -196,6 +196,16 @@ window.__early = {};
   .etcfacts .kv > span:last-child { text-align:right; overflow-wrap:anywhere; }
   .etcfacts svg { vertical-align:middle; }
   .readlist { margin:6px 0 0; padding-left:18px; font-size:12.5px; line-height:1.5; } .readlist li { margin:0 0 6px; }
+
+  .wide { display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:14px; padding:0 14px 14px; align-items:start; }
+  .wide .panel { min-width:0; } .wide h3 { font-size:12px; margin:10px 0 4px; color:var(--ink-2, var(--ink)); }
+  .toptab { border-collapse:collapse; width:100%; font-size:12px; } .toptab th { text-align:left; font-size:10.5px; color:var(--muted); font-weight:600; padding:2px 8px 2px 0; border-bottom:1px solid var(--line); }
+  .toptab td { padding:3px 8px 3px 0; border-bottom:1px solid var(--line); vertical-align:top; } #topLatents .toptab tr[data-id] { cursor:pointer; } #topLatents .toptab tr[data-id]:hover { background:#fff4d6; }
+  .msgmap { margin-top:10px; } .msgmap h3 { font-size:12px; margin:0 0 4px; } .msgmap svg { display:block; margin-top:4px; max-width:100%; } .msgtabs { margin:4px 0; flex-wrap:wrap; }
+  .condtab td:not(:first-child), .condtab th:not(:first-child) { white-space:nowrap; text-align:right; padding-left:8px; } .condtab td:first-child { overflow-wrap:anywhere; }
+  button.avex { font-size:10.5px; padding:0 6px; margin-left:4px; cursor:pointer; }
+  @media (max-width:1180px) { .wide { grid-template-columns:minmax(0, 1fr); } }
+  @media (max-width:760px) { .wide { padding:0 10px 10px; gap:10px; } }
   @media (hover: none) { .tt { border-bottom-style:dashed; } }
   /* hover preview cards (explain.js) */
   .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
@@ -261,6 +271,7 @@ window.__early = {};
     </div>
     <div class="small" id="clickHint">Click a node to explain the model's prediction for it at the current step.</div>
     <div class="small" id="graphLegend" style="margin-top:6px;"></div>
+    <div id="msgMap" class="msgmap"></div>
   </div>
 
   <div class="panel" id="pnlAttr">
@@ -270,7 +281,7 @@ window.__early = {};
     <div id="edgeNote" class="edgenote" hidden></div>
     <div class="toolbar">
       <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
-      <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button></div>
+      <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button><button data-v="meaning" data-tip="g:bymeaning">By meaning</button></div>
       <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
     </div>
     <div id="attribScroll" class="gscroll"><svg id="attribSvg" role="img" aria-label="Attribution graph"></svg></div>
@@ -290,6 +301,17 @@ window.__early = {};
     <div class="small pcfoot">Bright line: what is executing now. Thin bar: the loops and tests around it. Small tags: the current loop values. The colour shows how deeply a line is nested:
       <span class="pclegend"><span><i style="background:#2563eb"></i>level 1</span><span><i style="background:#059669"></i>level 2</span><span><i style="background:#d97706"></i>level 3</span><span><i style="background:#7c3aed"></i>level 4</span><span><i style="background:#db2777"></i>level 5</span></span>
       Some algorithms record several steps for one line, so a line can stay highlighted for a few steps.</div>
+  </div>
+</div>
+
+<div class="wide">
+  <div class="panel" id="pnlTop">
+    <h2><span class="tt" data-tip="g:topLatents">Top latents at each step</span></h2>
+    <div id="topLatents" class="small">Click a node in the simulation to trace a prediction.</div>
+  </div>
+  <div class="panel" id="pnlDict">
+    <h2><span class="tt" data-tip="g:latDict">Latent dictionary: what the best-understood latents mean</span></h2>
+    <div id="latDict" class="small">Loading…</div>
   </div>
 </div>
 
@@ -1384,6 +1406,8 @@ async function loadAlgo() {
   showSkeleton();
   setStatus('Loading ' + algo + '…');
   fillHeader(algo);                                 // target, FVU and scores come from the small summary: instant
+  if (typeof ensureLatents === 'function') ensureLatents(algo).catch(() => {});      // what the latents mean (small, cached)
+  if (typeof renderDictionary === 'function') renderDictionary();
   ensureLocalModel(algo);                           // start the model download straight away, in parallel with everything else
   if (gen !== algoGen) return;
   await loadGraph();

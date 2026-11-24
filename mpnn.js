@@ -188,6 +188,7 @@
   //                           hint values read, and raw decoder logits for steps in [from, to]
   // opts.stopAt: t            stop after step t (inclusive)
   // opts.patch: {t, i, dy}    add dy (H) to node i's new hidden state at step t (feature intervention)
+  // opts.site: (t, s, y) => void   called with the site input s and output y of every step; may overwrite y in place (replacement model)
   // opts.patchY: {t, i, j, dy} add dy (H) to the message y_ij of sender i to receiver j at step t (edge-site feature intervention)
   // opts.hints: [..]          use these per-step hint inputs instead of the model's own decoded ones
   function* runGen(M, inst, opts) {      // one step at a time: yields {t, z, msgs} so a caller can show early steps while the rest is computed
@@ -209,7 +210,7 @@
       for (let i = 0; i < N; i++) { z.set(nodeF.subarray(i * H, (i + 1) * H), i * 2 * H); z.set(hidden.subarray(i * H, (i + 1) * H), i * 2 * H + H); }
       const keep = R && t >= R.from && t <= R.to;
       const m1 = linRows(z, N, P.m1), m2 = linRows(z, N, P.m2), me = linRows(edgeF, N * N, P.me), mg = linRows(graphF, 1, P.mg);
-      const pre = new Float64Array(N * N * H), mask0 = keep ? new Uint8Array(N * N * H) : null, sRaw = keep ? new Float64Array(N * N * H) : null;   // sRaw: the message-site input s_ij before its ReLU
+      const pre = new Float64Array(N * N * H), mask0 = keep ? new Uint8Array(N * N * H) : null, sRaw = (keep || opts.site) ? new Float64Array(N * N * H) : null;   // sRaw: the message-site input s_ij before its ReLU
       for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {                // i = sender, j = receiver
         const o = (i * N + j) * H;
         for (let c = 0; c < H; c++) { const v = m2[i * H + c] + m1[j * H + c] + me[o + c] + mg[c]; if (sRaw) sRaw[o + c] = v; if (v > 0) { pre[o + c] = v; if (mask0) mask0[o + c] = 1; } }
@@ -217,6 +218,7 @@
       const a0 = linRows(pre, N * N, P.mlp0), mask1 = keep ? new Uint8Array(N * N * H) : null;
       for (let k = 0; k < a0.length; k++) { if (a0[k] < 0) a0[k] = 0; else if (mask1 && a0[k] > 0) mask1[k] = 1; }
       const mm = linRows(a0, N * N, P.mlp1);                                   // y_ij: the message-site output
+      if (opts.site) opts.site(t, sRaw, mm);                                    // replace the message MLP's output (in place), e.g. by a transcoder's reconstruction
       if (opts.patchY && opts.patchY.t === t) { const o = (opts.patchY.i * N + opts.patchY.j) * H; for (let c = 0; c < H; c++) mm[o + c] += opts.patchY.dy[c]; }   // add dy (H) to the message of pair (sender i, receiver j)
       const agg = new Float64Array(N * H).fill(-Infinity), route = keep ? new Int32Array(N * H) : null;
       for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const o = (i * N + j) * H; for (let c = 0; c < H; c++) if (mm[o + c] > agg[j * H + c]) { agg[j * H + c] = mm[o + c]; if (route) route[j * H + c] = i; } }

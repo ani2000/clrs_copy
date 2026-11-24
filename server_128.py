@@ -287,7 +287,7 @@ ALGOS_JSON = json.dumps({a: dict(target=META[a]['target'], target_type=META[a]['
 GZ_STATIC = {}        # (file, content hash) -> gzip bytes, compressed once
 PAGES = ('viewer3.html', 'demo.html')       # pages with the build id and the algorithm list filled in; /demo is the previous version (node-site transcoder)
 MODEL_RE = re.compile(r'^models/([a-z_]+)\.(json|bin)$')
-EDGE_RE = re.compile(r'^edge_tc/(?:([a-z_]+)\.(json|bin)|clrs-edge-summary\.json)$')    # edge-site transcoder files; the algorithm must be one we serve
+EDGE_RE = re.compile(r'^edge_tc/(?:([a-z_]+)(?:\.latents)?\.(json|bin)|clrs-edge-summary\.json)$')    # edge-site transcoder files; the algorithm must be one we serve
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -415,13 +415,14 @@ class Handler(BaseHTTPRequestHandler):
                     data = data.replace(b'__BUILD__', BUILD.encode())
                     data = data.replace(b'__ALGOS_JSON__', ALGOS_JSON.replace(b'<', b'\\u003c'))
                 # pages and scripts are text: send them gzip-compressed (about 3x smaller; model bundles are floats and barely shrink)
-                gz = path in STATIC_FILES and 'gzip' in self.headers.get('Accept-Encoding', '')
+                comp = path in STATIC_FILES or (me is not None and path.endswith('.latents.json'))      # pages, scripts and the latent tables are text
+                gz = comp and 'gzip' in self.headers.get('Accept-Encoding', '')
                 tag = None
                 if m or me or path in PAGES:
                     tag = '"' + hashlib.sha1(data).hexdigest()[:20] + ('-gz' if gz else '') + '"'
                     if self.headers.get('If-None-Match') == tag:
                         self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache)
-                        if path in STATIC_FILES: self.send_header('Vary', 'Accept-Encoding')
+                        if comp: self.send_header('Vary', 'Accept-Encoding')
                         self.end_headers(); return
                 if gz:
                     key = (path, hashlib.sha1(data).digest())
@@ -432,7 +433,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(200); self.send_header('Content-Type', ctype)
                 self.send_header('Cache-Control', cache)
                 if tag: self.send_header('ETag', tag)
-                if path in STATIC_FILES: self.send_header('Vary', 'Accept-Encoding')
+                if comp: self.send_header('Vary', 'Accept-Encoding')
                 if gz: self.send_header('Content-Encoding', 'gzip')
                 self.send_header('Content-Length', str(len(data))); self.end_headers()
                 self._write(data)
