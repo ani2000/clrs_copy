@@ -190,7 +190,7 @@ const PSEUDO = (function () {
         for (let j = i - 1; j >= 0 && d > 0; j--) { const dj = code[j][0]; if (dj < d) { if (dj > 0) ctx.add(j); d = dj; } }
       }
       for (const i of c) ctx.delete(i);
-      const bind = {}; for (const [k, v] of Object.entries(x.bind || {})) bind[ix(k)] = v;
+      const bind = {}; for (const [k, v] of Object.entries(x.bind || {})) if (String(v).length <= 24 && (String(v).match(/,/g) || []).length < 2) bind[ix(k)] = v;   // short tags only: no lists of vertices
       return { lines: c, cur: c, ctx: [...ctx].sort((a, b) => a - b), bind, head, note, state: state || [], nodes: nodes || [] };
     };
     const edge = (u, v) => adj[u][v] > 0;
@@ -297,7 +297,6 @@ const PSEUDO = (function () {
         const ids = ch.map(c => c.i); const nodes = ids.slice(); if (u !== null) nodes.unshift(u);
         const idList = ids.join(', ');
         if (kind === 'bf') {
-          bind.round = `round = ${t}`;
           if (ch.length) { cur = ['upd', 'par']; head = `Round ${t}`; note = `Round ${t}: every edge is checked. Improved: ${relaxText(ch, u === null || ch.length > 1 ? null : u)}.`; bind.edge = u !== null && ch.length === 1 ? `(u, v) = (${u}, ${ids[0]})` : `improving v = ${idList}`; }
           else { cur = ['cond']; head = `Round ${t}`; note = `Round ${t}: every edge is checked and the test d[v] > d[u] + w(u, v) never succeeds, so the distances are final.`; }
           state = [['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n], ['improved this round', list(ids)]];
@@ -358,7 +357,7 @@ const PSEUDO = (function () {
         out.push(S(t === 0 ? ['init', 'upd'] : ['upd'], `k = ${k}`,
           (t === 0 ? 'D starts as the table of direct edge weights. ' : '') + `Stop-over vertex ${k}: for every pair (i, j) keep the shorter of "direct" and "through ${k}".`,
           [['stop-overs allowed so far', k === 0 ? 'vertex 0' : 'vertices 0 … ' + k]], [k],
-          { bind: { k: `k = ${k}`, i: 'every i', j: 'every j', upd: `via vertex ${k}` } }));
+          { bind: { k: `k = ${k}` } }));
       }
     }
 
@@ -438,6 +437,6 @@ const PSEUDO = (function () {
     if (!s || s.algo !== algo) { let arr = null; try { arr = steps(algo, inst); } catch (e) { arr = null; } s = { algo, arr }; cache.set(inst, s); }
     return s.arr ? s.arr[Math.max(0, Math.min(step, s.arr.length - 1))] : null;
   }
-  return { CODE, forStep, steps };
+  return { CODE, TAGS, forStep, steps };
 })();
 if (typeof module !== 'undefined') module.exports = PSEUDO;

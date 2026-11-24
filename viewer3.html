@@ -143,14 +143,10 @@ window.__early = {};
   .pccode .pl.cx { border-left-color:var(--lc); background:linear-gradient(90deg, var(--lb) 0, transparent 38px); }
   .pccode .pl.on { background:var(--lb); border-left-color:var(--lc); box-shadow:inset 0 0 0 1px var(--lc); border-radius:0 4px 4px 0; font-weight:600; }
   .pccode .pl.on .ln, .pccode .pl.cx .ln { color:var(--lc); font-weight:700; }
-  .pccode .pl .bd { flex:none; margin-left:auto; align-self:flex-start; font-size:10.5px; font-weight:700; color:var(--lc); background:#fff; border:1px solid var(--lc); border-radius:999px; padding:0 7px; line-height:1.5; white-space:nowrap; }
+  .pccode .pl { flex-wrap:wrap; }
+  .pccode .pl .tx { flex:1 1 60%; min-width:12ch; }
+  .pccode .pl .bd { flex:0 1 auto; max-width:100%; margin-left:auto; align-self:flex-start; font-size:10.5px; font-weight:700; color:var(--lc); background:#fff; border:1px solid var(--lc); border-radius:999px; padding:0 7px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pccode .pl .bd[hidden] { display:none; }
-  .pcpath { display:flex; flex-wrap:wrap; align-items:center; gap:3px 2px; margin:8px 0 0; font-size:11px; }
-  .pcpath:empty { display:none; }
-  .pcpath .pp { font-family:var(--mono); border:1px solid var(--lc); border-left-width:4px; border-radius:4px; background:#fff; padding:0 6px; color:var(--ink-3); }
-  .pcpath .pp.now { background:var(--lb); color:var(--ink); font-weight:600; }
-  .pcpath .pp b { color:var(--lc); }
-  .pcpath .pa { color:var(--ink-3); margin:0 2px; }
   .pclegend { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:6px; }
   .pclegend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:3px; vertical-align:-1px; }
   .pccode .kw { color:#6d28d9; }
@@ -272,7 +268,6 @@ window.__early = {};
     <h2><span title="The steps of the algorithm, in plain pseudo-code. The highlighted line is the one the simulation has just executed.">Pseudo-code</span></h2>
     <div id="pcName" class="pcname"></div>
     <div id="pcCode" class="pccode" role="list" aria-label="Algorithm pseudo-code"></div>
-    <div id="pcPath" class="pcpath" aria-label="Where this step sits in the loops"></div>
     <div class="pcnow">
       <div id="pcHead" class="pchead"></div>
       <div id="pcNote" class="note"></div>
@@ -503,7 +498,7 @@ const PSEUDO = (function () {
         for (let j = i - 1; j >= 0 && d > 0; j--) { const dj = code[j][0]; if (dj < d) { if (dj > 0) ctx.add(j); d = dj; } }
       }
       for (const i of c) ctx.delete(i);
-      const bind = {}; for (const [k, v] of Object.entries(x.bind || {})) bind[ix(k)] = v;
+      const bind = {}; for (const [k, v] of Object.entries(x.bind || {})) if (String(v).length <= 24 && (String(v).match(/,/g) || []).length < 2) bind[ix(k)] = v;   // short tags only: no lists of vertices
       return { lines: c, cur: c, ctx: [...ctx].sort((a, b) => a - b), bind, head, note, state: state || [], nodes: nodes || [] };
     };
     const edge = (u, v) => adj[u][v] > 0;
@@ -610,7 +605,6 @@ const PSEUDO = (function () {
         const ids = ch.map(c => c.i); const nodes = ids.slice(); if (u !== null) nodes.unshift(u);
         const idList = ids.join(', ');
         if (kind === 'bf') {
-          bind.round = `round = ${t}`;
           if (ch.length) { cur = ['upd', 'par']; head = `Round ${t}`; note = `Round ${t}: every edge is checked. Improved: ${relaxText(ch, u === null || ch.length > 1 ? null : u)}.`; bind.edge = u !== null && ch.length === 1 ? `(u, v) = (${u}, ${ids[0]})` : `improving v = ${idList}`; }
           else { cur = ['cond']; head = `Round ${t}`; note = `Round ${t}: every edge is checked and the test d[v] > d[u] + w(u, v) never succeeds, so the distances are final.`; }
           state = [['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n], ['improved this round', list(ids)]];
@@ -671,7 +665,7 @@ const PSEUDO = (function () {
         out.push(S(t === 0 ? ['init', 'upd'] : ['upd'], `k = ${k}`,
           (t === 0 ? 'D starts as the table of direct edge weights. ' : '') + `Stop-over vertex ${k}: for every pair (i, j) keep the shorter of "direct" and "through ${k}".`,
           [['stop-overs allowed so far', k === 0 ? 'vertex 0' : 'vertices 0 … ' + k]], [k],
-          { bind: { k: `k = ${k}`, i: 'every i', j: 'every j', upd: `via vertex ${k}` } }));
+          { bind: { k: `k = ${k}` } }));
       }
     }
 
@@ -751,7 +745,7 @@ const PSEUDO = (function () {
     if (!s || s.algo !== algo) { let arr = null; try { arr = steps(algo, inst); } catch (e) { arr = null; } s = { algo, arr }; cache.set(inst, s); }
     return s.arr ? s.arr[Math.max(0, Math.min(step, s.arr.length - 1))] : null;
   }
-  return { CODE, forStep, steps };
+  return { CODE, TAGS, forStep, steps };
 })();
 </script>
 <script>
@@ -1428,8 +1422,8 @@ function renderPseudo(P) {
       return `<div class="pl${ind === 0 ? ' proc' : ''}" data-i="${i}" role="listitem" style="--lc:${PC_LV[lv]};--lb:${PC_BG[lv]}"><span class="ln">${i + 1}</span><span class="tx" style="padding-left:${ind * 1.4}em">${escHtml(txt).replace(PC_KW, '<span class="kw">$1</span>')}</span><span class="bd" hidden></span></div>`; }).join('') : '';
     box.scrollTop = 0;
   }
-  const head = document.getElementById('pcHead'), note = document.getElementById('pcNote'), st = document.getElementById('pcState'), path = document.getElementById('pcPath');
-  if (!code) { head.textContent = ''; note.textContent = 'No pseudo-code is available for this algorithm.'; st.innerHTML = ''; path.innerHTML = ''; return; }
+  const head = document.getElementById('pcHead'), note = document.getElementById('pcNote'), st = document.getElementById('pcState');
+  if (!code) { head.textContent = ''; note.textContent = 'No pseudo-code is available for this algorithm.'; st.innerHTML = ''; return; }
   const cur = new Set(P ? P.cur : []), ctx = new Set(P ? P.ctx : []), bind = P ? P.bind : {};
   let first = null;
   box.querySelectorAll('.pl').forEach(el => {
@@ -1439,9 +1433,6 @@ function renderPseudo(P) {
     if (on && first === null) first = el;
   });
   if (first) { const top = first.offsetTop - box.offsetTop; if (top < box.scrollTop + 4 || top + first.offsetHeight > box.scrollTop + box.clientHeight - 4) box.scrollTop = Math.max(0, top - 60); }
-  // where the step sits: the enclosing loops/tests (outermost first), then the executing line
-  path.innerHTML = P ? [...P.ctx, ...P.cur].filter(i => cur.has(i) || bind[i]).sort((a, b) => a - b).map(i => { const lv = Math.min(code[i][0], 6), on = cur.has(i);
-    return `<span class="pp${on ? ' now' : ''}" style="--lc:${PC_LV[lv]};--lb:${PC_BG[lv]}">${escHtml(code[i][1].replace(/\s{2,}\/\/.*$/, ''))}${bind[i] ? ` <b>${escHtml(bind[i])}</b>` : ''}</span>`; }).join('<span class="pa">›</span>') : '';
   head.textContent = P ? `Step ${curStep}: ${P.head}` : '';
   note.textContent = P ? P.note : 'Waiting for the first steps…';
   st.innerHTML = P ? P.state.map(([k, v]) => `<dt>${escHtml(String(k))}</dt><dd>${escHtml(String(v))}</dd>`).join('') : '';
