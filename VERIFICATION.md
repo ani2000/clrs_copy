@@ -101,3 +101,31 @@ with everything on dfs.
    Play speed, interventions (real-model re-run), and "F1" → CLRS output score (accuracy for pointers, F1 for masks).
 3. Predictions shown before a step is traced (a transcoder approximation) are now greyed and labelled as such;
    traced steps show the real model's prediction.
+
+---
+
+## Edge-site transcoder graph (toggle "Edge-site (new)" in the attribution panel)
+
+Source of the transcoders: `clrs-transcoder-out/<algo>/transcoder.npz` (trained for the same `best.pkl` weights the tracer serves:
+the 12 files in `checkpoints_v3` are byte-identical to the training run's). Converted by `clrs_export_edge_tc.py` to `edge_tc/`, which also
+writes `edge_tc/clrs-edge-summary.json` from each `report.json` (the numbers in the page's note come from there). Only the edge site
+(message input s_ij → message y_ij, D = 1280, k = 8) is used. The node-site transcoders are not used: their in-network retention is
+0.13–0.49 for dfs, strongly_connected_components and floyd_warshall, and they collapse at n = 64 for several algorithms.
+
+Engine: `clrs-edge-attrib.js`. Tests, all in `verification/clrs-edge/` (inputs: the 12 model bundles from `/models/<algo>.*`, 4 random
+n = 16 graphs per algorithm from `/api/instance`, the reference file `clrs-transcoder-reference.json`):
+
+| test | what it shows | result |
+|---|---|---|
+| `test1_port.js` (+ `test1_crosscheck.py`) | the JS transcoder gives the same active latents and values as an independent numpy float64 implementation on the reference inputs, for all 12 algorithms | identical indices, relative error 4e-13. Against the reference file's own stored outputs the difference is up to 1e-3, because its inputs are stored with 6 significant digits |
+| `test2_quality.js` | the transcoder reconstructs the site model's real messages (FVU, sum‖y−ŷ‖² / sum‖y−mean y‖²) | 0.002–0.035 on all 12 (a transcoder that did not belong to this model would score about 1). Compared with the report's validation FVU it is 0.7–7× higher, because the tracer samples its own random graphs |
+| `test4_fd.js` | (E0) an independent replay of the replacement model (transcoder output + error node, winners / σ / ReLU pattern frozen) reproduces the real hidden states and target logits; (FD) nudging one latent in the replay changes later pre-activations by exactly the edge weight / activation, and every target logit by exactly the total effect; (SUM) for every latent and target the sum of incoming edges plus the explicit bias equals its value | all 12 algorithms: E0 ≤ 1.4e-14, edge weights vs finite differences ≤ 5.5e-14 (about 15–40 thousand comparisons each), total effects ≤ 1.1e-13, sums ≤ 1e-13. The bias is computed from the constant terms, not chosen to make the sums work |
+| `test6_regression.js` | the previous (node-site) graph is unchanged by this change | byte-identical nodes, edges, pruned graph and total effects for bfs, bellman_ford, dijkstra (n = 8, p = 0.4, seed = 42) |
+| `test7_intervene.js` | the clamp panel runs for every algorithm and a factor of 1 changes nothing | 12/12 |
+| `report_interventions.js` | **not a gate**: how well does the graph's linear prediction of a clamp match the real model? | direction matched in 223 of 325 comparisons (69%), 44–77% depending on the algorithm. Holding the fed-back hints fixed makes no difference. The graph freezes the LayerNorm σ, the max-routing winners and the TopK sets, so it is a first-order guide only; the page says so next to every result |
+
+Known limits (also stated in the page): the edge-site latents have no names (the hint predicates the node-site features use fit pair latents
+poorly); the faithfulness of the replacement is measured at n = 16 for all algorithms and at n = 64 only for the seven tier-A ones
+(bridges 0.54, articulation_points 0.89, dijkstra 0.90 at n = 64); with k = 8 the replacement changes the max-winner in 9–20% of channels when it
+runs on its own (the graph uses the real winners, so it is exact for the real run regardless); cost: about 0.4 s at n = 16, 0.8 s at n = 24 and
+1.5 s at n = 32 in the browser worker.

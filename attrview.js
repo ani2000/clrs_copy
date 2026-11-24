@@ -20,7 +20,14 @@ function avGroup(label) {
   return 'state';
 }
 const AV_GROUP = { state: ['--g-state', 'target state'], class: ['--g-class', 'class change'], source: ['--g-source', 'source'],
-                   neg: ['--g-neg', 'negated state (“not …”)'], none: ['--g-none', 'unlabelled'] };
+                   neg: ['--g-neg', 'negated state (“not …”)'], none: ['--g-none', 'unlabelled'],
+                   pe: ['--g-state', 'latent on a real edge'], pn: ['--g-none', 'latent on a non-edge pair'], ps: ['--g-source', 'latent on a self pair'] };   // pe / pn / ps: edge-site latents, by what the pair is in this graph
+const avEdge = () => !!(AV.data ? AV.data.mode === 'edge' : (typeof ATTR !== 'undefined' && ATTR.mode === 'edge'));
+function avReset() {                         // the graph model changed: drop every trace of the old one at once
+  AV.data = null; AV.gr = null; AV.pinned = null; AV.hovered = null; AV.edgeEls = []; AV.nodeEls = {}; AV.want = null;
+  const g = id => document.getElementById(id); if (g('attribSvg')) g('attribSvg').innerHTML = ''; if (g('avLegend')) g('avLegend').innerHTML = '';
+  if (g('featDetail')) g('featDetail').innerHTML = '<p class="empty">Hover a node in the attribution graph to see its edges; click to pin it here.</p>'; if (g('ivPanel')) g('ivPanel').innerHTML = '';
+}
 const avLabel = f => (labelByFeat[f] && labelByFeat[f].label) || '(unlabeled)';
 
 // ---------- worker plumbing ----------
@@ -29,7 +36,7 @@ function avWorker() {
   AV.worker = new Worker('mpnn_worker.js' + VQ);
   AV.worker.onmessage = ev => {
     const m = ev.data;
-    if (m.type === 'loaded' || m.type === 'tcloaded') { const k = m.type + ':' + m.algo; AV.ready[k] = true; (AV.waiters[k] || []).forEach(f => f()); delete AV.waiters[k]; return; }
+    if (m.type === 'loaded' || m.type === 'tcloaded' || m.type === 'edgetcloaded') { const k = m.type + ':' + m.algo; AV.ready[k] = true; (AV.waiters[k] || []).forEach(f => f()); delete AV.waiters[k]; return; }
     if (m.type === 'attrib' || (m.type === 'error' && m.id && m.id.startsWith('a'))) {
       AV.busy = false;
       if (AV.want && m.id === AV.want.id) { if (m.type === 'error') { console.warn(m.error); avStatus('Could not trace this prediction just now. Click the node again to retry.'); } else avReceive(m); }
@@ -45,15 +52,20 @@ async function avEnsure(algo) {
   ensureLocalModel(algo);
   const entry = LOCAL.models[algo];
   if (!entry) throw new Error('model bundle unavailable');
-  const wp = ensureWeights(algo), lp = ensureLabels(algo);      // the large weights and the labels are needed for the first trace
-  wp.catch(() => {}); lp.catch(() => {});
+  const edge = ATTR.mode === 'edge';
+  const wp = edge ? null : ensureWeights(algo), lp = edge ? null : ensureLabels(algo), ep = edge ? ensureEdgeTC(algo) : null;      // node-site: weights and labels; edge-site: its transcoder (1.3 MB)
+  if (wp) wp.catch(() => {}); if (lp) lp.catch(() => {}); if (ep) ep.catch(() => {});
   await entry.promise;
   if (entry.state === 'aborted' || algo !== curAlgo) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
   if (entry.stale) throw new StaleError('stale');
   if (entry.state !== 'ready' || !entry.man) throw new Error('model bundle failed to load');
-  const Wfull = await wp; await lp;
+  const Wfull = edge ? null : await wp, ET = edge ? await ep : null; if (lp) await lp;
   if (algo !== curAlgo) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
   if (!AV.ready['loaded:' + algo] && !AV['sent:' + algo]) { AV['sent:' + algo] = true; w.postMessage({ type: 'load', algo, manifest: entry.man, buffer: entry.buf.slice(0) }); }
+  if (edge) {
+    if (!AV.ready['edgetcloaded:' + algo] && !AV['etcsent:' + algo]) { AV['etcsent:' + algo] = true; w.postMessage({ type: 'edgetc', algo, manifest: ET.man, buffer: ET.buf.slice(0) }); }
+    await Promise.all([avWait('loaded:' + algo), avWait('edgetcloaded:' + algo)]); return;
+  }
   if (!AV.ready['tcloaded:' + algo] && !AV['tcsent:' + algo]) { AV['tcsent:' + algo] = true; w.postMessage({ type: 'tc', algo, W: Wfull }); }
   await Promise.all([avWait('loaded:' + algo), avWait('tcloaded:' + algo)]);
 }
@@ -64,10 +76,10 @@ function avPump() {
   AV.busy = true; AV.worker.postMessage(req);
 }
 function avSameGraph() { return !!(AV.data && G && AV.data.key.startsWith([curAlgo, G.seed, G.n, G.length].join('|') + '|')); }
-function avKey(step, node) { return [curAlgo, G.seed, G.n, G.length, step, node].join('|'); }
+function avKey(step, node) { return [curAlgo, G.seed, G.n, G.length, step, node, ATTR.mode].join('|'); }
 async function avRequest(step, node) {
   const key = avKey(step, node);
-  const req = { type: 'attrib', id: 'a' + (++AV.seq), key, algo: curAlgo, t: step, i: node, main: W.target, window: 3 };
+  const req = { type: ATTR.mode === 'edge' ? 'attribEdge' : 'attrib', id: 'a' + (++AV.seq), key, algo: curAlgo, t: step, i: node, main: W.target, window: 3 };
   AV.want = req;
   avStatus(AV.data ? 'tracing…' : (LOCAL.models[curAlgo] && LOCAL.models[curAlgo].state === 'ready' ? 'tracing the circuit…' : 'loading the model into your browser…'), true);
   try {
@@ -91,9 +103,9 @@ function avStatus(text, busy) {
 // ---------- receive & index ----------
 function avReceive(m) {
   if (!G || !AV.want || !AV.want.key.startsWith([curAlgo, G.seed, G.n, G.length].join('|') + '|')) return;   // traced for a graph no longer shown
-  const nodes = {}; m.nodes.forEach(nd => { nodes[nd.id] = nd; if (nd.type === 'feature') { nd.label = avLabel(nd.f); nd.group = avGroup(nd.label); } });
-  AV.data = Object.assign(m, { nodesById: nodes, t: AV.want.t, i: AV.want.i, key: AV.want.key });
-  AV.pinned = null; AV.hovered = null;
+  const nodes = {}; m.nodes.forEach(nd => { nodes[nd.id] = nd; if (nd.type === 'feature') { if (m.mode === 'edge') { nd.label = `${nd.s}→${nd.i}`; nd.group = nd.ptype === 'edge' ? 'pe' : nd.ptype === 'self' ? 'ps' : 'pn'; } else { nd.label = avLabel(nd.f); nd.group = avGroup(nd.label); } } });
+  AV.data = Object.assign(m, { nodesById: nodes, t: AV.want.t, i: AV.want.i, key: AV.want.key, mode: m.mode || 'node' });
+  AV.pinned = null; AV.hovered = null; AV.scrolled = null;
   avRender();
   const top = m.pruned.nodes.filter(id => nodes[id] && nodes[id].type === 'feature').sort((a, b) => (m.influence[b] || 0) - (m.influence[a] || 0))[0];
   if (top) avInspect(nodes[top]);
@@ -103,7 +115,8 @@ function avReceive(m) {
 
 // ---------- entry point (called by the viewer on every relevant change) ----------
 function drawAttribution() {
-  if (AV.data && !avSameGraph()) {                 // a different algorithm or graph: drop every trace of the old one at once
+  if (typeof renderEdgeNote === 'function') renderEdgeNote();          // the quality note follows the algorithm and graph size
+  if (AV.data && (!avSameGraph() || (AV.data.mode === 'edge') !== (ATTR.mode === 'edge'))) {                 // a different algorithm or graph: drop every trace of the old one at once
     AV.data = null; AV.gr = null; AV.pinned = null; AV.hovered = null; AV.edgeEls = []; AV.nodeEls = {};
     document.getElementById('attribSvg').innerHTML = ''; document.getElementById('avLegend').innerHTML = '';
     document.getElementById('featDetail').innerHTML = '<p class="empty">Hover a node in the attribution graph to see its edges; click to pin it here.</p>';
@@ -243,11 +256,11 @@ function avNodeColor(nd) {
   return avCss('--ink-3');
 }
 function avNodeText(nd, Gr) {
-  if (nd.type === 'feature') return Gr.super ? `${nd.label} (${nd.members.length})` : `f${nd.f}`;
+  if (nd.type === 'feature') return Gr.super ? `${nd.label} (${nd.members.length})` : (AV.data && AV.data.mode === 'edge' ? `${nd.s}:f${nd.f}` : `f${nd.f}`);
   if (nd.type === 'leaf') { if (Gr.super) return `${nd.label} (${nd.members.length})`;
     if (nd.probe === 'state') return `h[${nd.i}]`; return nd.i === null || nd.i === undefined ? nd.probe : (nd.j === null || nd.j === undefined ? `${nd.probe}[${nd.i}]` : `${nd.probe}[${nd.i},${nd.j}]`); }
   if (nd.type === 'logit') return avChipText(nd);
-  if (nd.type === 'error') return Gr.super ? `err (${nd.members.length})` : 'err';
+  if (nd.type === 'error') return Gr.super ? `err (${nd.members.length})` : (AV.data && AV.data.mode === 'edge' ? `err ${nd.s}→${nd.i}` : 'err');
   return 'bias';
 }
 function avRender() {
@@ -268,7 +281,7 @@ function avRender() {
     const tip = r === 'O' ? 'g:avRowO' : r[0] === 'F' ? 'g:avRowF' : 'g:avRowL'; tx.setAttribute('data-tip', tip);
   });
   L.cols.forEach(c => { const tx = avEl('text', { x: L.colX(c), y: 22, class: 'collab', 'text-anchor': 'middle' }, svg);
-    tx.textContent = Gr.super ? c : (c === 'bias' ? 'bias' : `node ${c}${+c === G.source ? ' (src)' : ''}${+c === AV.data.i ? ' ★' : ''}`);
+    tx.textContent = Gr.super ? c : (c === 'bias' ? 'bias' : `${AV.data.mode === 'edge' ? 'to ' : ''}node ${c}${+c === G.source ? ' (src)' : ''}${+c === AV.data.i ? ' ★' : ''}`);
     if (!Gr.super && c !== 'bias') tx.setAttribute('data-tip', 'node:' + c); });
   const wmax = Math.max(1e-6, ...Gr.edges.map(e => Math.abs(e.w)));
   const eg = avEl('g', {}, svg), hitg = avEl('g', {}, svg);
@@ -293,7 +306,7 @@ function avRender() {
     else { const txt = avChipText(nd), w = Math.max(64, txt.length * 6.6 + 16), fill = nd.always ? avCss('--logit') : avCss('--surface');
       avEl('rect', { x: -w / 2, y: -11, width: w, height: 22, rx: 11, fill, stroke: avCss('--logit'), 'stroke-width': 1.2 }, g);
       const tx = avEl('text', { y: 3.5, 'text-anchor': 'middle', fill: nd.always ? avCss('--surface') : avCss('--logit'), 'font-size': '10.5px' }, g); tx.textContent = txt; }
-    if (nd.type !== 'logit' && (Gr.super || nd.type === 'feature' || (nd.type === 'leaf' && pruneMode === 'pruned' && nd._m <= 4))) {
+    if (nd.type !== 'logit' && (Gr.super || (nd.type === 'feature' && (AV.data.mode !== 'edge' || (nd._m || 1) <= 4)) || (nd.type === 'leaf' && pruneMode === 'pruned' && nd._m <= 4))) {   // edge-site cells can hold many latents: their labels would overlap, so they show on hover instead
       const yoff = nd.type === 'feature' ? (Gr.super ? Math.min(14, 5 + 2.5 * Math.sqrt(nd.members.length)) : Math.min(11, 4 + 2.2 * Math.sqrt(nd.act))) + 10 + ((nd._m || 1) > 2 ? ((nd._q || 0) % 2) * 9 : 0) : nd.type === 'error' ? 15 : 15 + ((nd._q || 0) % 3) * 9;
       const tx = avEl('text', { y: yoff, 'text-anchor': 'middle', class: 'nlab' }, g); tx.textContent = avNodeText(nd, Gr);
     }
@@ -304,6 +317,9 @@ function avRender() {
     AV.nodeEls[nd.id] = g;
   });
   avHighlight(); avLegend(Gr); avStat(Gr);
+  if (AV.data.mode === 'edge' && !Gr.super && !AV.scrolled) {          // edge-site graphs are wide: bring the explained node's column into view the first time
+    const host = document.getElementById('attribScroll'), c = String(AV.data.i); if (host && L.cols.includes(c)) host.scrollLeft = Math.max(0, L.colX(c) - host.clientWidth / 2); AV.scrolled = AV.data.key;
+  }
   if (window.HoverCard) HoverCard.refresh();
 }
 function avHighlight() {
@@ -317,7 +333,7 @@ function avHighlight() {
 }
 function avLegend(Gr) {
   const groups = new Set(Gr.nodes.filter(nd => nd.type === 'feature').map(nd => nd.group || avGroup(nd.label)));
-  const g = ['state', 'class', 'source', 'neg', 'none'].filter(k => groups.has(k)).map(k => `<span data-tip="g:avg_${k}"><i class="sw" style="background:var(${AV_GROUP[k][0]})"></i>${AV_GROUP[k][1]}</span>`).join('');
+  const g = ['state', 'class', 'source', 'neg', 'none', 'pe', 'pn', 'ps'].filter(k => groups.has(k)).map(k => `<span data-tip="g:avg_${k}"><i class="sw" style="background:var(${AV_GROUP[k][0]})"></i>${AV_GROUP[k][1]}</span>`).join('');
   document.getElementById('avLegend').innerHTML = g +
     `<span data-tip="g:legendLeaf"><i class="sw sq" style="background:var(--leaf)"></i>encoder leaf</span>` +
     `<span data-tip="g:avError"><i class="sw sq" style="background:repeating-linear-gradient(45deg,transparent 0 2px,var(--err) 2px 3px)"></i>error</span>` +
@@ -328,16 +344,17 @@ function avLegend(Gr) {
 function avStat(Gr) {
   const d = AV.data;
   const shown = pruneMode === 'pruned' ? '' : ` Showing the ${d.top.length.toLocaleString()} strongest of ${d.eAll.toLocaleString()} edges${minW > 0 ? `, |w| ≥ ${minW.toFixed(2)}` : ''}.`;
-  document.getElementById('gstat').textContent = `Attribution graph: ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Every feature's pre-activation and every target logit equals the sum of its incoming edges (ReLU masks, max-routing, top-k and pointer max frozen; edge weights verified against finite differences). Traced in your browser in ${d.ms} ms.`;
+  const ek = d.mode === 'edge', ck = d.checks;
+  document.getElementById('gstat').textContent = ek ? `Attribution graph (edge-site transcoder): ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Every latent's pre-activation and every target logit equals the sum of its incoming edges plus a bias computed from the constant terms (max-routing winners, LayerNorm σ, the node update's ReLU pattern and the pointer max frozen). Checked on this graph: ${ck.n.toLocaleString()} nodes, largest difference ${ck.maxAbs.toExponential(1)}. Edge weights and total effects were checked against finite differences in the test suite (verification/clrs-edge). Traced in your browser in ${d.ms} ms.` : `Attribution graph: ${d.nAll.toLocaleString()} nodes / ${d.eAll.toLocaleString()} edges at steps ${d.tLo}–${d.t}; pruned to ${d.pruned.nodes.length} / ${d.pruned.edges.length}, keeping ${(d.keptInfluence * 100).toFixed(0)}% of the influence on the targets.${shown} Every feature's pre-activation and every target logit equals the sum of its incoming edges (ReLU masks, max-routing, top-k and pointer max frozen; edge weights verified against finite differences). Traced in your browser in ${d.ms} ms.`;
 }
 
 // ---------- inspector ----------
 function avName(id, Gr) {
   const nd = (Gr && Gr.nodes.find(x => x.id === id)) || AV.data.nodesById[id]; if (!nd) return id;
-  if (nd.type === 'feature') return Gr && Gr.super ? nd.label : `f${nd.f} @${nd.t}:${nd.i} · ${nd.label}`;
+  if (nd.type === 'feature') return Gr && Gr.super ? nd.label : (AV.data.mode === 'edge' ? `f${nd.f} @${nd.t}:${nd.s}→${nd.i}` : `f${nd.f} @${nd.t}:${nd.i} · ${nd.label}`);
   if (nd.type === 'leaf' && !(Gr && Gr.super)) return avNodeText(nd, Gr || { super: false }) + ` @${nd.t}`;
   if (nd.type === 'bias') return nd.t > AV.data.t ? 'bias (outputs)' : `bias @${nd.t}`;
-  if (nd.type === 'error') return (Gr && Gr.super) ? `errors @${nd.t}` : `err @${nd.t}:${nd.i}`;
+  if (nd.type === 'error') return (Gr && Gr.super) ? `errors @${nd.t}` : (AV.data.mode === 'edge' ? `err @${nd.t}:${nd.s}→${nd.i}` : `err @${nd.t}:${nd.i}`);
   return avNodeText(nd, Gr || { super: false });
 }
 function avTargetName(id) { const tg = AV.data.targets.find(x => x.id === id); return tg ? (tg.kind === 'pointer' ? `${tg.field}[${tg.i}]→${tg.j}` : `${W.target}[${tg.i}]${tg.ftype === 'categorical' ? '=' + tg.c : ''}`) : id; }
@@ -354,6 +371,22 @@ function avInspectEmpty() { document.getElementById('featDetail').innerHTML = '<
 function avInspect(nd, Gr) {
   Gr = Gr || AV.gr; const d = AV.data; let h = '';
   const iv = document.getElementById('ivPanel'); iv.innerHTML = '<p class="empty small">Pin a feature to clamp it.</p>';
+  if (nd.type === 'feature' && !Gr.super && d.mode === 'edge') {
+    const fi = nd.fires || { n: 0, real: 0, self: 0, pairs: [] };
+    h += `<div class="ititle">latent f${nd.f} at step ${nd.t}, pair ${nd.s} → ${nd.i}</div>
+      <div class="chips"><span class="chip grp" style="background:var(${AV_GROUP[nd.group][0]})">${AV_GROUP[nd.group][1]}</span></div>
+      <dl class="ikv"><dt data-tip="g:avAct">activation</dt><dd>${nd.act.toFixed(3)}</dd><dt data-tip="g:avInfluence">influence on targets</dt><dd>${(d.influence[nd.id] || 0).toFixed(4)}</dd>
+      <dt>active in this graph</dt><dd>${fi.n} of ${G.n * G.n} pairs at step ${nd.t}: ${fi.real} real edges, ${fi.self} self pairs${fi.pairs.length ? ' (e.g. ' + fi.pairs.slice(0, 5).map(p => p[0] + '→' + p[1]).join(', ') + (fi.n > 5 ? ', …' : '') + ')' : ''}</dd></dl>
+      <p class="note">This latent has no name: the edge-site transcoders have no label set yet, so only facts measured on this graph are shown.</p>`;
+    const te = d.totalEffect[nd.id] || {};
+    const rows = Object.entries(te).filter(([id]) => d.targets.some(x => x.id === id && (x.prob >= 0.01 || x.always))).map(([id, w]) => ({ id, w, tip: 'an:' + id })).sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, 6);
+    h += `<div class="isec"><h3 data-tip="g:avTotalEffect">Total effect on the targets (per unit activation)</h3>${avBars(rows, x => avTargetName(x.id))}</div>`;
+    h += `<div class="isec"><h3>Incoming edges</h3>${avEdgeList(nd.id, 'in', Gr)}</div><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+    iv.innerHTML = `<div class="small">Clamp <b>f${nd.f}@${nd.t}:${nd.s}→${nd.i}</b> (its message changes by (factor − 1) × activation × decoder vector) and re-run the real model (its own hint feedback included):</div>
+      <div class="ivbtns"><button id="ivNeg" data-tip="g:ivNeg">Clamp to −1×</button> <button id="ivZero" data-tip="g:ivZero">Ablate (×0)</button> <button id="ivDbl" data-tip="g:ivDbl">Amplify (×2)</button></div><div id="ivResult"></div>`;
+    [['ivNeg', -1], ['ivZero', 0], ['ivDbl', 2]].forEach(([id, f]) => document.getElementById(id).addEventListener('click', () => avIntervene(nd, f)));
+    document.getElementById('featDetail').innerHTML = h; return;
+  }
   if (nd.type === 'feature' && !Gr.super) {
     const L = labelByFeat[nd.f] || {};
     h += `<div class="ititle">f${nd.f} at step ${nd.t}, node ${nd.i}</div>
@@ -371,7 +404,7 @@ function avInspect(nd, Gr) {
     [['ivNeg', -1], ['ivZero', 0], ['ivDbl', 2]].forEach(([id, f]) => document.getElementById(id).addEventListener('click', () => avIntervene(nd, f)));
   } else if (nd.type === 'feature') {
     h += `<div class="ititle">Supernode · ${avEsc(nd.label)} · step ${nd.t}</div><div class="chips"><span class="chip grp" style="background:var(${AV_GROUP[nd.group || avGroup(nd.label)][0]})">${nd.members.length} features</span></div>
-      <p class="note">Members: ${nd.members.map(id => { const m = d.nodesById[id]; return `f${m.f}@${m.i}`; }).join(', ')}</p>
+      <p class="note">Members: ${nd.members.map(id => { const m = d.nodesById[id]; return d.mode === 'edge' ? `f${m.f}@${m.s}→${m.i}` : `f${m.f}@${m.i}`; }).join(', ')}</p>
       <div class="isec"><h3>Incoming edges (summed)</h3>${avEdgeList(nd.id, 'in', Gr)}</div><div class="isec"><h3>Outgoing edges (summed)</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
   } else if (nd.type === 'leaf') {
     const desc = nd.probe === 'state' ? `The node's hidden state from before step ${d.tLo} (the window shown starts at step ${d.tLo}); its effect is exact but not traced further back.`
@@ -383,9 +416,9 @@ function avInspect(nd, Gr) {
       <dl class="ikv"><dt>logit</dt><dd>${nd.logit.toFixed(3)}</dd><dt>probability</dt><dd>${nd.ftype === 'scalar' ? 'n/a (scalar)' : (nd.kind === 'pointer' || nd.ftype === 'categorical' ? nd.prob : nd.p1).toFixed(4)}</dd></dl>
       <div class="isec"><h3>Incoming edges</h3>${avEdgeList(nd.id, 'in', Gr)}</div>`;
   } else if (nd.type === 'error') {
-    h += `<div class="ititle">Error node · ${Gr.super ? `step ${nd.t}` : `step ${nd.t}, node ${nd.i}`}</div><p class="note">The part of the new hidden state the transcoder did not reconstruct${Gr.super ? '' : ` (‖h − ĥ‖ = ${nd.norm.toFixed(3)})`}. Included so the replacement model reproduces the real network exactly; its outgoing weight is how much of the explanation is not captured by features.</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+    h += `<div class="ititle">Error node · ${Gr.super ? `step ${nd.t}` : `step ${nd.t}, node ${nd.i}`}</div><p class="note">${d.mode === 'edge' ? 'The part of the pair’s message that the transcoder did not reconstruct' : 'The part of the new hidden state the transcoder did not reconstruct'}${Gr.super ? '' : ` (${d.mode === 'edge' ? '‖y − ŷ‖' : '‖h − ĥ‖'} = ${nd.norm.toFixed(3)})`}. Included so the replacement model reproduces the real network exactly; its outgoing weight is how much of the explanation is not captured by features.</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
   } else {
-    h += `<div class="ititle">Bias · ${nd.t > d.t ? 'into the predictions' : 'into step ' + nd.t}</div><p class="note">All constant terms on the frozen path (encoder, message, node-update, transcoder and decoder biases), summed, so every value is exactly the sum of its incoming edges.</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
+    h += `<div class="ititle">Bias · ${nd.t > d.t ? 'into the predictions' : 'into step ' + nd.t}</div><p class="note">${d.mode === 'edge' ? 'All constant terms on the frozen path (encoder, message-site, node-update, hidden-state-decoder and transcoder biases and offsets), added up from their parts. Every value equals the sum of its incoming edges plus this term; the page checks that for every node.' : 'All constant terms on the frozen path (encoder, message, node-update, transcoder and decoder biases), summed, so every value is exactly the sum of its incoming edges.'}</p><div class="isec"><h3>Outgoing edges</h3>${avEdgeList(nd.id, 'out', Gr)}</div>`;
   }
   document.getElementById('featDetail').innerHTML = h;
   if (nd.type === 'feature' && !Gr.super) loadContexts(nd.f);
@@ -395,17 +428,18 @@ function avInspect(nd, Gr) {
 function avIntervene(nd, factor) {
   const res = document.getElementById('ivResult'); res.innerHTML = '<span class="small">re-running the model…</span>';
   const id = 'i' + (++AV.ivSeq); AV.ivWant = { id, nd, factor };
-  AV.worker.postMessage({ type: 'intervene', id, ref: AV.data.id, t0: nd.t, i0: nd.i, q: nd.f, factor });
+  if (AV.data.mode === 'edge') AV.worker.postMessage({ type: 'interveneEdge', id, ref: AV.data.id, node: nd.id, factor });
+  else AV.worker.postMessage({ type: 'intervene', id, ref: AV.data.id, t0: nd.t, i0: nd.i, q: nd.f, factor });
 }
 function avIvResult(m) {
   if (!AV.ivWant || m.id !== AV.ivWant.id) return;
   const res = document.getElementById('ivResult'); if (!res) return;
   if (m.type === 'error') { res.innerHTML = `<p class="note">${avEsc(m.error.split('\n')[0])}</p>`; return; }
-  const iv = m.iv; LAST_IV = { name: `f${iv.q}@${iv.t0}:${iv.i0}`, factor: iv.factor, base: iv.rows[0].base, after: iv.rows[0].actual,
+  const iv = m.iv; LAST_IV = { name: iv.s0 !== undefined ? `f${iv.f}@${iv.t0}:${iv.s0}→${iv.i0}` : `f${iv.q}@${iv.t0}:${iv.i0}`, factor: iv.factor, base: iv.rows[0].base, after: iv.rows[0].actual,
     predicted: `${(iv.rows[0].predicted - iv.rows[0].base) >= 0 ? '+' : ''}${(iv.rows[0].predicted - iv.rows[0].base).toFixed(3)} (graph)` };
   const agree = iv.rows.filter(r => Math.abs(r.actual - r.base) > 1e-3).every(r => Math.sign(r.actual - r.base) === Math.sign(r.predicted - r.base));
   res.innerHTML = `<table class="ivtab" data-tip="dyn:iv"><tr><th>target</th><th>logit</th><th>Δ actual</th><th>Δ graph</th></tr>${iv.rows.map(r => `<tr><td>${avEsc(avTargetName(r.id))}</td><td>${r.base.toFixed(2)}</td><td>${(r.actual - r.base >= 0 ? '+' : '') + (r.actual - r.base).toFixed(3)}</td><td>${(r.predicted - r.base >= 0 ? '+' : '') + (r.predicted - r.base).toFixed(3)}</td></tr>`).join('')}</table>
-    <p class="note">${agree ? '<b>Direction confirmed:</b> the real model moved the way the graph predicted.' : '<b>Not confirmed:</b> the real model moved differently from the linear prediction.'} ${iv.flips} of ${iv.decisions.toLocaleString()} downstream ReLU / max-routing decisions changed (${iv.decisions ? (100 * iv.flips / iv.decisions).toFixed(2) : '0.00'}%)${iv.flips ? '; where they flip, the frozen-linear graph can only approximate.' : '.'} “Δ graph” = (factor − 1) × activation × total effect.</p>`;
+    <p class="note">${agree ? '<b>Direction confirmed:</b> the real model moved the way the graph predicted.' : '<b>Not confirmed:</b> the real model moved differently from the linear prediction.'} ${iv.flips} of ${iv.decisions.toLocaleString()} downstream ${iv.s0 !== undefined ? 'max-routing winner / TopK decisions' : 'ReLU / max-routing decisions'} changed (${iv.decisions ? (100 * iv.flips / iv.decisions).toFixed(2) : '0.00'}%)${iv.flips ? '; where they flip, the frozen-linear graph can only approximate.' : '.'} “Δ graph” = (factor − 1) × activation × total effect.${iv.s0 !== undefined ? ' The graph freezes the LayerNorm σ, the max-routing winners and the TopK sets, so this is only a first-order guide: in our tests (ablating the most influential latents on all 12 algorithms, 325 comparisons) its direction matched the real model 69% of the time, 44–77% depending on the algorithm. “Δ actual” is the real model with its own hint feedback.' : ''}</p>`;
 }
 
 // ---------- simulation panel helpers ----------
@@ -430,6 +464,12 @@ window.avCard = function (id) {
   const nd = Gr.nodes.find(x => x.id === id) || d.nodesById[id]; if (!nd) return null;
   const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
   const inW = Gr.edges.filter(e => e.d === id).length, outW = Gr.edges.filter(e => e.s === id).length;
+  if (nd.type === 'feature' && !Gr.super && d.mode === 'edge') {
+    const te = d.totalEffect[id] || {};
+    return `<div class="hc-title">Latent ${nd.f} · step ${nd.t} · pair ${nd.s} → ${nd.i}</div><div class="hc-body"><b>${avEsc(AV_GROUP[nd.group][1])}</b> <span class="hc-muted">unnamed</span></div>
+      <table class="hc-kv">${row('activation', nd.act.toFixed(3))}${row('influence on targets', (d.influence[id] || 0).toFixed(4))}${d.targets.filter(t => t.always).map(t => row('total effect → ' + avEsc(avTargetName(t.id)), ((te[t.id] || 0) >= 0 ? '+' : '') + (te[t.id] || 0).toFixed(3))).join('')}${row('edges in / out (view)', `${inW} / ${outW}`)}</table>
+      <div class="hc-why"><b>Why:</b> one of the 8 transcoder latents active on the pair ${nd.s} → ${nd.i} in step ${nd.t}. It writes into the message that node ${nd.s} sends to node ${nd.i}; that message reaches node ${nd.i}’s new state only through the channels where ${nd.s} is the max-routing winner.</div><div class="hc-how">Click to pin it: highlights its edges, opens the inspector and lets you clamp it.</div>`;
+  }
   if (nd.type === 'feature' && !Gr.super) {
     const L = labelByFeat[nd.f] || {}, te = d.totalEffect[id] || {};
     return `<div class="hc-title">Feature ${nd.f} · step ${nd.t} · node ${nd.i}</div><div class="hc-body"><b>${avEsc(nd.label)}</b> <span class="hc-muted">P ${fmt(L.precision, 2)} · R ${fmt(L.recall, 2)} · F1 ${fmt(L.f1, 2)}</span></div>

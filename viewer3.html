@@ -184,6 +184,12 @@ window.__early = {};
   #algoInfoTable th { font-size:11px; color:var(--muted); font-weight:600; }
   #algoInfoTable tr[data-a] { cursor:pointer; } #algoInfoTable tr[data-a]:hover, #algoInfoTable tr.cur { background:#fff4d6; }
   @media (max-width:760px) { #algoInfo { padding:6px 12px; } }
+
+  /* ---------- attribution model toggle and its quality note ---------- */
+  .edgenote { font-size:12px; line-height:1.5; color:var(--ink); background:#eef6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:6px; padding:6px 10px; margin:0 0 8px; }
+  .edgenote.warn { background:#fff7ed; border-color:#fed7aa; border-left-color:#d97706; }
+  .edgenote b { font-weight:600; }
+  .prevnote { font-size:11.5px; color:var(--muted); background:var(--bg); border:1px dashed var(--line); border-radius:6px; padding:4px 8px; margin:0 0 8px; }
   @media (hover: none) { .tt { border-bottom-style:dashed; } }
   /* hover preview cards (explain.js) */
   .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
@@ -254,7 +260,9 @@ window.__early = {};
     <h2><span class="tt" data-tip="g:attrgraph">Attribution graph</span></h2>
     <div id="question" class="question">Click a node in the simulation to trace the model's prediction for it.</div>
     <div id="outprobs" class="outprobs"></div>
+    <div id="edgeNote" class="edgenote" hidden></div>
     <div class="toolbar">
+      <div class="seg" id="attrSeg" role="group" aria-label="Which transcoder the graph is built from"><button data-v="edge" data-tip="g:attrEdge">Edge-site (new)</button><button data-v="node" data-tip="g:attrNode">Node-site (previous)</button></div>
       <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
       <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button></div>
       <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
@@ -282,6 +290,7 @@ window.__early = {};
 <div class="layout">
   <div class="panel">
     <h2><span class="tt" data-tip="g:transcoder">Model &amp; transcoder</span></h2>
+    <div class="prevnote" hidden>The transcoder numbers in this panel (FVU, features) belong to the previous node-site transcoder. The measured quality of the edge-site transcoder is in the note above the attribution graph.</div>
     <div class="kv"><span class="tt" data-tip="g:hidden">hidden_dim</span><span data-tip="g:hidden">128</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:target">target</span><span id="targetName" data-tip="dyn:target">-</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:fvu">transcoder FVU</span><span id="fvu" data-tip="dyn:fvu">-</span></div>
@@ -291,6 +300,7 @@ window.__early = {};
   </div>
 
   <div class="panel">
+    <div class="prevnote" hidden>This table describes the previous (node-site) transcoder. The edge-site latents shown in the graph are not labelled; their inspector shows facts measured on the current graph instead.</div>
     <h2><span class="tt" data-tip="g:featlabels">Feature labels (top 15 by F1)</span></h2>
     <div class="tscroll"><table id="featTable"><thead><tr><th>feature</th><th><span class="tt" data-tip="g:featlabels">label</span></th><th><span class="tt" data-tip="g:precision">P</span></th><th><span class="tt" data-tip="g:recall">R</span></th><th><span class="tt" data-tip="g:f1">F1</span></th><th><span class="tt" data-tip="g:firesOn">fires on</span></th></tr></thead><tbody></tbody></table></div>
   </div>
@@ -772,6 +782,10 @@ const SUMMARY_V3 = {
 };
 let W = null, FL = null, G = null, ALGOS = null, curAlgo = 'bfs', curStep = 0, playTimer = null, selected = null, CUR_ATTR = null;
 let pruneMode = 'pruned', minW = 0, viewMode = 'bynode';
+// which transcoder the attribution graph is built from: 'edge' = the new edge-site transcoders (latents on sender->receiver pairs), 'node' = the previous node-site transcoder
+const ATTR = { mode: 'edge', summary: null };
+try { const q = new URLSearchParams(location.search).get('attr'), st = q || localStorage.getItem('clrs-attr-mode'); if (st === 'node' || st === 'edge') ATTR.mode = st; } catch (e) {}
+window.AV_EDGE_ON = () => ATTR.mode === 'edge';
 let NODE_PRED = {}, SHOWN_EDGES = [], LAST_IV = null;   // read by explain.js hover cards
 // Race-condition guards: every async load takes a generation number; a response is applied only
 // if it is still the newest request, and superseded fetches are aborted.
@@ -881,6 +895,44 @@ function ensureWeights(a) {             // the large transcoder weights (about 0
     p.ctl = ctl; WT[a] = p;
   }
   return WT[a];
+}
+// ---------- edge-site transcoders (edge_tc/<algo>.bin + .json, 1.3 MB per algorithm, cached forever) and their measured quality ----------
+const ETCS = {}, ETC_REQ = {};
+function ensureEdgeTC(a) {
+  if (ETCS[a]) return Promise.resolve(ETCS[a]);
+  if (!ETC_REQ[a]) ETC_REQ[a] = withRetry(async () => { const [man, buf] = await Promise.all([getJSON('/edge_tc/' + a + '.json?v=' + BUILD), fetchBytes('/edge_tc/' + a + '.bin?v=' + BUILD)]); return { man, buf }; })
+    .then(x => { ETCS[a] = x; delete ETC_REQ[a]; return x; }, e => { delete ETC_REQ[a]; throw e; });
+  return ETC_REQ[a];
+}
+let ETC_SUM = null;
+function ensureEdgeSummary() {
+  if (!ETC_SUM) ETC_SUM = withRetry(() => getJSON('/edge_tc/clrs-edge-summary.json?v=' + BUILD)).then(j => { ATTR.summary = j.summary; renderEdgeNote(); return j; }, e => { ETC_SUM = null; throw e; });
+  return ETC_SUM;
+}
+const pc1 = x => (x * 100).toFixed(1) + '%';
+function renderEdgeNote() {                 // what the person is looking at, with the measured numbers behind it
+  const el = document.getElementById('edgeNote'); if (!el) return;
+  const edge = ATTR.mode === 'edge';
+  document.querySelectorAll('.prevnote').forEach(e => { e.hidden = !edge; });
+  if (!edge || !G || !curAlgo) { el.hidden = true; return; }
+  const sm = ATTR.summary && ATTR.summary[curAlgo];
+  if (!sm) { el.hidden = false; el.classList.remove('warn'); el.innerHTML = 'Edge-site transcoder: loading its measured quality\u2026'; return; }
+  const big = G.n > 16, low = sm.retention_val < 0.9 || (big && (sm.retention_n64 === null || sm.retention_n64 < 0.9));
+  let h = `<b>Edge-site transcoder</b> for ${curAlgo} (D = ${sm.D}, k = ${sm.k}). Each latent sits on one <b>sender \u2192 receiver</b> pair, so a node column shows what is written <i>to</i> that node. ` +
+    `Replacing the message MLP by it inside the real network keeps <b>${pc1(sm.retention_val)}</b> of the original F1 on 16-node validation graphs` +
+    (sm.retention_n64 === null ? ' (not measured on 64-node graphs)' : ` and <b>${pc1(sm.retention_n64)}</b> on 64-node graphs`) + `; reconstruction error (FVU) ${sm.nmse_val.toFixed(4)}. ` +
+    `The graph itself is exact for the real run: it uses the real winners and an error node per pair.`;
+  if (big) h += ` <b>This graph has ${G.n} nodes</b>: the transcoder was trained on 16-node graphs${sm.retention_n64 === null ? ' and was not validated at larger sizes for this algorithm' : ' and validated at 64 nodes only for the seven shortest-path / spanning-tree / cut-vertex algorithms'}.`;
+  if (sm.retention_val < 0.9) h += ' Its replacement fidelity is below 0.90: read the latents with care.';
+  el.hidden = false; el.classList.toggle('warn', low); el.innerHTML = h;
+}
+function setAttrMode(mode) {
+  if (mode === ATTR.mode) return;
+  ATTR.mode = mode; try { localStorage.setItem('clrs-attr-mode', mode); } catch (e) {}
+  document.querySelectorAll('#attrSeg button').forEach(b => b.classList.toggle('active', b.dataset.v === mode));
+  if (typeof avReset === 'function') avReset();
+  renderEdgeNote(); if (mode === 'edge') ensureEdgeSummary().catch(() => {});
+  if (G && !G._preview) { drawGraph(); drawAttribution(); }
 }
 function getInstance(a, n, p, seed) {   // tiny, deterministic for its query: shared by every caller and cached
   const k = gkey(a, n, p, seed); let e = INST.get(k);
@@ -1018,6 +1070,7 @@ function unloadAlgo(a) {
   for (const st of LOCAL.workers) { st.loaded.delete(a); delete st.waiters[a]; st.w.postMessage({ type: 'unload', algo: a }); }
   if (AV.worker) AV.worker.postMessage({ type: 'unload', algo: a });
   delete AV.ready['loaded:' + a]; delete AV.ready['tcloaded:' + a]; delete AV['sent:' + a]; delete AV['tcsent:' + a];
+  delete AV.ready['edgetcloaded:' + a]; delete AV['etcsent:' + a]; delete ETCS[a];          // the worker dropped the edge-site transcoder too: load it again when needed
   delete HEAVY[a];
   for (const [k, e] of [...GRAPH_CACHE]) if (k.startsWith(a + '|')) { if (!e.done) e.ctl.abort(); GRAPH_CACHE.delete(k); }
 }
@@ -1266,6 +1319,8 @@ async function boot() {
       if (selected) selected = { node: selected.node, step: Math.min(curStep, G.length - 2) };
       drawGraph(); drawAttribution();
     });
+    document.querySelectorAll('#attrSeg button').forEach(b => { b.classList.toggle('active', b.dataset.v === ATTR.mode); b.addEventListener('click', () => setAttrMode(b.dataset.v)); });
+    if (ATTR.mode === 'edge') ensureEdgeSummary().catch(() => {});
     document.querySelectorAll('#pruneSeg button').forEach(b => b.addEventListener('click', () => {
       document.querySelectorAll('#pruneSeg button').forEach(x => x.classList.remove('active'));
       b.classList.add('active'); pruneMode = b.dataset.v;

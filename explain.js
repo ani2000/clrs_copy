@@ -122,6 +122,20 @@
     ivDbl: ['×2 — amplify', 'Doubles the feature’s activation and re-runs the real model.', 'The opposite test to ablation: the prediction should move the other way.', ''],
   });
 
+  // wording that differs for the edge-site graph (latents on sender -> receiver pairs); everything else is shared
+  const GL_EDGE = {
+    avRowF: ['Latents at this step', 'For every receiver node (column), the transcoder latents active on the pairs sender → receiver in this step (8 per pair, all senders), coloured by what the pair is in this graph: a real edge, a non-edge or a self pair. The hatched square is the error node of a pair. Label: sender : latent.', 'Latents are the units this explanation is written in. They have no names yet.', 'Size ∝ √activation.'],
+    avRowL: ['Leaves at this step', 'The values the encoders read at this step: inputs (pos, A, adj, s…) and hints the model fed back from its previous prediction, per node; edge-located values (A[i,j]) sit under the sender. The earlier-state leaf is the hidden state from before the window.', 'Leaves are where the explanation stops.', ''],
+    avError: ['Error node', 'The part of a pair’s message y that the transcoder did not reconstruct. Adding it back makes the replacement model reproduce the real network exactly (Circuit Tracing).', 'Its outgoing weight shows how much of the mechanism lies outside the latents.', ''],
+    avAct: ['Activation', 'The latent’s value on this pair and step (after ReLU and top-k).', '', ''],
+    avTotalEffect: ['Total effect', 'Change in each target logit per unit change of this latent’s activation, summed over every path in the frozen-linear graph (direct, skip and indirect). Checked against finite differences in the test suite.', 'The intervention panel compares this prediction with the real model.', ''],
+    avg_pe: ['Latent on a real edge', 'The pair sender → receiver is an edge of the input graph (adj > 0). Colour says what the pair is in this graph, not what the latent means.', '', ''],
+    avg_pn: ['Latent on a non-edge pair', 'The pair is not an edge of the input graph. The MPNN still computes a message for it (it uses an all-ones adjacency), so every pair has latents.', '', ''],
+    avg_ps: ['Latent on a self pair', 'Sender and receiver are the same node.', '', ''],
+    attrEdge: ['Edge-site transcoder (new)', 'Sparse latents on the message each sender sends to each receiver (input s, output y of the message MLP), trained for this algorithm’s MPNN. The graph shows how latents of one step feed latents of the next through the real max-routing winners, plus error nodes, inputs and a bias.', 'Faithfulness numbers for this algorithm are in the note above the graph.', 'Switch to “Node-site (previous)” for the earlier graphs.'],
+    attrNode: ['Node-site transcoder (previous)', 'The earlier attribution graph: features of each node’s update, with predicate labels and top-activating dataset examples.', '', 'Switch to “Edge-site (new)” for latents on sender → receiver pairs.']
+  };
+  Object.assign(GL, { attrEdge: GL_EDGE.attrEdge, attrNode: GL_EDGE.attrNode });
   function card(title, what, why, how, extra) {
     let h = `<div class="hc-title">${title}</div>`;
     if (what) h += `<div class="hc-body">${what}</div>`;
@@ -154,7 +168,7 @@
 
   // ---------------- dynamic renderers ----------------
   const R = {
-    g(key) { const e = GL[key]; return e ? card(e[0], e[1], e[2], e[3]) : null; },
+    g(key) { const e = (window.AV_EDGE_ON && window.AV_EDGE_ON() && GL_EDGE[key]) || GL[key]; return e ? card(e[0], e[1], e[2], e[3]) : null; },
 
     node(arg) {
       const { G, W, step } = S(); if (!G || !W) return null;

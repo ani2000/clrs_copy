@@ -13,7 +13,7 @@ for (const a of algos) {
   const T = E.prepTC(JSON.parse(fs.readFileSync(path.join(ROOT, 'edge_tc', a + '.json'))), fs.readFileSync(path.join(ROOT, 'edge_tc', a + '.bin')));
   const inst = JSON.parse(fs.readFileSync(path.join(INST, a + '_103.json'))), N = inst.n, H = M.H, P = M.proc, t = Math.min(3, inst.length - 2);
   const meta = JSON.parse(fs.readFileSync(path.join(ROOT, 'algos', a, 'meta.json'))), ptr = M.fields.some(f => f.name === 'pi_h' && f.stage === 'hint' && f.loc === 'node' && f.type === 'pointer') ? 'pi_h' : null;
-  const ex = E.explain(MP, AT, M, T, inst, { t, i: 3 % N, main: meta.target, pointerField: ptr, window: 3 }), pr = E.prune(ex), { St, tLo } = ex;
+  const ex = E.explain(MP, AT, M, T, inst, { t, i: 3 % N, main: meta.target, pointerField: ptr, window: 3, full: true }), pr = E.prune(ex), { St, tLo } = ex;
   // ---- replay of the replacement model; `bump` = {ts, p, q, d} adds d to the activation of latent q at pair p of step ts
   function replay(bump) {
     let h = Float64Array.from(St[tLo].hidden); const pres = {}; let hT = null, edgeF = null;

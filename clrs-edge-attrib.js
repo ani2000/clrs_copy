@@ -61,6 +61,12 @@
     for (let i = 0; i < din; i++) { let s = 0; const r = i * dout; for (let o = 0; o < dout; o++) s += w[r + o] * g[o]; out[i] = s; }
     return out;
   }
+  function linTz(p, g) {                    // same as linT; zero entries of g are skipped
+    const { din, dout, w } = p, out = zeros(din), nz = []; for (let o = 0; o < dout; o++) if (g[o] !== 0) nz.push(o);
+    if (nz.length === dout) return linT(p, g);
+    for (let i = 0; i < din; i++) { let s = 0; const r = i * dout; for (let q = 0; q < nz.length; q++) s += w[r + nz[q]] * g[nz[q]]; out[i] = s; }
+    return out;
+  }
   const EPS = 1e-12;
 
   // ---------- the graph ----------
@@ -81,6 +87,7 @@
     for (let ts = tLo; ts <= t; ts++) {
       const r = run.rec[ts], S = { r, lat: new Array(N * N).fill(null), eps: zeros(N * N * H), Du: new Uint8Array(N * H), sig: zeros(N), winCh: new Array(N * N), hidden: r.hidden, vals: valuesAt(ts) };
       for (let p = 0; p < N * N; p++) {
+        if (ts === t && !opts.full && !targetNodes.has(p % N)) continue;                 // at the last step only latents written to a target node can reach the targets
         const ids = encodeRow(T, r.s, p * H, pre, tmp); decodeRow(T, ids, pre, yh);
         S.lat[p] = { idx: ids, a: ids.map(f => pre[f]) };
         for (let c = 0; c < H; c++) S.eps[p * H + c] = r.y[p * H + c] - yh[c];
@@ -101,8 +108,10 @@
     const nodeOf = (key, mk) => { let v = nid.get(key); if (v === undefined) { v = nodes.length; nodes.push(Object.assign({ id: key }, mk())); nid.set(key, v); } return v; };
     let cap = 1 << 20, eS = new Int32Array(cap), eD = new Int32Array(cap), eW = new Float64Array(cap), E = 0;
     const push = (s, d, w, acc) => { acc.sum += w; if (Math.abs(w) <= EPS) return; if (E === cap) { cap *= 2; const a = new Int32Array(cap), b = new Int32Array(cap), c = new Float64Array(cap); a.set(eS); b.set(eD); c.set(eW); eS = a; eD = b; eW = c; } eS[E] = s; eD[E] = d; eW[E] = w; E++; };
-    const featNode = (ts, p, q) => { const L = St[ts].lat[p], f = L.idx[q]; return nodeOf(`F${ts}:${p}:${f}`, () => ({ type: 'feature', t: ts, s: Math.floor(p / N), i: p % N, f, act: L.a[q], pre: L.a[q], pair: p })); };
-    const errNode = (ts, p) => nodeOf(`E${ts}:${p}`, () => { let n2 = 0; const e = St[ts].eps; for (let c = 0; c < H; c++) n2 += e[p * H + c] ** 2; return { type: 'error', t: ts, s: Math.floor(p / N), i: p % N, norm: Math.sqrt(n2), pair: p }; });
+    const featId = {}, errId = {};                                                  // node index of every latent / error node, by array position (no string keys on the hot path)
+    const featNode = (ts, p, q) => { const a = featId[ts] || (featId[ts] = new Array(N * N)); let v = a[p]; if (!v) v = a[p] = new Int32Array(St[ts].lat[p].idx.length).fill(-1);
+      if (v[q] < 0) { const L = St[ts].lat[p], f = L.idx[q]; v[q] = nodeOf(`F${ts}:${p}:${f}`, () => ({ type: 'feature', t: ts, s: Math.floor(p / N), i: p % N, f, act: L.a[q], pre: L.a[q], pair: p })); } return v[q]; };
+    const errNode = (ts, p) => { const a = errId[ts] || (errId[ts] = new Int32Array(N * N).fill(-1)); if (a[p] < 0) a[p] = nodeOf(`E${ts}:${p}`, () => { let n2 = 0; const e = St[ts].eps; for (let c = 0; c < H; c++) n2 += e[p * H + c] ** 2; return { type: 'error', t: ts, s: Math.floor(p / N), i: p % N, norm: Math.sqrt(n2), pair: p }; }); return a[p]; };
     const biasNode = ts => nodeOf(ts > t ? 'Bout' : `B${ts}`, () => ({ type: 'bias', t: ts }));
     const argmaxAt = (v, k, K) => { let b = 0; for (let c = 1; c < K; c++) if (v[k * K + c] > v[k * K + b]) b = c; return b; };
     const leaf = (key, info, w, dst, acc) => { if (Math.abs(w) > EPS) push(nodeOf(key, () => Object.assign({ type: 'leaf' }, info)), dst, w, acc); else acc.sum += w; };
@@ -153,7 +162,7 @@
       for (let c = 0; c < H; c++) { v[c] = gh[c] * gamma[c] / S.sig[k]; mean += v[c]; bb += beta[c] * gh[c]; } mean /= H;
       const gx = zeros(H); for (let c = 0; c < H; c++) if (S.Du[k * H + c]) { gx[c] = v[c] - mean; bb += gx[c] * (P.o1.b[c] + P.o2.b[c]); }
       acc.bias += bb;
-      const gz = linT(P.o1, gx), gm = linT(P.o2, gx);
+      const gz = linTz(P.o1, gx), gm = linTz(P.o2, gx);
       for (let i = 0; i < N; i++) {
         const ch = S.winCh[k * N + i]; if (!ch.length) continue;                 // a sender that wins no channel has no effect
         const p = i * N + k, L = S.lat[p]; let cst = 0, er = 0;
@@ -176,8 +185,7 @@
     for (let ts = tLo; ts <= t; ts++) {
       for (let p = 0; p < N * N; p++) {
         const j2 = p % N, i2 = Math.floor(p / N);
-        if (ts === t && !targetNodes.has(j2)) continue;                              // only latents that can reach the targets
-        const L = St[ts].lat[p];
+        const L = St[ts].lat[p]; if (!L) continue;                                    // at the last step only latents that can reach the targets exist
         for (let q = 0; q < L.idx.length; q++) {
           const f = L.idx[q], d = featNode(ts, p, q), acc = { sum: 0, bias: 0 };
           let cf = latCache.get(f);                                                       // everything that depends only on the latent, not on the pair
@@ -257,13 +265,21 @@
   // the part of the result the page needs: pruned graph, the strongest edges for the "all" view, and facts about each shown latent in THIS graph
   function pack(ex, pr, inst) {
     const { nodes, eS, eD, eW, E, St, N, tLo, t } = ex;
-    const topN = 6000, mag = Float64Array.from(pr.A); mag.sort();
-    const thr = E > topN ? mag[E - topN] : 0, topE = []; for (let e = 0; e < E && topE.length < topN; e++) if (pr.A[e] >= thr) topE.push(e);
+    const topN = 6000; let topE = [];
+    if (E <= topN) { for (let e = 0; e < E; e++) topE.push(e); }
+    else {                                                                              // threshold from a log-scale histogram (linear time), then sort only the candidates
+      let mx = 0; for (let e = 0; e < E; e++) if (pr.A[e] > mx) mx = pr.A[e];
+      const B = 4096, lo = Math.log(mx) - 40, hist = new Int32Array(B + 1), bin = a => a <= 0 ? 0 : Math.max(0, Math.min(B, Math.floor((Math.log(a) - lo) / 40 * B)));
+      for (let e = 0; e < E; e++) hist[bin(pr.A[e])]++;
+      let cnt = 0, b = B; while (b > 0 && cnt + hist[b] < topN) { cnt += hist[b]; b--; }
+      for (let e = 0; e < E; e++) if (bin(pr.A[e]) >= b) topE.push(e);
+      topE.sort((a, b2) => pr.A[b2] - pr.A[a]); topE = topE.slice(0, topN);
+    }
     topE.sort((a, b) => pr.A[b] - pr.A[a]);
     const send = new Set(pr.prunedNodes); for (const e of topE) { send.add(eS[e]); send.add(eD[e]); }
     nodes.forEach((nd, k) => { if (nd.type === 'logit') send.add(k); });
     const where = {};                                                                  // step -> latent -> [pairs where it is active at that step]
-    for (let ts = tLo; ts <= t; ts++) { const m = new Map(); St[ts].lat.forEach((L, p) => L.idx.forEach(f => { if (!m.has(f)) m.set(f, []); m.get(f).push(p); })); where[ts] = m; }
+    for (let ts = tLo; ts <= t; ts++) { const m = new Map(); St[ts].lat.forEach((L, p) => L && L.idx.forEach(f => { if (!m.has(f)) m.set(f, []); m.get(f).push(p); })); where[ts] = m; }
     const adjOf = (a, b) => (inst.adj && inst.adj[a] && inst.adj[a][b] > 0);
     const ids = [...send], out = [], influence = {}, totalEffect = {};
     for (const k of ids) {
@@ -288,13 +304,15 @@
     const H = M.H, N = inst.n, k0 = ex.nid.get(nodeId), nd = ex.nodes[k0], t0 = nd.t, t = ex.t, dy = zeros(H);
     for (let c = 0; c < H; c++) dy[c] = (factor - 1) * nd.act * T.W_dec[nd.f * H + c] * T.y_scale;
     const alt = MP.runRecord(M, inst, { patchY: { t: t0, i: nd.s, j: nd.i, dy }, record: { from: t0, to: t }, stopAt: t });
+    // the graph treats the hints that are fed back as fixed inputs; the real model re-decodes them after the clamp. Run it both ways so the two effects can be told apart.
+    const fixed = MP.runRecord(M, inst, { patchY: { t: t0, i: nd.s, j: nd.i, dy }, hints: ex.run.hintsRead, record: { from: t0, to: t }, stopAt: t });
     let flips = 0, decisions = 0; const pre = zeros(T.D), tmp = zeros(T.D);
     for (let ts = t0; ts <= t; ts++) { const A = alt.rec[ts], B = ex.run.rec[ts];
       for (let q = 0; q < A.route.length; q++) { decisions++; if (A.route[q] !== B.route[q]) flips++; }
-      if (ts > t0) for (let p = 0; p < N * N; p++) { const a = encodeRow(T, A.s, p * H, pre, tmp), b = ex.St[ts].lat[p].idx; decisions += T.k; if (a.length !== b.length || a.some((v, q) => v !== b[q])) flips++; } }
+      if (ts > t0) for (let p = 0; p < N * N; p++) { const L = ex.St[ts].lat[p]; if (!L) continue; const a = encodeRow(T, A.s, p * H, pre, tmp), b = L.idx; decisions += T.k; if (a.length !== b.length || a.some((v, q) => v !== b[q])) flips++; } }
     const val = (rr, tg) => { const L = rr.logits[tg.field]; if (tg.kind === 'pointer') return L[tg.i * N + tg.j]; const f = M.fields.find(x => x.name === tg.field); return L[tg.i * f.dec[0].dout + (tg.c || 0)]; };
     const rows = ex.targets.map(tg => { const l = ex.nid.get(tg.id), te = pr.effects.get(l)[k0], base = val(ex.run.rec[t], tg);
-      return { id: tg.id, base, actual: val(alt.rec[t], tg), predicted: base + (factor - 1) * nd.act * te }; });
+      return { id: tg.id, base, actual: val(alt.rec[t], tg), actualFixed: val(fixed.rec[t], tg), predicted: base + (factor - 1) * nd.act * te }; });
     return { t0, i0: nd.i, s0: nd.s, f: nd.f, act: nd.act, factor, rows, flips, decisions };
   }
 

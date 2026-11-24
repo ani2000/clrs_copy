@@ -271,6 +271,8 @@ def _build_id():
         for a in sorted(ALGOS):
             for ext in ('json', 'bin'):
                 h.update(open(f'models/{a}.{ext}', 'rb').read())
+        for f in sorted(os.listdir('edge_tc')) if os.path.isdir('edge_tc') else []:     # edge-site transcoders (clrs_export_edge_tc.py)
+            h.update(f.encode()); h.update(open(f'edge_tc/{f}', 'rb').read())
         return h.hexdigest()[:10]
     except OSError:
         return 'dev'
@@ -283,6 +285,7 @@ ALGOS_JSON = json.dumps({a: dict(target=META[a]['target'], target_type=META[a]['
 
 GZ_STATIC = {}        # (file, content hash) -> gzip bytes, compressed once
 MODEL_RE = re.compile(r'^models/([a-z_]+)\.(json|bin)$')
+EDGE_RE = re.compile(r'^edge_tc/(?:([a-z_]+)\.(json|bin)|clrs-edge-summary\.json)$')    # edge-site transcoder files; the algorithm must be one we serve
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -389,7 +392,11 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 path = u.path.lstrip('/') or 'viewer3.html'
                 m = MODEL_RE.match(path)
-                if path in STATIC_FILES:
+                me = EDGE_RE.match(path)
+                if me and (me.group(1) is None or me.group(1) in META):
+                    ctype = 'application/octet-stream' if me.group(2) == 'bin' else 'application/json'
+                    cache = 'public, max-age=31536000, immutable'            # fixed for a given image (the URL carries ?v=BUILD)
+                elif path in STATIC_FILES:
                     ctype, cache = STATIC_FILES[path], (CACHE_IMMUTABLE if versioned else 'no-cache')
                 elif m and m.group(1) in META:
                     ctype = 'application/json' if m.group(2) == 'json' else 'application/octet-stream'
@@ -406,7 +413,7 @@ class Handler(BaseHTTPRequestHandler):
                 # pages and scripts are text: send them gzip-compressed (about 3x smaller; model bundles are floats and barely shrink)
                 gz = path in STATIC_FILES and 'gzip' in self.headers.get('Accept-Encoding', '')
                 tag = None
-                if m or path == 'viewer3.html':
+                if m or me or path == 'viewer3.html':
                     tag = '"' + hashlib.sha1(data).hexdigest()[:20] + ('-gz' if gz else '') + '"'
                     if self.headers.get('If-None-Match') == tag:
                         self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache)

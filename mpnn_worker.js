@@ -1,7 +1,7 @@
 /* Web Worker: runs the in-browser MPNN forward pass and attribution graphs off the UI thread. */
 const Q = self.location.search || '';          // ?v=BUILD: every file the worker loads carries the same version key
-importScripts('mpnn.js' + Q, 'attrib.js' + Q);
-const MODELS = {}, TCS = {}, EXPL = new Map();   // EXPL: recent explanations, kept for interventions
+importScripts('mpnn.js' + Q, 'attrib.js' + Q, 'clrs-edge-attrib.js' + Q);
+const MODELS = {}, TCS = {}, ETC = {}, EXPL = new Map();   // ETC: edge-site transcoders   // EXPL: recent explanations, kept for interventions
 function slimTarget(tg) { const o = Object.assign({}, tg); delete o.sel; return o; }
 function pack(id, ex, ms, main, ptr) {
   const G = ex.G, Pr = ex.Pr, E = G.eW.length;
@@ -51,11 +51,14 @@ self.onmessage = (e) => {
       MODELS[m.algo] = self.MPNN.loadModel(m.manifest, new Float32Array(m.buffer));
       self.postMessage({ type: 'loaded', algo: m.algo });
     } else if (m.type === 'unload') {
-      delete MODELS[m.algo]; delete TCS[m.algo];
+      delete MODELS[m.algo]; delete TCS[m.algo]; delete ETC[m.algo];
       for (const [k, rec] of [...EXPL]) if (rec.algo === m.algo) EXPL.delete(k);
     } else if (m.type === 'tc') {
       TCS[m.algo] = self.Attrib.prepTranscoder(m.W);
       self.postMessage({ type: 'tcloaded', algo: m.algo });
+    } else if (m.type === 'edgetc') {
+      ETC[m.algo] = self.ClrsEdge.prepTC(m.manifest, new Float32Array(m.buffer));
+      self.postMessage({ type: 'edgetcloaded', algo: m.algo });
     } else if (m.type === 'cancel') {
       CANCEL.add(m.id);
     } else if (m.type === 'run') {
@@ -66,6 +69,18 @@ self.onmessage = (e) => {
       const ex = self.Attrib.explain(self.MPNN, M, T, m.inst, { t: m.t, i: m.i, main: m.main, pointerField: ptr, window: m.window || 3 });
       EXPL.set(m.id, { ex, inst: m.inst, algo: m.algo }); while (EXPL.size > 4) EXPL.delete(EXPL.keys().next().value);
       self.postMessage(pack(m.id, ex, Date.now() - t0, m.main, ptr));
+    } else if (m.type === 'attribEdge') {                       // edge-site transcoder graph (clrs-edge-attrib.js)
+      const t0 = Date.now(), M = MODELS[m.algo], T = ETC[m.algo];
+      const ptr = M.fields.some(f => f.name === 'pi_h' && f.stage === 'hint' && f.loc === 'node' && f.type === 'pointer') ? 'pi_h' : null;
+      const CE = self.ClrsEdge, ex = CE.explain(self.MPNN, self.Attrib, M, T, m.inst, { t: m.t, i: m.i, main: m.main, pointerField: ptr, window: m.window || 3 });
+      const pr = CE.prune(ex), pk = CE.pack(ex, pr, m.inst), last = ex.run.rec[ex.run.rec.length - 1];
+      EXPL.set(m.id, { ex, pr, inst: m.inst, algo: m.algo, edge: true }); while (EXPL.size > 3) EXPL.delete(EXPL.keys().next().value);
+      self.postMessage(Object.assign({ type: 'attrib', id: m.id, mode: 'edge', ms: Date.now() - t0, main: m.main, pointerField: ptr,
+        rowLogits: Array.from(last.logits[m.main]), rowPtr: ptr ? Array.from(last.logits[ptr]) : null }, pk));
+    } else if (m.type === 'interveneEdge') {
+      const rec = EXPL.get(m.ref); if (!rec || !rec.edge) throw new Error('explanation expired; click the latent again');
+      const iv = self.ClrsEdge.intervene(self.MPNN, MODELS[rec.algo], ETC[rec.algo], rec.inst, rec.ex, rec.pr, m.node, m.factor);
+      self.postMessage({ type: 'intervened', id: m.id, iv });
     } else if (m.type === 'intervene') {
       const rec = EXPL.get(m.ref); if (!rec) throw new Error('explanation expired; click the feature again');
       const iv = self.Attrib.intervene(self.MPNN, MODELS[rec.algo], TCS[rec.algo], rec.inst, rec.ex, m.t0, m.i0, m.q, m.factor);
