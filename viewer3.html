@@ -189,7 +189,13 @@ window.__early = {};
   .edgenote { font-size:12px; line-height:1.5; color:var(--ink); background:#eef6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:6px; padding:6px 10px; margin:0 0 8px; }
   .edgenote.warn { background:#fff7ed; border-color:#fed7aa; border-left-color:#d97706; }
   .edgenote b { font-weight:600; }
-  .prevnote { font-size:11.5px; color:var(--muted); background:var(--bg); border:1px dashed var(--line); border-radius:6px; padding:4px 8px; margin:0 0 8px; }
+
+  .navlink { font-size:12px; margin-left:4px; white-space:nowrap; }
+  .etcfacts { margin-top:8px; font-size:12.5px; }
+  .etcfacts .kv { align-items:flex-start; }
+  .etcfacts .kv > span:last-child { text-align:right; overflow-wrap:anywhere; }
+  .etcfacts svg { vertical-align:middle; }
+  .readlist { margin:6px 0 0; padding-left:18px; font-size:12.5px; line-height:1.5; } .readlist li { margin:0 0 6px; }
   @media (hover: none) { .tt { border-bottom-style:dashed; } }
   /* hover preview cards (explain.js) */
   .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
@@ -225,6 +231,7 @@ window.__early = {};
 <body>
 <header>
   <h1>CLRS-30 Circuit Tracer</h1>
+  <a class="navlink" href="/demo" data-tip="g:demoLink">Previous demo (node-site transcoder) &rarr;</a>
   <div class="ctrl"><span class="tt" data-tip="g:algo">algo</span> <select id="inAlgo" data-tip="g:algo"></select></div>
   <div class="ctrl"><span class="tt" data-tip="g:n">n</span> <input data-tip="g:n" id="inN" type="number" value="16" min="4" max="32"></div>
   <div class="ctrl"><span class="tt" data-tip="g:p">p</span> <input data-tip="g:p" id="inP" type="number" value="0.4" min="0.1" max="0.95" step="0.05"></div>
@@ -242,7 +249,7 @@ window.__early = {};
     <p class="small" style="color:var(--muted)">Scores come from the training run (MPNN, 128 hidden units, 10,000 steps, batch 32, seed 42). Validation is on 16-node graphs, test on 64-node graphs. CLEAN means the drop is under 10 pp, SEVERE means over 40 pp; every one of the 12 falls on one side or the other.</p>
   </details>
 </details>
-<div class="intro">The trained 128-hidden MPNN executes a CLRS-30 algorithm on a random graph, one message-passing step at a time. Click a node to trace the circuit behind its prediction. Hover any <span class="tt" data-tip="g:howItWorks">dotted term</span>, number or box for an explanation of what it is and why it is there. The pseudo-code pane follows the same steps.</div>
+<div class="intro">The trained 128-hidden MPNN executes a CLRS-30 algorithm on a random graph, one message-passing step at a time. Click a node to trace the circuit behind its prediction: a graph of sparse latents on sender &rarr; receiver message pairs, built from the new edge-site transcoders. Hover any <span class="tt" data-tip="g:howItWorks">dotted term</span>, number or box for an explanation of what it is and why it is there. The pseudo-code pane follows the same steps.</div>
 <div class="stage">
   <div class="panel" id="pnlSim">
     <h2><span class="tt" data-tip="g:simulation">Simulation</span></h2>
@@ -262,7 +269,6 @@ window.__early = {};
     <div id="outprobs" class="outprobs"></div>
     <div id="edgeNote" class="edgenote" hidden></div>
     <div class="toolbar">
-      <div class="seg" id="attrSeg" role="group" aria-label="Which transcoder the graph is built from"><button data-v="edge" data-tip="g:attrEdge">Edge-site (new)</button><button data-v="node" data-tip="g:attrNode">Node-site (previous)</button></div>
       <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
       <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button></div>
       <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
@@ -288,28 +294,36 @@ window.__early = {};
 </div>
 
 <div class="layout">
-  <div class="panel">
-    <h2><span class="tt" data-tip="g:transcoder">Model &amp; transcoder</span></h2>
-    <div class="prevnote" hidden>The transcoder numbers in this panel (FVU, features) belong to the previous node-site transcoder. The measured quality of the edge-site transcoder is in the note above the attribution graph.</div>
+  <div class="panel" id="pnlModel">
+    <h2><span class="tt" data-tip="g:etcPanel">Model &amp; edge-site transcoder</span></h2>
     <div class="kv"><span class="tt" data-tip="g:hidden">hidden_dim</span><span data-tip="g:hidden">128</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:target">target</span><span id="targetName" data-tip="dyn:target">-</span></div>
-    <div class="kv"><span class="tt" data-tip="dyn:fvu">transcoder FVU</span><span id="fvu" data-tip="dyn:fvu">-</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:f1">val / test score (OOD)</span><span id="f1s" data-tip="dyn:f1">-</span></div>
+    <div id="etcFacts" class="etcfacts"></div>
     <h2 style="margin-top:16px">Per-node predictions</h2>
     <div class="tscroll"><table id="nodeTable"><thead><tr id="nodeTableHead"></tr></thead><tbody id="nodeTableBody"></tbody></table></div>
   </div>
 
-  <div class="panel">
-    <div class="prevnote" hidden>This table describes the previous (node-site) transcoder. The edge-site latents shown in the graph are not labelled; their inspector shows facts measured on the current graph instead.</div>
-    <h2><span class="tt" data-tip="g:featlabels">Feature labels (top 15 by F1)</span></h2>
-    <div class="tscroll"><table id="featTable"><thead><tr><th>feature</th><th><span class="tt" data-tip="g:featlabels">label</span></th><th><span class="tt" data-tip="g:precision">P</span></th><th><span class="tt" data-tip="g:recall">R</span></th><th><span class="tt" data-tip="g:f1">F1</span></th><th><span class="tt" data-tip="g:firesOn">fires on</span></th></tr></thead><tbody></tbody></table></div>
+  <div class="panel" id="pnlRead">
+    <h2>How to read the attribution graph</h2>
+    <ul class="readlist">
+      <li><b>Latent (circle).</b> One of the 8 active entries of a sparse code (out of 1,280) that rebuilds the <i>message</i> one node sends to another at one step. It sits in the column of the receiver; its label is <i>sender : latent</i>. Size grows with the activation.</li>
+      <li><b>Colour.</b> What the pair is in the input graph: a real edge, a non-edge or a self pair. It is not a meaning of the latent (the latents have no names yet). The MPNN computes a message for every ordered pair, so every pair has latents.</li>
+      <li><b>Error node (hatched).</b> What the latents of a pair did not rebuild. It is added back, so the graph is exact for the real run.</li>
+      <li><b>Leaves (squares) and bias (diamond).</b> The encoded inputs and the hints the model fed back, the hidden state from before the three-step window, and the constant terms.</li>
+      <li><b>Edges.</b> Blue pushes the destination up, red down. Weight = source activation &times; its effect on the destination, with the max-routing winners, the LayerNorm &sigma; and the node update&rsquo;s ReLU pattern frozen at their real values. A sender that wins no channel at a receiver has no outgoing edges there. Hidden state also reaches later steps directly, so some edges skip a step.</li>
+      <li><b>Exactness.</b> The line under the graph reports the largest difference, over every node shown, between its value and the sum of its incoming edges plus the bias.</li>
+      <li><b>Pruned / All.</b> Pruned keeps the nodes carrying 80% of the influence on the predictions and the edges carrying 98% of it among them. All shows the strongest 6,000 edges.</li>
+      <li><b>Supernodes.</b> All latents of one sender &rarr; receiver pair at one step are merged into one box; their edges are summed.</li>
+      <li><b>Clamp.</b> Pin a latent and clamp it. The real model is re-run and compared with the graph&rsquo;s first-order prediction; the graph freezes &sigma;, winners and TopK sets, so it is a guide, not a guarantee.</li>
+    </ul>
   </div>
 
   <div class="panel">
     <h2><span class="tt" data-tip="g:featdetail">Inspector</span></h2>
     <div id="featDetail" class="small">Hover a node in the attribution graph to see its edges; click to pin it here.</div>
     <h2 style="margin-top:18px"><span class="tt" data-tip="g:intervention">Intervention</span></h2>
-    <div id="ivPanel" class="small">Click a feature, then try clamping it.</div>
+    <div id="ivPanel" class="small">Click a latent, then try clamping it.</div>
   </div>
 </div>
 
@@ -783,8 +797,7 @@ const SUMMARY_V3 = {
 let W = null, FL = null, G = null, ALGOS = null, curAlgo = 'bfs', curStep = 0, playTimer = null, selected = null, CUR_ATTR = null;
 let pruneMode = 'pruned', minW = 0, viewMode = 'bynode';
 // which transcoder the attribution graph is built from: 'edge' = the new edge-site transcoders (latents on sender->receiver pairs), 'node' = the previous node-site transcoder
-const ATTR = { mode: 'edge', summary: null };
-try { const q = new URLSearchParams(location.search).get('attr'), st = q || localStorage.getItem('clrs-attr-mode'); if (st === 'node' || st === 'edge') ATTR.mode = st; } catch (e) {}
+const ATTR = { mode: 'edge', summary: null };      // this page is the edge-site version; the node-site version is at /demo
 window.AV_EDGE_ON = () => ATTR.mode === 'edge';
 let NODE_PRED = {}, SHOWN_EDGES = [], LAST_IV = null;   // read by explain.js hover cards
 // Race-condition guards: every async load takes a generation number; a response is applied only
@@ -874,27 +887,9 @@ function progressLine() {            // keeps the "Loading <algo>: n%" line fres
 const HEAVY = {}, LABELS = {}, LABEL_REQ = {}, WT = {}, INST = new Map();
 function metaFor(a) { const m = ALGOS[a]; return { target: m.target, target_type: m.target_type, fvu: m.fvu, val_f1: m.val_f1, test_f1: m.test_f1, hidden: 128 }; }
 function weightsFor(a) { return HEAVY[a] || metaFor(a); }
-function ensureLabels(a) {
-  if (LABELS[a]) return Promise.resolve(LABELS[a]);
-  if (!LABEL_REQ[a]) LABEL_REQ[a] = withRetry(() => getJSON('/api/feature_labels?algo=' + a + '&v=' + BUILD)).then(fl => {
-    if (fl.error) throw new Error(fl.error);
-    LABELS[a] = fl; delete LABEL_REQ[a]; return fl;
-  }, e => { delete LABEL_REQ[a]; throw e; });
-  return LABEL_REQ[a];
-}
-function ensureWeights(a) {             // the large transcoder weights (about 0.5 MB): needed for the node table and the attribution graph
-  if (HEAVY[a]) return Promise.resolve(HEAVY[a]);
-  if (!WT[a]) {
-    const ctl = new AbortController();
-    const p = withRetry(() => getJSON('/api/weights?algo=' + a + '&v=' + BUILD, ctl.signal), ctl.signal).then(w => {
-      if (w.error) throw new Error(w.error);
-      HEAVY[a] = w; delete WT[a];
-      if (a === curAlgo) { W = w; if (G && !G._preview) renderNodeTable(); maybePrefetch(); }
-      return w;
-    }, e => { delete WT[a]; throw e; });
-    p.ctl = ctl; WT[a] = p;
-  }
-  return WT[a];
+function ensureWeights(a) {             // this page has no node-site weights to fetch: the small per-algorithm summary is all the page needs
+  if (!HEAVY[a]) { HEAVY[a] = metaFor(a); if (a === curAlgo) { W = HEAVY[a]; if (G && !G._preview) renderNodeTable(); maybePrefetch(); } }
+  return Promise.resolve(HEAVY[a]);
 }
 // ---------- edge-site transcoders (edge_tc/<algo>.bin + .json, 1.3 MB per algorithm, cached forever) and their measured quality ----------
 const ETCS = {}, ETC_REQ = {};
@@ -906,14 +901,13 @@ function ensureEdgeTC(a) {
 }
 let ETC_SUM = null;
 function ensureEdgeSummary() {
-  if (!ETC_SUM) ETC_SUM = withRetry(() => getJSON('/edge_tc/clrs-edge-summary.json?v=' + BUILD)).then(j => { ATTR.summary = j.summary; renderEdgeNote(); return j; }, e => { ETC_SUM = null; throw e; });
+  if (!ETC_SUM) ETC_SUM = withRetry(() => getJSON('/edge_tc/clrs-edge-summary.json?v=' + BUILD)).then(j => { ATTR.summary = j.summary; renderEdgeNote(); renderEtcPanel(curAlgo); return j; }, e => { ETC_SUM = null; throw e; });
   return ETC_SUM;
 }
 const pc1 = x => (x * 100).toFixed(1) + '%';
 function renderEdgeNote() {                 // what the person is looking at, with the measured numbers behind it
   const el = document.getElementById('edgeNote'); if (!el) return;
   const edge = ATTR.mode === 'edge';
-  document.querySelectorAll('.prevnote').forEach(e => { e.hidden = !edge; });
   if (!edge || !G || !curAlgo) { el.hidden = true; return; }
   const sm = ATTR.summary && ATTR.summary[curAlgo];
   if (!sm) { el.hidden = false; el.classList.remove('warn'); el.innerHTML = 'Edge-site transcoder: loading its measured quality\u2026'; return; }
@@ -925,14 +919,6 @@ function renderEdgeNote() {                 // what the person is looking at, wi
   if (big) h += ` <b>This graph has ${G.n} nodes</b>: the transcoder was trained on 16-node graphs${sm.retention_n64 === null ? ' and was not validated at larger sizes for this algorithm' : ' and validated at 64 nodes only for the seven shortest-path / spanning-tree / cut-vertex algorithms'}.`;
   if (sm.retention_val < 0.9) h += ' Its replacement fidelity is below 0.90: read the latents with care.';
   el.hidden = false; el.classList.toggle('warn', low); el.innerHTML = h;
-}
-function setAttrMode(mode) {
-  if (mode === ATTR.mode) return;
-  ATTR.mode = mode; try { localStorage.setItem('clrs-attr-mode', mode); } catch (e) {}
-  document.querySelectorAll('#attrSeg button').forEach(b => b.classList.toggle('active', b.dataset.v === mode));
-  if (typeof avReset === 'function') avReset();
-  renderEdgeNote(); if (mode === 'edge') ensureEdgeSummary().catch(() => {});
-  if (G && !G._preview) { drawGraph(); drawAttribution(); }
 }
 function getInstance(a, n, p, seed) {   // tiny, deterministic for its query: shared by every caller and cached
   const k = gkey(a, n, p, seed); let e = INST.get(k);
@@ -1121,8 +1107,8 @@ async function prefetchOne(a) {
   PF.cur = pf;
   try {
     await pf.promise;
-    await fetchBytes('/api/weights?algo=' + a + '&v=' + BUILD, { signal: ctl.signal, low: true, keep: false, wait });
-    await fetchBytes('/api/feature_labels?algo=' + a + '&v=' + BUILD, { signal: ctl.signal, low: true, keep: false, wait });
+    await fetchBytes('/edge_tc/' + a + '.json' + VQ, { signal: ctl.signal, low: true, keep: false, wait });
+    await fetchBytes('/edge_tc/' + a + '.bin' + VQ, { signal: ctl.signal, low: true, keep: false, wait });          // the edge-site transcoder (1.3 MB, cached forever)
   } finally { if (PF.cur === pf) PF.cur = null; }
 }
 function warmLoad(a) {                 // while idle, get the most likely next algorithms ready inside the workers (from the browser cache)
@@ -1319,8 +1305,7 @@ async function boot() {
       if (selected) selected = { node: selected.node, step: Math.min(curStep, G.length - 2) };
       drawGraph(); drawAttribution();
     });
-    document.querySelectorAll('#attrSeg button').forEach(b => { b.classList.toggle('active', b.dataset.v === ATTR.mode); b.addEventListener('click', () => setAttrMode(b.dataset.v)); });
-    if (ATTR.mode === 'edge') ensureEdgeSummary().catch(() => {});
+    ensureEdgeSummary().catch(() => {});
     document.querySelectorAll('#pruneSeg button').forEach(b => b.addEventListener('click', () => {
       document.querySelectorAll('#pruneSeg button').forEach(x => x.classList.remove('active'));
       b.classList.add('active'); pruneMode = b.dataset.v;
@@ -1361,24 +1346,33 @@ let bootWired = false;
 function fillHeader(algo) {
   const m = weightsFor(algo);
   document.getElementById('targetName').textContent = `${m.target} (${m.target_type})`;
-  document.getElementById('fvu').textContent = fmt(m.fvu, 4);
   const gt = SUMMARY_V3[algo];
   document.getElementById('f1s').textContent = gt
     ? `${fmt(gt.val)} / ${fmt(gt.test)}  [${gt.cls}, gap=${fmt(gt.gap)}] (summary_v3.json)`
     : `${fmt(m.val_f1)} / ${fmt(m.test_f1)}`;
+  renderEtcPanel(algo);
 }
-function renderLabels(algo) {
-  const fl = LABELS[algo]; if (!fl || algo !== curAlgo) return;
-  FL = fl;
-  const tbody = document.querySelector('#featTable tbody'); tbody.innerHTML = '';
-  FL.rows.slice(0, 15).forEach(r => {
-    const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'fl:' + r.feature);
-    tr.innerHTML = `<td>f${r.feature}</td><td>${r.label}</td><td>${fmt(r.precision)}</td><td>${fmt(r.recall)}</td><td>${fmt(r.f1)}</td><td>${r.n_fire}/${FL.total_sites}</td>`;
-    tbody.appendChild(tr);
-  });
-  labelByFeat = {}; FL.rows.forEach(r => labelByFeat[r.feature] = r);
+const TIER_TEXT = { A: 'A: the baseline generalises to 64 nodes, so the replacement is judged at 16 and at 64 nodes', B: 'B: the baseline generalises badly to 64 nodes, so the replacement is judged at 16 nodes only', C: 'C: the baseline itself is weak (validation F1 below 0.95): results are indicative only' };
+function renderEtcPanel(algo) {          // everything measured about the edge-site transcoder of this algorithm (edge_tc/clrs-edge-summary.json, copied from report.json)
+  const el = document.getElementById('etcFacts'); if (!el) return;
+  const sm = ATTR.summary && ATTR.summary[algo];
+  if (!sm) { el.innerHTML = '<div class="small">Loading the transcoder’s measured quality…</div>'; return; }
+  const row = (k, v, tip) => `<div class="kv"><span class="tt" ${tip ? `data-tip="g:${tip}"` : ''}>${k}</span><span ${tip ? `data-tip="g:${tip}"` : ''}>${v}</span></div>`;
+  const e = sm.nmse_per_step_val, mx = Math.max(...e), pts = e.map((v, i) => `${(i * 100 / Math.max(1, e.length - 1)).toFixed(1)},${(22 - 20 * v / mx).toFixed(1)}`).join(' ');
+  const spark = `<svg width="104" height="24" viewBox="0 0 100 24" role="img" aria-label="reconstruction error by step"><polyline fill="none" stroke="#2563eb" stroke-width="1.6" points="${pts}"/></svg>`;
+  const hm = sm.hidden_rel_error_direct.reduce((a, b) => a + b, 0) / sm.hidden_rel_error_direct.length;
+  el.innerHTML =
+    row('transcoder', `edge site · ${sm.D} latents · ${sm.k} active per pair`, 'etcSite') +
+    row('tier', TIER_TEXT[sm.tier] ? `<span title="${TIER_TEXT[sm.tier]}">${sm.tier}</span>` : sm.tier, 'etcTier') +
+    row('reconstruction error (FVU)', `val ${sm.nmse_val.toFixed(4)} · train ${sm.nmse_train.toFixed(4)} · 64 nodes ${sm.nmse_n64 === null ? 'not measured' : sm.nmse_n64.toFixed(4)}`, 'etcFvu') +
+    row('error by step (val)', `${spark} <span class="small">${e[0].toFixed(4)} → ${e[e.length - 1].toFixed(4)}</span>`, 'etcStep') +
+    row('latents that never fire', `${pc1(sm.dead_frac_train)} of ${sm.D}`, 'etcDead') +
+    row('active latents per pair', sm.l0_val.toFixed(2), 'etcDead') +
+    row('replacement keeps (F1)', `16 nodes ${pc1(sm.retention_val)} (${sm.f1_full_val.toFixed(3)} of ${sm.f1_off_val.toFixed(3)})${sm.retention_n64 === null ? '' : ` · 64 nodes ${pc1(sm.retention_n64)}`}`, 'etcRet') +
+    row('winner flips (replacement alone)', `${pc1(sm.winner_flip_rate)} of channels`, 'etcFlips') +
+    row('one-step hidden-state error', `${pc1(hm)} (mean over steps)`, 'etcHid') +
+    row('trained', `${sm.train_steps.toLocaleString()} steps on ${sm.train_rows.toLocaleString()} rows, ${sm.minutes} min`, 'etcTrain');
 }
-
 async function loadAlgo() {
   const gen = ++algoGen, algo = curAlgo;
   ++graphGen; ++ctxGen;
@@ -1391,8 +1385,6 @@ async function loadAlgo() {
   setStatus('Loading ' + algo + '…');
   fillHeader(algo);                                 // target, FVU and scores come from the small summary: instant
   ensureLocalModel(algo);                           // start the model download straight away, in parallel with everything else
-  if (LABELS[algo]) renderLabels(algo);
-  else ensureLabels(algo).then(() => renderLabels(algo), e => { if (!(e instanceof StaleError)) console.warn('labels', e && e.message); });
   if (gen !== algoGen) return;
   await loadGraph();
 }
@@ -1626,7 +1618,7 @@ function drawStepLabel() {
   document.getElementById('stepLbl').textContent = `step ${curStep} of ${G.length-1}` + (wait ? ' (computing\u2026)' : '');
 }
 
-function renderNodeTable() {
+function renderNodeTable() {             // per node: the true hint now, the REAL model's prediction (shown once the step has been traced), and the true next value
   const step = Math.min(curStep, G.length - 2);
   const head = document.getElementById('nodeTableHead'), body = document.getElementById('nodeTableBody');
   const catCols = W.target_type === 'categorical';
@@ -1634,39 +1626,13 @@ function renderNodeTable() {
   NODE_PRED = {};
   body.innerHTML = '';
   if (step < 0) return;
-  const prevRow = G.target_true ? G.target_true[step] : null;
-  const trueRow = G.target_true ? G.target_true[step+1] : null;
-  const haveStep = !G._preview && G.z && step < G.z.length;
-  const haveW = haveStep && !!W.w_enc;      // predictions need the large weights and the model's steps; until they arrive the table shows the truth only
-  G._need = !haveW;
+  const prevRow = G.target_true ? G.target_true[step] : null, trueRow = G.target_true ? G.target_true[step+1] : null;
   for (let node = 0; node < G.n; node++) {
-    if (!haveW) {
-      const tv = trueRow ? trueRow[node] : null, pv = prevRow ? prevRow[node] : null;
-      NODE_PRED[node] = '\u2026';
-      const tr0 = document.createElement('tr'); tr0.setAttribute('data-tip', 'node:' + node);
-      tr0.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(pv,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="color:var(--muted)">\u2026</td><td data-tip="cell:${node}:true">${fmt(tv,catCols?0:2)}</td>`;
-      body.appendChild(tr0);
-      continue;
-    }
-    const featsCur = encode([...G.z[step][node], ...G.msgs[step][node]]);
-    const featsPrev = step > 0 ? encode([...G.z[step-1][node], ...G.msgs[step-1][node]]) : new Array(W.F).fill(0);
-    const H = W.hidden;
-    const hiddenIn = step > 0 ? reconstruct(featsPrev) : new Array(H).fill(0);
-    const nxt = reconstruct(featsCur);
-    const h_t = [...G.node_fts[step][node], ...hiddenIn, ...nxt];
-    const logits = decodeAllClasses(h_t);
-    let predStr;
-    if (catCols) { const c = logits.indexOf(Math.max(...logits)); predStr = 'class ' + c; }
-    else if (W.target_type === 'scalar') predStr = fmt(logits[0], 2);
-    else predStr = fmt(1/(1+Math.exp(-logits[0])), 2);
-    const realP = typeof avRealPred === 'function' ? avRealPred(step, node) : null;
-    const approx = realP === null; if (!approx) predStr = realP;
-    const trueVal = trueRow ? trueRow[node] : null;
-    const prevVal = prevRow ? prevRow[node] : null;
+    const realP = typeof avRealPred === 'function' ? avRealPred(step, node) : null, predStr = realP === null ? '…' : realP;
     NODE_PRED[node] = predStr;
     const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'node:' + node);
     if (node === selected?.node) tr.style.background = '#f3f4f6';
-    tr.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(prevVal,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="color:var(--pos)${approx ? ';font-style:italic;opacity:.55' : ''}">${predStr}</td><td data-tip="cell:${node}:true">${fmt(trueVal,catCols?0:2)}</td>`;
+    tr.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(prevRow ? prevRow[node] : null,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="${realP === null ? 'color:var(--muted)' : 'color:var(--pos)'}">${predStr}</td><td data-tip="cell:${node}:true">${fmt(trueRow ? trueRow[node] : null,catCols?0:2)}</td>`;
     body.appendChild(tr);
   }
 }
@@ -1684,20 +1650,6 @@ function selectTarget(node) {
 }
 
 // ---------------- linear-algebra engine (generic over target type) ----------------
-function dot(a, b) { let s=0; for (let i=0;i<a.length;i++) s+=a[i]*b[i]; return s; }
-function matvec(Wm, x) { const out = new Array(Wm[0].length).fill(0); for (let i=0;i<x.length;i++) for (let j=0;j<Wm[i].length;j++) out[j]+=Wm[i][j]*x[i]; return out; }
-function encode(x) {
-  const xn = x.map((v,i)=>(v-W.mu_x[i])/W.sd_x[i]);
-  const pre = matvec(W.w_enc, xn).map((v,i)=>v+W.b_enc[i]);
-  const act = pre.map(v=>Math.max(0,v));
-  const idx = act.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).slice(0, W.K).map(p=>p[1]);
-  const feats = new Array(W.F).fill(0);
-  idx.forEach(i => feats[i] = act[i]);
-  return feats;
-}
-function reconstruct(feats) { const h = matvec(W.w_dec, feats); return h.map((v,i)=>v+W.b_dec[i]); }
-function decodeAllClasses(hT) { return matvec(W.W_dec, hT).map((v,i)=>v+W.b_dec_target[i]); } // C logits
-function featureInputGrad(f) { return W.w_enc.map((row,i)=>row[f]/W.sd_x[i]); }
 
 async function loadContexts(f) {
   const gen = ++ctxGen, algo = curAlgo;

@@ -12,7 +12,7 @@ bfs, dfs, bellman_ford, dijkstra, dag_shortest_paths, mst_prim, mst_kruskal, top
 
 1. **Transcoder** (`algos/<algo>/transcoder.npz`): a top-k sparse dictionary (F=192, k=8) trained to reconstruct each MPNN's node-update function from `(z, msgs)` → `hidden`.
 2. **Feature labeling** (`algos/<algo>/feature_labels.json`): each of the 192 sparse features labeled against hand-derived predicates over the algorithm's own hint fields (precision/recall/F1 reported).
-3. **Attribution graphs** (two kinds, switchable in the page: node-site features with labels, or the newer edge-site latents on sender → receiver pairs; see `VERIFICATION.md`): linearized, per-example causal graphs from sparse features through to a target prediction, built by freezing the top-k selection mask for that specific forward pass.
+3. **Attribution graphs** (the main page `/` uses the newer edge-site latents on sender → receiver pairs, with the measured quality of those transcoders; the earlier node-site version with labelled features is kept unchanged in behaviour at `/demo`; see `VERIFICATION.md`): linearized, per-example causal graphs from sparse features through to a target prediction, built by freezing the top-k selection mask for that specific forward pass.
 4. **Interventions**: features (individually or grouped into "supernodes") clamped to a negative multiple of their activation, with the resulting logit change measured through the actual replacement-model recompute — including letting the top-k selection cascade to a different feature set, a real causal test, not a linear estimate.
 5. **Aggregation**: every claim about confirmation rate is reported over 15 independently-sampled graphs per algorithm, not a single cherry-picked example (`fig47/phase2agg_<algo>.json`).
 

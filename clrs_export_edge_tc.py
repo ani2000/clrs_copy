@@ -45,6 +45,10 @@ def export(src, dst):
             f1_full_val=e2['val']['full']['score'], f1_off_val=e2['val']['off']['score'],
             winner_flip_rate=dr['winner_flips']['flip_rate'], winner_flip_violations=dr['winner_flips']['n_violations'],
             hidden_rel_error_direct_mean=float(np.mean(list(dr['hidden_rel_error']['direct'].values()))),
+            nmse_per_step_val=[e1['val']['nmse_per_step'][k] for k in sorted(e1['val']['nmse_per_step'], key=int)],
+            dead_frac_val=e1['val']['dead_frac'], train_rows=r['rows']['train'], train_steps=r['config']['steps'],
+            hidden_rel_error_direct=[dr['hidden_rel_error']['direct'][k] for k in sorted(dr['hidden_rel_error']['direct'], key=int)],
+            f1_full_n64=e2['test']['full']['score'] if 'test' in e2 else None, f1_off_n64=e2['test']['off']['score'] if 'test' in e2 else None,
             parity_abs_diff=r['parity']['abs_diff'], minutes=r['minutes'],
             node_site_retention_val=e2['val'].get('retention_node_full'), both_sites_retention_val=e2['val'].get('retention_both_full'))
     json.dump(dict(source='clrs-transcoder-out/*/report.json', site='edge: s_ij -> y_ij', summary=summary),

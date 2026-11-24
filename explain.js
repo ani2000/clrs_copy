@@ -129,13 +129,36 @@
     avError: ['Error node', 'The part of a pair’s message y that the transcoder did not reconstruct. Adding it back makes the replacement model reproduce the real network exactly (Circuit Tracing).', 'Its outgoing weight shows how much of the mechanism lies outside the latents.', ''],
     avAct: ['Activation', 'The latent’s value on this pair and step (after ReLU and top-k).', '', ''],
     avTotalEffect: ['Total effect', 'Change in each target logit per unit change of this latent’s activation, summed over every path in the frozen-linear graph (direct, skip and indirect). Checked against finite differences in the test suite.', 'The intervention panel compares this prediction with the real model.', ''],
+    attrgraph: ['Attribution graph', 'A graph of direct linear effects that explains one prediction. Columns are the receiving nodes, rows are algorithm steps (newest at the top). Each step has a row of transcoder latents (circles, 8 per sender → receiver pair) and a row of encoder leaves (squares: the inputs and fed-back hints read at that step). The window covers the last 3 steps; older state enters as one leaf per node.',
+      'This is the method of ' + CT + ', used in ' + BIO + ' to trace multi-step reasoning. Here it is applied to a graph neural network executing a textbook algorithm.', 'To make the model linear for one input, the max-routing winners, the LayerNorm σ and the ReLU pattern of the node update are frozen at their real values, and every pair has an error node. Edge = source activation × (its decoder vector · the gradient of the destination).'],
+    bynode: ['By node', 'Every latent appears once per pair and step where it is active: column = receiving node, row = step. Its label is sender : latent index.', 'Keeps full detail: you see exactly when and on which pair each latent fired.', ''],
+    supernodes: ['Supernodes', 'All latents of one sender → receiver pair at one step are merged into one box, and their edges are summed.', 'Shows which messages (which sender to which receiver) carry the computation.', 'Aggregation only: the numbers are exact sums of the underlying edges; edges between latents of the same box are dropped.'],
+    featdetail: ['Latent detail', 'What is known about the clicked latent: its pair, activation, influence, where else it fires in this graph, its total effect on the targets and its edges.', 'The latents have no names yet, so only facts measured on this graph are shown.', ''],
+    intervention: ['Intervention', 'Clamps the pinned latent (−1× reverses it, ×0 removes it, ×2 amplifies it): the message of its pair changes by (factor − 1) × activation × decoder vector, and the real model is re-run from that step on with every nonlinearity and its own hint feedback recomputed.',
+      'An attribution graph is a hypothesis about causes; clamping tests it.', '“Δ graph” = (factor − 1) × activation × total effect; “Δ actual” = what the real network did. The graph freezes σ, winners and TopK sets, so in our tests its predicted direction matched the real model 69% of the time (44–77% depending on the algorithm).'],
+    ivZero: ['×0 — ablate', 'Sets the latent’s activation to zero and re-runs the real model.', 'Tests necessity: does the prediction depend on this latent?', ''],
+    ivNeg: ['−1× — invert', 'Reverses the latent’s activation and re-runs the real model.', 'A stronger perturbation than ablation.', ''],
+    ivDbl: ['×2 — amplify', 'Doubles the latent’s activation and re-runs the real model.', 'The opposite test to ablation.', ''],
+    transcoder: ['Edge-site transcoder', 'A sparse dictionary (D = 1,280 latents, at most k = 8 active) trained to read the message input of one sender → receiver pair (128 numbers: the summed, pre-ReLU message) and reproduce the 128-number message the message MLP outputs.',
+      'The raw message is dense and entangled; forcing it through a few active latents is what lets a circuit be read.', 'The MPNN has one processor reused at every step, so one transcoder per algorithm covers all steps. It was trained on the real activations of that algorithm’s MPNN.'],
+    howItWorks: ['How this tool works', '1) CLRS samples a graph and runs the textbook algorithm to get hints. 2) The trained MPNN executes the same algorithm step by step; every ordered pair of nodes sends a message. 3) A transcoder rewrites each message as a few sparse latents. 4) Freezing the max-routing winners, the LayerNorm σ and the ReLU pattern makes one prediction a linear sum, shown as an attribution graph. 5) Clamping latents tests whether the graph is causally right.',
+      'Accuracy says whether the model is right; this says how it gets there, and interventions say whether that story is true.', 'Method: ' + CT + ' / ' + BIO + '. Benchmark: ' + CLRS + '.'],
+    bias: ['bias', 'All constant terms on the frozen path (encoder, message-site, node-update, hidden-state-decoder and transcoder biases and offsets).', 'Included so the edges into a node add up exactly to its value; the page checks that for every node.', ''],
+    etcPanel: ['Model & edge-site transcoder', 'The trained MPNN for this algorithm and the measured quality of its edge-site transcoder, copied from the training run’s report.', '', ''],
+    etcSite: ['Transcoder site', 'It reads the message input s of every sender → receiver pair and rebuilds the message y. D latents, of which k are active for each pair.', '', ''],
+    etcTier: ['Tier', 'A: the baseline MPNN generalises to 64 nodes (OOD F1 ≥ 0.90), so the replacement is judged at 16 and 64 nodes. B: it generalises badly, so the replacement is judged at 16 nodes only. C: the baseline itself is weak (validation F1 below 0.95): results are indicative only.', '', ''],
+    etcFvu: ['Reconstruction error (FVU)', 'Fraction of the message variance the latents do not rebuild: on validation graphs (16 nodes), on the training rows, and on 64-node test graphs (measured for tier A only). 0 is perfect.', 'The error node carries the rest, so the graph is exact for the real run whatever the FVU.', ''],
+    etcStep: ['Error by step', 'Reconstruction error of the messages at each algorithm step on validation graphs. Later steps are usually harder.', '', ''],
+    etcDead: ['Dead latents and sparsity', 'Latents that never fire on the training rows, and the average number of active latents per pair (at most k).', 'Dead latents are simply unused dictionary entries.', ''],
+    etcRet: ['Replacement fidelity', 'The share of the original network’s score that is kept when the transcoder replaces the message MLP at every step and everything downstream is recomputed (winners included). “x of y” is the replaced score of the original score; a share above 100% can happen by chance.', 'This measures whether the sparse code is a faithful stand-in for the real computation.', ''],
+    etcFlips: ['Winner flips', 'How often the replacement changes which sender wins a channel of the max when it runs on its own. A flip needs twice the reconstruction error to exceed the gap between the best and second-best sender; that bound was checked with zero violations.', 'The attribution graph uses the real winners, so it is not affected.', ''],
+    etcHid: ['One-step hidden-state error', 'Relative error of the next hidden state when one step’s messages are replaced, starting from the true input; mean over steps.', '', ''],
+    etcTrain: ['Training', 'Optimisation steps, number of pair rows used, and minutes of training for this algorithm’s edge-site transcoder.', '', ''],
+    demoLink: ['Previous demo', 'The earlier version of this tool, kept as it was: attribution graphs built from the node-site transcoder, with labelled features, top-activating examples and the node table.', '', ''],
     avg_pe: ['Latent on a real edge', 'The pair sender → receiver is an edge of the input graph (adj > 0). Colour says what the pair is in this graph, not what the latent means.', '', ''],
     avg_pn: ['Latent on a non-edge pair', 'The pair is not an edge of the input graph. The MPNN still computes a message for it (it uses an all-ones adjacency), so every pair has latents.', '', ''],
-    avg_ps: ['Latent on a self pair', 'Sender and receiver are the same node.', '', ''],
-    attrEdge: ['Edge-site transcoder (new)', 'Sparse latents on the message each sender sends to each receiver (input s, output y of the message MLP), trained for this algorithm’s MPNN. The graph shows how latents of one step feed latents of the next through the real max-routing winners, plus error nodes, inputs and a bias.', 'Faithfulness numbers for this algorithm are in the note above the graph.', 'Switch to “Node-site (previous)” for the earlier graphs.'],
-    attrNode: ['Node-site transcoder (previous)', 'The earlier attribution graph: features of each node’s update, with predicate labels and top-activating dataset examples.', '', 'Switch to “Edge-site (new)” for latents on sender → receiver pairs.']
+    avg_ps: ['Latent on a self pair', 'Sender and receiver are the same node.', '', '']
   };
-  Object.assign(GL, { attrEdge: GL_EDGE.attrEdge, attrNode: GL_EDGE.attrNode });
   function card(title, what, why, how, extra) {
     let h = `<div class="hc-title">${title}</div>`;
     if (what) h += `<div class="hc-body">${what}</div>`;
@@ -182,7 +205,7 @@
         rows([['degree', deg], [`${esc(W.target)} at step ${step}`, fmtHint(hintVal(step, i))],
               st >= 0 ? [`true ${esc(W.target)} at step ${st + 1}`, fmtHint(hintVal(st + 1, i))] : null,
               st >= 0 ? ['model’s prediction', esc(pred)] : null,
-              ['strongest active features', tf]]));
+              (window.AV_EDGE_ON && window.AV_EDGE_ON()) ? null : ['strongest active features', tf]]));
     },
 
     cell(arg) {
@@ -191,7 +214,7 @@
       const m = {
         node: [`Node ${i}`, `Row for node ${i}. Hover the other cells for their meaning.`],
         prev: [`${esc(W.target)}(${st}) — current state`, `The true hint value of node ${i} at step ${st}, from CLRS’s reference implementation. This is part of what the model is given.`],
-        pred: [`pred ${esc(W.target)}(${st + 1}) — model’s prediction`, `The real model’s prediction for step ${st + 1}, from the in-browser run of the checkpoint (grey italic until the step has been traced: a transcoder approximation). ${TYPES[W.target_type] || ''}`],
+        pred: [`pred ${esc(W.target)}(${st + 1}) — model’s prediction`, `The real model’s prediction for step ${st + 1}, from the in-browser run of the checkpoint ${window.AV_EDGE_ON && window.AV_EDGE_ON() ? '(shown once the step has been traced)' : '(grey italic until the step has been traced: a transcoder approximation)'}. ${TYPES[W.target_type] || ''}`],
         true: [`true(${st + 1}) — correct answer`, `The reference algorithm’s value at step ${st + 1}. Compare with the prediction to see where the model is right or wrong.`],
       }[col];
       return m ? card(m[0], m[1], col === 'pred' ? 'Explaining the replacement model is what makes attribution possible; its agreement with the true value says whether the explanation concerns correct behaviour.' : null) : null;

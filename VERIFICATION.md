@@ -104,7 +104,7 @@ with everything on dfs.
 
 ---
 
-## Edge-site transcoder graph (toggle "Edge-site (new)" in the attribution panel)
+## Edge-site transcoder graph (the main page, `/`; the previous node-site version is kept at `/demo`)
 
 Source of the transcoders: `clrs-transcoder-out/<algo>/transcoder.npz` (trained for the same `best.pkl` weights the tracer serves:
 the 12 files in `checkpoints_v3` are byte-identical to the training run's). Converted by `clrs_export_edge_tc.py` to `edge_tc/`, which also
@@ -120,7 +120,7 @@ n = 16 graphs per algorithm from `/api/instance`, the reference file `clrs-trans
 | `test1_port.js` (+ `test1_crosscheck.py`) | the JS transcoder gives the same active latents and values as an independent numpy float64 implementation on the reference inputs, for all 12 algorithms | identical indices, relative error 4e-13. Against the reference file's own stored outputs the difference is up to 1e-3, because its inputs are stored with 6 significant digits |
 | `test2_quality.js` | the transcoder reconstructs the site model's real messages (FVU, sum‖y−ŷ‖² / sum‖y−mean y‖²) | 0.002–0.035 on all 12 (a transcoder that did not belong to this model would score about 1). Compared with the report's validation FVU it is 0.7–7× higher, because the tracer samples its own random graphs |
 | `test4_fd.js` | (E0) an independent replay of the replacement model (transcoder output + error node, winners / σ / ReLU pattern frozen) reproduces the real hidden states and target logits; (FD) nudging one latent in the replay changes later pre-activations by exactly the edge weight / activation, and every target logit by exactly the total effect; (SUM) for every latent and target the sum of incoming edges plus the explicit bias equals its value | all 12 algorithms: E0 ≤ 1.4e-14, edge weights vs finite differences ≤ 5.5e-14 (about 15–40 thousand comparisons each), total effects ≤ 1.1e-13, sums ≤ 1e-13. The bias is computed from the constant terms, not chosen to make the sums work |
-| `test6_regression.js` | the previous (node-site) graph is unchanged by this change | byte-identical nodes, edges, pruned graph and total effects for bfs, bellman_ford, dijkstra (n = 8, p = 0.4, seed = 42) |
+| `test6_regression.js` | the previous (node-site) graph, now served at `/demo`, is unchanged by this change | byte-identical nodes, edges, pruned graph and total effects for bfs, bellman_ford, dijkstra (n = 8, p = 0.4, seed = 42) |
 | `test7_intervene.js` | the clamp panel runs for every algorithm and a factor of 1 changes nothing | 12/12 |
 | `report_interventions.js` | **not a gate**: how well does the graph's linear prediction of a clamp match the real model? | direction matched in 223 of 325 comparisons (69%), 44–77% depending on the algorithm. Holding the fed-back hints fixed makes no difference. The graph freezes the LayerNorm σ, the max-routing winners and the TopK sets, so it is a first-order guide only; the page says so next to every result |
 

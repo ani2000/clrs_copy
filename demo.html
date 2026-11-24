@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLRS-30 Circuit Tracer (previous demo)</title>
+<script>
+/* Start the default algorithm's downloads right away, before the page scripts have even loaded (saves several round trips on a first visit). */
+window.__early = {};
+(function () { try { var B = '__BUILD__', q = '?v=' + B, E = window.__early;
+  E.json = fetch('/models/bfs.json' + q); E.bin = fetch('/models/bfs.bin' + q);
+  E.inst = fetch('/api/instance?algo=bfs&n=16&p=0.4&seed=42&v=' + B);
+  ['json', 'bin', 'inst'].forEach(function (k) { E[k].catch(function () {}); }); } catch (e) {} })();
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='4' cy='4' r='3' fill='%236366f1'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23f59e0b'/%3E%3Cpath d='M4 4L12 12' stroke='%231f2328' stroke-width='1.5'/%3E%3C/svg%3E">
+<style>
+  :root { --bg:#faf9f7; --panel:#fff; --line:#e5e0d8; --ink:#1f2328; --muted:#6b7280;
+          --pos:#2a78d6; --neg:#e34948; --accent:#f59e0b;
+          --surface:#fcfcfb; --surface-2:#f0efea; --ink-2:#4a4944; --ink-3:#8a887f; --leaf:#6b6963; --err:#8a887f; --logit:#141412;
+          --g-state:#1baf7a; --g-class:#eb6834; --g-source:#eda100; --g-neg:#e87ba4; --g-none:#9c9a92;
+          --mono: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  header { max-width:100vw; }
+  #inAlgo { max-width:100%; }
+  header { padding:12px 20px; border-bottom:1px solid var(--line); background:var(--panel); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:16px; white-space:nowrap; }
+  .ctrl { display:flex; align-items:center; gap:6px; font-size:12px; }
+  .ctrl input, .ctrl select { padding:3px 5px; border:1px solid var(--line); border-radius:4px; }
+  .ctrl input { width:56px; }
+  button { padding:5px 12px; border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer; font-size:12px; }
+  button.primary { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .layout { display:grid; grid-template-columns: 300px 1fr 320px; gap:14px; padding:14px; align-items:start; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 10px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th, td { text-align:left; padding:3px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; background:#eef2ff; color:#3730a3; font-size:11px; margin-right:4px;}
+  .pill.good { background:#ecfdf5; color:#065f46; } .pill.bad { background:#fef2f2; color:#991b1b; }
+  .edge-pos { stroke: var(--pos); } .edge-neg { stroke: var(--neg); }
+  .node-box.feat { fill:#eef2ff; stroke:#6366f1; cursor:pointer; }
+  .node-box.leaf { fill:#f3f4f6; stroke:#9ca3af; }
+  .node-box.target { fill:#fef3c7; stroke:var(--accent); }
+  .node-box:hover { stroke-width:2.5; }
+  .stepLabel { fill:var(--muted); font-size:10px; }
+  .small { font-size:11px; color:var(--muted); }
+  .kv { display:flex; justify-content:space-between; font-size:12px; padding:3px 0; border-bottom:1px solid var(--line); }
+  #featDetail h3 { margin:4px 0; font-size:14px; }
+  .divergeNote { background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:8px 10px; font-size:12px; margin-top:8px; }
+  #stepBar { display:flex; align-items:center; gap:8px; margin:10px 0; }
+  #stepBar input[type=range] { flex:1; }
+  #status { font-size:11px; color:var(--muted); margin-left:auto; }
+  .pill.p { background:#f3f4f6; color:#374151; font-family: ui-monospace, monospace; }
+  #nodeTable { margin-top:10px; font-size:11px; }
+  #nodeTable td, #nodeTable th { padding:2px 4px; }
+  .toolbar { display:flex; gap:10px; align-items:center; margin-bottom:8px; font-size:11px; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { border:none; border-radius:0; padding:4px 10px; }
+  .seg button.active { background:var(--ink); color:#fff; }
+  .bar-row { display:flex; align-items:center; gap:6px; font-size:11px; padding:2px 0; }
+  .bar-track { flex:1; height:8px; background:#eee; border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; background:var(--pos); }
+  .bar-fill.neg { background:var(--neg); }
+  .ctxThumb { display:inline-block; text-align:center; margin:4px 6px 4px 0; }
+  .ctxThumb svg { border:1px solid var(--line); border-radius:6px; }
+  /* ---------- attribution graph (grid of graph nodes x steps) ---------- */
+  .question { font-size:14px; line-height:1.45; margin-bottom:6px; }
+  .question b { font-weight:600; } .qtruth { color:var(--muted); font-size:12px; margin-left:6px; }
+  .outprobs { display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 10px; }
+  .outprobs .p { display:inline-flex; align-items:center; gap:6px; padding:2px 9px; border:1px solid var(--line); border-radius:999px; font-family:var(--mono); font-size:12px; background:var(--surface); }
+  .outprobs .p i { display:inline-block; height:8px; border-radius:2px; background:var(--pos); min-width:2px; }
+  .outprobs .p.true { border-color:var(--ink); border-width:1.5px; }
+  #attribScroll { overflow:auto; max-height:74vh; border-top:1px solid var(--line); -webkit-overflow-scrolling:touch; }
+  #attribSvg { display:block; font-family:var(--mono); font-size:10.5px; transition:opacity .15s; }
+  #attribSvg .nd { cursor:pointer; } #attribSvg .nd.dim { opacity:.16; } #attribSvg .nd:focus { outline:none; } #attribSvg .nd:focus-visible circle, #attribSvg .nd:focus-visible rect { stroke:var(--ink); stroke-width:2; }
+  #attribSvg .edge { fill:none; stroke-linecap:round; } #attribSvg .edge.dim { opacity:.04 !important; } #attribSvg .edge.hi { opacity:1 !important; }
+  #attribSvg .rowlab { fill:var(--ink-3); font-size:10px; letter-spacing:.06em; } #attribSvg .collab { fill:var(--ink-2); font-size:11px; }
+  #attribSvg text.nlab { fill:var(--ink-2); font-size:9.5px; pointer-events:none; }
+  @media (prefers-reduced-motion: no-preference) { #attribSvg .nd, #attribSvg .edge { transition:opacity .12s; } }
+  .avlegend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:8px 2px 2px; font-size:12px; color:var(--ink-2); border-top:1px solid var(--line); }
+  .avlegend span { display:inline-flex; align-items:center; gap:6px; cursor:help; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:50%; } .sw.sq { border-radius:2px; } .sw.dia { border-radius:1px; transform:rotate(45deg); width:8px; height:8px; } .sw.ln { width:14px; height:2.5px; border-radius:1px; }
+  #gstat { font-size:11.5px; color:var(--ink-3); padding:6px 2px 0; line-height:1.45; }
+  .ititle { font-size:14px; font-weight:600; margin:2px 0 6px; font-family:var(--mono); }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+  .chip { font-family:var(--mono); font-size:11.5px; padding:2px 7px; border-radius:4px; background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line); }
+  .chip.grp { color:#fff; border-color:transparent; }
+  .ikv { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:12px; margin:0 0 6px; } .ikv dt { color:var(--ink-3); } .ikv dd { margin:0; font-family:var(--mono); }
+  .isec { border-top:1px solid var(--line); margin-top:10px; padding-top:8px; } .isec h3 { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0 0 6px; font-weight:600; }
+  .bars { display:grid; grid-template-columns:minmax(0,auto) minmax(40px,1fr) auto; gap:4px 8px; align-items:center; font-family:var(--mono); font-size:11.5px; }
+  .bars > span:first-child, .bars > span:nth-child(3n+1) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
+  .bars .bar { height:8px; background:var(--surface-2); border-radius:2px; position:relative; overflow:hidden; }
+  .bars .bar i { position:absolute; left:0; top:0; bottom:0; } .bars .bar i.pos { background:var(--pos); } .bars .bar i.neg { background:var(--neg); }
+  .note { font-size:12px; color:var(--ink-2); line-height:1.45; } .empty { color:var(--muted); font-size:12px; }
+  .ivbtns { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .ivtab { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11.5px; margin-top:6px; }
+  .ivtab th, .ivtab td { text-align:right; padding:2px 4px; border-bottom:1px solid var(--surface-2); } .ivtab th:first-child, .ivtab td:first-child { text-align:left; }
+  .mono { font-family:var(--mono); }
+  /* ---------- responsive layout ---------- */
+  html { -webkit-text-size-adjust:100%; }
+  body { overflow-x:hidden; }
+  .layout > .panel { min-width:0; }
+  #graphSvg { display:block; width:100%; max-width:380px; height:auto; margin:0 auto; touch-action:manipulation; }
+  .gscroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:6px; }
+  .tscroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .toolbar { flex-wrap:wrap; }
+  #featDetail, #ivPanel { overflow-wrap:anywhere; }
+  .ctxThumb svg { max-width:100%; height:auto; }
+  @media (max-width: 1180px) {
+    .layout { grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); }
+    .layout > .panel:nth-child(3) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 760px) {
+    header { padding:10px 12px; gap:8px 10px; }
+    header h1 { width:100%; font-size:15px; }
+    .ctrl { flex:1 1 auto; }
+    .ctrl { min-width:0; }
+    .ctrl:has(#inAlgo) { flex:1 1 100%; }
+    .ctrl select { flex:1 1 auto; width:100%; min-width:0; max-width:100%; }
+    .ctrl input, .ctrl select, button { font-size:16px; min-height:36px; }   /* 16px stops iOS zoom-on-focus; 36px+ touch targets */
+    .ctrl input { width:72px; }
+    #btnNew { flex:1 1 100%; }
+    #status { width:100%; margin-left:0; }
+    .intro { padding:8px 12px; }
+    .layout { grid-template-columns: minmax(0, 1fr); padding:10px; gap:10px; }
+    .layout > .panel:nth-child(3) { grid-column:auto; }
+    .panel { padding:12px; }
+    .seg button { padding:8px 12px; }
+    #stepBar input[type=range], #minW { min-height:28px; }
+    .kv { gap:10px; } .kv span:last-child { text-align:right; }
+  }
+
+  /* ---------- three views side by side: simulation | attribution graph | pseudo-code ---------- */
+  .stage { display:grid; grid-template-columns: minmax(270px, 1fr) minmax(0, 1.7fr) minmax(260px, 1fr); gap:14px; padding:14px 14px 0; align-items:start; }
+  .stage > .panel { min-width:0; }
+  .pcname { font-family:var(--mono); font-size:12px; color:var(--ink-3); margin:-4px 0 6px; }
+  .pccode { font-family:var(--mono); font-size:12px; line-height:1.55; border:1px solid var(--line); border-radius:6px; background:var(--surface); max-height:430px; overflow:auto; padding:4px 0; -webkit-overflow-scrolling:touch; }
+  .pccode .pl { display:flex; gap:8px; padding:0 8px 0 4px; border-left:3px solid transparent; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .pccode .pl .ln { flex:none; width:1.6em; text-align:right; color:var(--ink-3); user-select:none; }
+  .pccode .pl.proc .tx { font-weight:600; }
+  .pccode .pl { border-left-width:4px; }
+  .pccode .pl.cx { border-left-color:var(--lc); background:linear-gradient(90deg, var(--lb) 0, transparent 38px); }
+  .pccode .pl.on { background:var(--lb); border-left-color:var(--lc); box-shadow:inset 0 0 0 1px var(--lc); border-radius:0 4px 4px 0; font-weight:600; }
+  .pccode .pl.on .ln, .pccode .pl.cx .ln { color:var(--lc); font-weight:700; }
+  .pccode .pl { flex-wrap:wrap; }
+  .pccode .pl .tx { flex:1 1 60%; min-width:12ch; }
+  .pccode .pl .bd { flex:0 1 auto; max-width:100%; margin-left:auto; align-self:flex-start; font-size:10.5px; font-weight:700; color:var(--lc); background:#fff; border:1px solid var(--lc); border-radius:999px; padding:0 7px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pccode .pl .bd[hidden] { display:none; }
+  .pclegend { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:6px; }
+  .pclegend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:3px; vertical-align:-1px; }
+  .pccode .kw { color:#6d28d9; }
+  .pcnow { margin-top:10px; }
+  .pchead { display:inline-block; font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:#92400e; background:#fff4d6; border:1px solid #fcd34d; border-radius:999px; padding:1px 9px; margin-bottom:5px; }
+  .pchead:empty { display:none; }
+  #pcState { margin-top:8px; }
+  #pcState dd { overflow-wrap:anywhere; }
+  .pcfoot { margin-top:8px; }
+  @media (min-width: 1181px) and (min-height: 720px) { #pnlSim, #pnlCode { position:sticky; top:8px; } #pnlCode { max-height:calc(100vh - 16px); overflow:auto; } }
+  @media (max-width: 1180px) {
+    .stage { grid-template-columns: minmax(260px, 1fr) minmax(0, 1fr); }
+    #pnlCode { order:2; } #pnlAttr { order:3; grid-column:1 / -1; }
+  }
+  @media (max-width: 760px) {
+    .stage { grid-template-columns: minmax(0, 1fr); padding:10px 10px 0; gap:10px; }
+    #pnlAttr { grid-column:auto; }
+    .pccode { font-size:11.5px; max-height:240px; }
+  }
+
+  /* ---------- algorithm info card ---------- */
+  #algoInfo { margin:0; padding:6px 20px; background:var(--panel); border-bottom:1px solid var(--line); font-size:12.5px; }
+  #algoInfo > summary { cursor:pointer; font-weight:600; color:var(--ink); }
+  #algoInfo p { margin:6px 0; max-width:92ch; line-height:1.5; }
+  .aiHead { margin:6px 0; font-size:14px; }
+  .aiTag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.04em; padding:1px 8px; border-radius:999px; vertical-align:1px; }
+  .aiTag.ok { background:#dcfce7; color:#166534; } .aiTag.bad { background:#fee2e2; color:#991b1b; }
+  .aiGrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:6px 14px; margin:6px 0; }
+  .aiGrid div { border:1px solid var(--line); border-radius:6px; padding:5px 9px; background:var(--bg); }
+  .aiGrid span { display:block; font-size:11px; color:var(--muted); } .aiGrid b { font-size:14px; }
+  #algoAll { margin:6px 0 2px; } #algoAll > summary { cursor:pointer; color:var(--muted); }
+  .aiScroll { overflow-x:auto; }
+  #algoInfoTable { border-collapse:collapse; margin-top:6px; min-width:460px; }
+  #algoInfoTable th, #algoInfoTable td { text-align:left; padding:3px 12px 3px 0; border-bottom:1px solid var(--line); white-space:nowrap; }
+  #algoInfoTable th { font-size:11px; color:var(--muted); font-weight:600; }
+  #algoInfoTable tr[data-a] { cursor:pointer; } #algoInfoTable tr[data-a]:hover, #algoInfoTable tr.cur { background:#fff4d6; }
+  @media (max-width:760px) { #algoInfo { padding:6px 12px; } }
+
+  /* ---------- attribution model toggle and its quality note ---------- */
+  .edgenote { font-size:12px; line-height:1.5; color:var(--ink); background:#eef6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:6px; padding:6px 10px; margin:0 0 8px; }
+  .edgenote.warn { background:#fff7ed; border-color:#fed7aa; border-left-color:#d97706; }
+  .edgenote b { font-weight:600; }
+  .prevnote { font-size:11.5px; color:var(--muted); background:var(--bg); border:1px dashed var(--line); border-radius:6px; padding:4px 8px; margin:0 0 8px; }
+
+  .navlink { font-size:12px; margin-left:4px; white-space:nowrap; }
+  .navtag { font-size:11px; font-weight:600; color:#92400e; background:#fff4d6; border:1px solid #fcd34d; border-radius:999px; padding:1px 8px; margin-left:6px; vertical-align:2px; }
+  @media (hover: none) { .tt { border-bottom-style:dashed; } }
+  /* hover preview cards (explain.js) */
+  .tt { border-bottom:1px dotted #9ca3af; cursor:help; }
+  [data-tip].hc-active.tt { border-bottom-color: var(--ink); }
+  .hc { position:fixed; z-index:50; pointer-events:none; max-width:min(340px, calc(100vw - 12px)); background:#fff; color:var(--ink);
+        border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px rgba(15,23,42,.14), 0 1px 3px rgba(15,23,42,.08);
+        padding:10px 12px; font-size:12px; line-height:1.45; animation: hcIn .12s ease-out; }
+  .hc[hidden] { display:none; }
+  #btnRetry[hidden] { display:none; }
+  .sk { fill:#e5e7eb; animation: skp 1.1s ease-in-out infinite alternate; }
+  @keyframes skp { from { opacity:.35; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .sk { animation:none; } }
+  .hc::after { content:''; position:absolute; left:var(--arrow-x,50%); bottom:-6px; width:10px; height:10px; background:#fff;
+               border-right:1px solid var(--line); border-bottom:1px solid var(--line); transform:translateX(-50%) rotate(45deg); }
+  .hc.below::after { bottom:auto; top:-6px; transform:translateX(-50%) rotate(225deg); }
+  .hc-title { font-weight:600; font-size:12.5px; margin-bottom:4px; }
+  .hc-body { margin-bottom:6px; }
+  .hc-why { color:#374151; background:#f8fafc; border-left:3px solid #6366f1; padding:4px 7px; margin:6px 0 4px; border-radius:0 4px 4px 0; }
+  .hc-how { color:var(--muted); font-size:11px; margin-top:4px; }
+  .hc-muted { color:var(--muted); }
+  .hc-kv { margin:6px 0 2px; font-size:11.5px; }
+  .hc-kv td { padding:2px 4px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  .hc-kv td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  .hc-kv td:last-child { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align:right; }
+  @keyframes hcIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+  #attribSvg line.hc-dim { opacity:.08 !important; }
+  #attribSvg line.hc-hi { opacity:1 !important; }
+  #graphSvg circle[data-tip]:hover, #attribSvg rect[data-tip]:hover { stroke-width:2.5; }
+  .intro { padding:8px 20px; font-size:12px; color:var(--muted); background:var(--panel); border-bottom:1px solid var(--line); }
+  @media (prefers-reduced-motion: reduce) { .hc { animation:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>CLRS-30 Circuit Tracer <span class="navtag">previous demo</span></h1>
+  <a class="navlink" href="/">Current version: edge-site transcoders &rarr;</a>
+  <div class="ctrl"><span class="tt" data-tip="g:algo">algo</span> <select id="inAlgo" data-tip="g:algo"></select></div>
+  <div class="ctrl"><span class="tt" data-tip="g:n">n</span> <input data-tip="g:n" id="inN" type="number" value="16" min="4" max="32"></div>
+  <div class="ctrl"><span class="tt" data-tip="g:p">p</span> <input data-tip="g:p" id="inP" type="number" value="0.4" min="0.1" max="0.95" step="0.05"></div>
+  <div class="ctrl"><span class="tt" data-tip="g:seed">seed</span> <input data-tip="g:seed" id="inSeed" type="number" value="42"></div>
+  <button class="primary" id="btnNew" data-tip="g:new">New random graph</button>
+  <span id="status" class="tt" data-tip="dyn:status" role="status" aria-live="polite">Starting…</span>
+  <button id="btnRetry" hidden>Retry</button>
+</header>
+<script type="application/json" id="algosData">__ALGOS_JSON__</script>
+<details id="algoInfo" open>
+  <summary>About this algorithm: training scores and why its output type</summary>
+  <div id="algoInfoBody"></div>
+  <details id="algoAll"><summary>All 12 algorithms side by side (click a row to switch)</summary>
+    <div class="aiScroll"><table id="algoInfoTable"></table></div>
+    <p class="small" style="color:var(--muted)">Scores come from the training run (MPNN, 128 hidden units, 10,000 steps, batch 32, seed 42). Validation is on 16-node graphs, test on 64-node graphs. CLEAN means the drop is under 10 pp, SEVERE means over 40 pp; every one of the 12 falls on one side or the other.</p>
+  </details>
+</details>
+<div class="intro"><b>Previous demo.</b> The attribution graphs on this page are built from the earlier node-site transcoder (one set of labelled features per node update). The current version, with the new edge-site transcoders, is at <a href="/">the main page</a>. The trained 128-hidden MPNN executes a CLRS-30 algorithm on a random graph, one message-passing step at a time. Click a node to trace the circuit behind its prediction. Hover any <span class="tt" data-tip="g:howItWorks">dotted term</span>, number or box for an explanation of what it is and why it is there. The pseudo-code pane follows the same steps.</div>
+<div class="stage">
+  <div class="panel" id="pnlSim">
+    <h2><span class="tt" data-tip="g:simulation">Simulation</span></h2>
+    <svg id="graphSvg" viewBox="0 0 260 230" preserveAspectRatio="xMidYMid meet"><circle class="sk" cx="126.0" cy="20.0" r="11"/><circle class="sk" cx="176.0" cy="36.2" r="11"/><circle class="sk" cx="206.8" cy="78.7" r="11"/><circle class="sk" cx="206.8" cy="131.3" r="11"/><circle class="sk" cx="176.0" cy="173.8" r="11"/><circle class="sk" cx="126.0" cy="190.0" r="11"/><circle class="sk" cx="76.0" cy="173.8" r="11"/><circle class="sk" cx="45.2" cy="131.3" r="11"/><circle class="sk" cx="45.2" cy="78.7" r="11"/><circle class="sk" cx="76.0" cy="36.2" r="11"/></svg>
+    <div id="stepBar">
+      <button id="btnPlay" data-tip="g:play">▶ Play</button>
+      <input data-tip="dyn:step" id="stepRange" type="range" min="0" max="0" value="0">
+      <span class="small tt" data-tip="dyn:step" id="stepLbl">step 0</span>
+    </div>
+    <div class="small" id="clickHint">Click a node to explain the model's prediction for it at the current step.</div>
+    <div class="small" id="graphLegend" style="margin-top:6px;"></div>
+  </div>
+
+  <div class="panel" id="pnlAttr">
+    <h2><span class="tt" data-tip="g:attrgraph">Attribution graph</span></h2>
+    <div id="question" class="question">Click a node in the simulation to trace the model's prediction for it.</div>
+    <div id="outprobs" class="outprobs"></div>
+    <div class="toolbar">
+      <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
+      <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button></div>
+      <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
+    </div>
+    <div id="attribScroll" class="gscroll"><svg id="attribSvg" role="img" aria-label="Attribution graph"></svg></div>
+    <div id="avLegend" class="avlegend"></div>
+    <div id="gstat"></div>
+  </div>
+
+  <div class="panel" id="pnlCode">
+    <h2><span title="The steps of the algorithm, in plain pseudo-code. The highlighted line is the one the simulation has just executed.">Pseudo-code</span></h2>
+    <div id="pcName" class="pcname"></div>
+    <div id="pcCode" class="pccode" role="list" aria-label="Algorithm pseudo-code"></div>
+    <div class="pcnow">
+      <div id="pcHead" class="pchead"></div>
+      <div id="pcNote" class="note"></div>
+    </div>
+    <dl id="pcState" class="ikv"></dl>
+    <div class="small pcfoot">Bright line: what is executing now. Thin bar: the loops and tests around it. Small tags: the current loop values. The colour shows how deeply a line is nested:
+      <span class="pclegend"><span><i style="background:#2563eb"></i>level 1</span><span><i style="background:#059669"></i>level 2</span><span><i style="background:#d97706"></i>level 3</span><span><i style="background:#7c3aed"></i>level 4</span><span><i style="background:#db2777"></i>level 5</span></span>
+      Some algorithms record several steps for one line, so a line can stay highlighted for a few steps.</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2><span class="tt" data-tip="g:transcoder">Model &amp; transcoder</span></h2>
+    <div class="kv"><span class="tt" data-tip="g:hidden">hidden_dim</span><span data-tip="g:hidden">128</span></div>
+    <div class="kv"><span class="tt" data-tip="dyn:target">target</span><span id="targetName" data-tip="dyn:target">-</span></div>
+    <div class="kv"><span class="tt" data-tip="dyn:fvu">transcoder FVU</span><span id="fvu" data-tip="dyn:fvu">-</span></div>
+    <div class="kv"><span class="tt" data-tip="dyn:f1">val / test score (OOD)</span><span id="f1s" data-tip="dyn:f1">-</span></div>
+    <h2 style="margin-top:16px">Per-node predictions</h2>
+    <div class="tscroll"><table id="nodeTable"><thead><tr id="nodeTableHead"></tr></thead><tbody id="nodeTableBody"></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tt" data-tip="g:featlabels">Feature labels (top 15 by F1)</span></h2>
+    <div class="tscroll"><table id="featTable"><thead><tr><th>feature</th><th><span class="tt" data-tip="g:featlabels">label</span></th><th><span class="tt" data-tip="g:precision">P</span></th><th><span class="tt" data-tip="g:recall">R</span></th><th><span class="tt" data-tip="g:f1">F1</span></th><th><span class="tt" data-tip="g:firesOn">fires on</span></th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tt" data-tip="g:featdetail">Inspector</span></h2>
+    <div id="featDetail" class="small">Hover a node in the attribution graph to see its edges; click to pin it here.</div>
+    <h2 style="margin-top:18px"><span class="tt" data-tip="g:intervention">Intervention</span></h2>
+    <div id="ivPanel" class="small">Click a feature, then try clamping it.</div>
+  </div>
+</div>
+
+<script src="explain.js?v=__BUILD__"></script>
+<script src="attrview.js?v=__BUILD__"></script>
+<script>
+/* ---------- pseudo-code pane: which line of the textbook algorithm each recorded step corresponds to ----------
+   The model's trace gives, for every step, one "hint" row (reached set, DFS colours, distances, keys, current edge or
+   intermediate vertex ...). Comparing a row with the previous one tells what the algorithm just did, so each step can
+   be mapped to a pseudo-code line plus a one-sentence description and the main variables. Where the row alone is not
+   enough (Dijkstra, Prim, Kruskal, bridges, articulation points) the missing detail is rebuilt from the graph and used
+   only if it agrees with the recorded trace; otherwise the plain version is shown. Nothing here touches the model.
+   Every step reports three things:
+     cur  - the innermost line(s) being executed (shown in full colour; the colour is the nesting depth of that line)
+     ctx  - the enclosing loops / tests and the call chain (shown only as a thin bar in their own depth colour)
+     bind - the value each loop currently has (u = 3, v = 5, k = 2 ...), shown as a small tag on that line */
+const PSEUDO = (function () {
+  const EPS = 1e-6;
+  const TAGS = {};
+  // a line ends with "@tag" to give it a name; the narrators below refer to lines by name, never by number
+  const L = (algo, ...a) => {
+    const tags = {};
+    const rows = a.map((s, i) => { const m = /^( *)(.*?)(?:\s+@(\w+))?$/.exec(s); if (m[3]) tags[m[3]] = i; return [m[1].length >> 1, m[2]]; });
+    TAGS[algo] = tags; return rows;
+  };
+  const CODE = {
+    bfs: L('bfs',
+      'BFS(G, s) @h',
+      '  for each vertex v:  reach[v] ← 0,  π[v] ← NIL @init',
+      '  reach[s] ← 1;  π[s] ← s @src',
+      '  repeat @rep',
+      '    prev ← reach @prev',
+      '    for each edge (u, v) in E @edge',
+      '      if prev[u] = 1 @cond',
+      '        if π[v] is unset:  π[v] ← u @par',
+      '        reach[v] ← 1 @mark',
+      '  until reach = prev @until'),
+    dfs: L('dfs',
+      'DFS(G) @h',
+      '  for each vertex u:  color[u] ← WHITE,  π[u] ← NIL @init',
+      '  time ← 0 @time0',
+      '  for each vertex u @outer',
+      '    if color[u] = WHITE @outerif',
+      '      DFS-VISIT(G, u) @callroot',
+      'DFS-VISIT(G, u) @vh',
+      '  time ← time + 1;  d[u] ← time;  color[u] ← GRAY @disc',
+      '  for each v in Adj[u] @adj',
+      '    if color[v] = WHITE @white',
+      '      π[v] ← u @par',
+      '      DFS-VISIT(G, v) @callv',
+      '  color[u] ← BLACK @black',
+      '  time ← time + 1;  f[u] ← time @fin'),
+    bellman_ford: L('bellman_ford',
+      'BELLMAN-FORD(G, w, s) @h',
+      '  for each vertex v:  d[v] ← ∞,  π[v] ← NIL @init',
+      '  d[s] ← 0 @src',
+      '  for round ← 1 to |V| − 1 @round',
+      '    for each edge (u, v) in E @edge',
+      '      if d[v] > d[u] + w(u, v) @cond',
+      '        d[v] ← d[u] + w(u, v) @upd',
+      '        π[v] ← u @par'),
+    dijkstra: L('dijkstra',
+      'DIJKSTRA(G, w, s) @h',
+      '  for each vertex v:  d[v] ← ∞,  π[v] ← NIL @init',
+      '  d[s] ← 0 @src',
+      '  Q ← all vertices @q',
+      '  while Q is not empty @while',
+      '    u ← EXTRACT-MIN(Q) @ext',
+      '    for each v in Adj[u] @adj',
+      '      if d[v] > d[u] + w(u, v) @cond',
+      '        d[v] ← d[u] + w(u, v) @upd',
+      '        π[v] ← u @par'),
+    dag_shortest_paths: L('dag_shortest_paths',
+      'DAG-SHORTEST-PATHS(G, w, s) @h',
+      '  topologically sort the vertices of G @topo',
+      '  for each vertex v:  d[v] ← ∞;   d[s] ← 0 @init',
+      '  for each vertex u, in topological order @outer',
+      '    for each v in Adj[u] @adj',
+      '      if d[v] > d[u] + w(u, v) @cond',
+      '        d[v] ← d[u] + w(u, v);  π[v] ← u @upd'),
+    mst_prim: L('mst_prim',
+      'MST-PRIM(G, w, r) @h',
+      '  for each vertex v:  key[v] ← ∞,  π[v] ← NIL @init',
+      '  key[r] ← 0 @src',
+      '  Q ← all vertices @q',
+      '  while Q is not empty @while',
+      '    u ← EXTRACT-MIN(Q)          // u joins the tree @ext',
+      '    for each v in Adj[u] @adj',
+      '      if v ∈ Q and w(u, v) < key[v] @cond',
+      '        π[v] ← u @par',
+      '        key[v] ← w(u, v) @upd'),
+    mst_kruskal: L('mst_kruskal',
+      'MST-KRUSKAL(G, w) @h',
+      '  A ← ∅ @a',
+      '  for each vertex v:  MAKE-SET(v) @make',
+      '  sort the edges of E by weight @sort',
+      '  for each edge (u, v) in E, lightest first @edge',
+      '    if FIND-SET(u) ≠ FIND-SET(v) @cond',
+      '      A ← A ∪ {(u, v)} @add',
+      '      UNION(u, v) @union',
+      '  return A @ret'),
+    topological_sort: L('topological_sort',
+      'TOPOLOGICAL-SORT(G) @h',
+      '  list ← empty @l',
+      '  for each vertex u @outer',
+      '    if u is not visited yet @outerif',
+      '      VISIT(u) @call',
+      '  return list @ret',
+      'VISIT(u) @vh',
+      '  mark u as visited @vis',
+      '  for each v in Adj[u] @adj',
+      '    if v is not visited yet @white',
+      '      VISIT(v) @callv',
+      '  insert u at the front of list      // u has finished @ins'),
+    articulation_points: L('articulation_points',
+      'ARTICULATION-POINTS(G) @h',
+      '  time ← 0;   visited[u] ← false for all u @init',
+      '  for each vertex u @outer',
+      '    if not visited[u] @outerif',
+      '      DFS-AP(u, NIL) @call',
+      'DFS-AP(u, p) @vh',
+      '  visited[u] ← true;  d[u] ← low[u] ← ++time;  children ← 0 @disc',
+      '  for each v in Adj[u] @adj',
+      '    if v is not visited @tree',
+      '      children ← children + 1 @kids',
+      '      DFS-AP(v, u) @rec',
+      '      low[u] ← min(low[u], low[v]) @lowupd',
+      '      if p ≠ NIL and low[v] ≥ d[u] @cond1',
+      '        u is an articulation point @found1',
+      '    else if v ≠ p @back',
+      '      low[u] ← min(low[u], d[v]) @backupd',
+      '  if p = NIL and children ≥ 2 @cond2',
+      '    u is an articulation point @found2'),
+    bridges: L('bridges',
+      'BRIDGES(G) @h',
+      '  time ← 0;   visited[u] ← false for all u @init',
+      '  for each vertex u @outer',
+      '    if not visited[u] @outerif',
+      '      DFS-BR(u, NIL) @callroot',
+      'DFS-BR(u, p) @vh',
+      '  visited[u] ← true;  d[u] ← low[u] ← ++time @disc',
+      '  for each v in Adj[u] @adj',
+      '    if v is not visited @tree',
+      '      DFS-BR(v, u) @callv',
+      '      low[u] ← min(low[u], low[v]) @lowupd',
+      '      if low[v] > d[u] @cond',
+      '        (u, v) is a bridge @found',
+      '    else if v ≠ p @back',
+      '      low[u] ← min(low[u], d[v]) @backupd'),
+    strongly_connected_components: L('strongly_connected_components',
+      'SCC(G) @h',
+      '  for each vertex u:  color[u] ← WHITE @init',
+      '  for each vertex u                       // pass 1 on G @outer',
+      '    if color[u] = WHITE @outerif',
+      '      DFS-VISIT(G, u) @callroot',
+      '  Gᵀ ← G with every edge reversed @rev',
+      '  for each vertex u:  color[u] ← WHITE @reset',
+      '  for each u, in decreasing order of f[u]  // pass 2 on Gᵀ @outer2',
+      '    if color[u] = WHITE @if2',
+      '      comp ← new empty component @newc',
+      '      DFS-VISIT(Gᵀ, u), adding every vertex it reaches to comp @call2',
+      '  return the components @ret',
+      'DFS-VISIT(H, u) @vh',
+      '  color[u] ← GRAY @disc',
+      '  for each v in Adj_H[u] @adj',
+      '    if color[v] = WHITE @white',
+      '      DFS-VISIT(H, v) @callv',
+      '  color[u] ← BLACK @black',
+      '  f[u] ← ++time                           // pass 1 only @fin'),
+    floyd_warshall: L('floyd_warshall',
+      'FLOYD-WARSHALL(W) @h',
+      '  n ← rows(W);   D ← W @init',
+      '  for k ← 1 to n @k',
+      '    for i ← 1 to n @i',
+      '      for j ← 1 to n @j',
+      '        D[i][j] ← min(D[i][j],  D[i][k] + D[k][j]) @upd'),
+  };
+
+  const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+  const list = a => a.length ? a.join(', ') : 'none';
+  const argmax = r => { let b = 0; for (let i = 1; i < r.length; i++) if (r[i] > r[b]) b = i; return b; };
+
+  function steps(algo, inst) {
+    const R = inst.target_true, n = inst.n, adj = inst.adj, src = inst.source;
+    const A = (inst.inputs && inst.inputs.A) || adj;
+    const T = R ? R.length : 0, out = [];
+    const code = CODE[algo], tg = TAGS[algo];
+    const ix = nm => { if (!(nm in tg)) throw new Error('unknown line ' + nm); return tg[nm]; };
+    const diff = t => { const o = []; if (t < 1) return o; for (let i = 0; i < n; i++) if (Math.abs(R[t][i] - R[t - 1][i]) > EPS) o.push({ i, a: R[t - 1][i], b: R[t][i] }); return o; };
+    // cur: names of the innermost executing lines; x.ctx: extra enclosing lines; x.bind: {line name: 'u = 3'}
+    const S = (cur, head, note, state, nodes, x) => {
+      x = x || {};
+      const c = [...new Set(cur.map(ix))].sort((a, b) => a - b), ctx = new Set((x.ctx || []).map(ix));
+      for (const i of c) {                                  // every enclosing loop / test of a current line
+        let d = code[i][0];
+        for (let j = i - 1; j >= 0 && d > 0; j--) { const dj = code[j][0]; if (dj < d) { if (dj > 0) ctx.add(j); d = dj; } }
+      }
+      for (const i of c) ctx.delete(i);
+      const bind = {}; for (const [k, v] of Object.entries(x.bind || {})) if (String(v).length <= 24 && (String(v).match(/,/g) || []).length < 2) bind[ix(k)] = v;   // short tags only: no lists of vertices
+      return { lines: c, cur: c, ctx: [...ctx].sort((a, b) => a - b), bind, head, note, state: state || [], nodes: nodes || [] };
+    };
+    const edge = (u, v) => adj[u][v] > 0;
+
+    // ---- DFS-style walk shared by dfs, bridges, scc (replays the colour changes: gives the stack, times, parents)
+    function colourWalk(mode) {
+      const st = { stack: [], time: 0, d: {}, par: {}, low: {}, fin: [], bridges: [], comps: [], comp: null, phase: 1 };
+      const rootNames = () => mode === 'scc' && st.phase === 2 ? ['outer2', 'if2', 'newc', 'call2'] : mode === 'dfs' || mode === 'scc' ? ['outer', 'outerif', 'callroot'] : ['outer', 'outerif', 'callroot'];
+      for (let t = 0; t < T; t++) {
+        if (t === 0) { out.push(S(mode === 'dfs' ? ['init', 'time0'] : ['init'], 'Start', mode === 'scc' ? 'Start the first depth-first search on the original graph (pass 1).' : 'Every vertex starts WHITE (not seen yet).', [['time', 0]], [])); continue; }
+        const prev = R[t - 1], cur = R[t];
+        if (mode === 'scc' && cur.every(v => v === 0) && prev.some(v => v !== 0)) {
+          st.phase = 2; st.stack = []; st.comp = null;
+          out.push(S(['rev', 'reset'], 'Second pass', 'First pass done. Reverse every edge and reset the colours; the second search takes vertices in decreasing finishing time f[u]. Each new tree will be one component.',
+            [['finishing order (pass 1)', list(st.fin)], ['components', 0]], [])); continue;
+        }
+        const disc = [], fin = [];
+        for (let i = 0; i < n; i++) { if (prev[i] === 0 && cur[i] >= 1) disc.push(i); if (prev[i] <= 1 && cur[i] === 2 && (prev[i] === 1 || cur[i] === 2)) fin.push(i); }
+        const notes = [], curN = new Set(), ctxN = new Set(), bind = {}, nodes = [];
+        const depth0 = st.stack.length;
+        for (const v of fin) {
+          const depth = st.stack.length;
+          const k = st.stack.lastIndexOf(v); if (k >= 0) st.stack.splice(k, 1);
+          st.time++; nodes.push(v);
+          if (depth >= 2) ctxN.add('callv');
+          if (mode === 'scc' && st.phase === 1) st.fin.push(v);
+          if (mode === 'bridges') {
+            let low = st.d[v]; const p = st.par[v];
+            for (let w = 0; w < n; w++) if (edge(v, w) && w !== p && st.d[w] !== undefined) low = Math.min(low, st.d[w]);
+            for (const c of Object.keys(st.par)) if (st.par[c] === v && st.low[c] !== undefined) low = Math.min(low, st.low[c]);
+            st.low[v] = low;
+            if (p !== undefined && p !== null) {
+              const isB = low > st.d[p];
+              if (isB) { curN.add('found'); st.bridges.push(`${p}–${v}`); bind.found = `(u, v) = (${p}, ${v})`; } else { curN.add('lowupd'); curN.add('cond'); bind.cond = `low[${v}] = ${low}, d[${p}] = ${st.d[p]}`; }
+              bind.adj = `u = ${p}, v = ${v}`;
+              notes.push(`Vertex ${v} is finished and control returns to its parent ${p}. low[${v}] = ${low}, d[${p}] = ${st.d[p]}, so the edge ${p}–${v} ${isB ? 'is a bridge (nothing below it reaches back above it)' : 'is not a bridge (there is another way around)'}.`);
+            } else { curN.add('outer'); bind.outer = `u = ${v}`; notes.push(`Root ${v} is finished; it has no parent edge to test, so the outer loop moves on.`); }
+          } else if (mode === 'dfs') { curN.add('black'); curN.add('fin'); bind.black = `u = ${v}`; notes.push(`Vertex ${v} has no unvisited neighbours left: it turns BLACK (finished), f[${v}] = ${st.time}.`); }
+          else if (st.phase === 1) { curN.add('black'); curN.add('fin'); bind.black = `u = ${v}`; notes.push(`Vertex ${v} is finished (pass 1), f[${v}] = ${st.time}.`); }
+          else {
+            if (!st.stack.length && st.comp) { st.comps.push(st.comp.slice()); curN.add('call2'); ctxN.add('newc'); bind.call2 = `component {${st.comp.join(', ')}}`; notes.push(`The search tree is complete: vertices {${st.comp.join(', ')}} form one strongly connected component.`); st.comp = null; }
+            else { curN.add('black'); bind.black = `u = ${v}`; notes.push(`Vertex ${v} is finished (pass 2).`); }
+          }
+          if (mode !== 'bridges' && depth >= 1) for (const r of rootNames()) ctxN.add(r);
+          if (mode === 'bridges' && depth >= 2) ctxN.add('callv');
+        }
+        for (const v of disc) {
+          const parent = st.stack.length ? st.stack[st.stack.length - 1] : null;
+          st.time++; st.d[v] = mode === 'bridges' ? Object.keys(st.d).length + 1 : st.time; st.par[v] = parent; st.stack.push(v); nodes.push(v);
+          curN.add('disc'); bind.disc = `u = ${v}`;
+          for (const r of rootNames()) ctxN.add(r);
+          if (parent === null) bind[mode === 'scc' && st.phase === 2 ? 'outer2' : 'outer'] = `u = ${v}`;
+          else { for (const nm of [mode === 'bridges' ? 'tree' : 'white', 'adj', 'callv']) ctxN.add(nm); if (mode === 'dfs') ctxN.add('par'); bind.adj = `u = ${parent}, v = ${v}`; }
+          if (mode === 'scc' && st.phase === 2) { if (parent === null) st.comp = [v]; else if (st.comp) st.comp.push(v); }
+          notes.push(parent === null ? `Start a new search tree at vertex ${v}: it turns GRAY (discovered), d[${v}] = ${st.d[v]}.` :
+            `Follow the edge ${parent}→${v}: vertex ${v} was WHITE${mode === 'dfs' ? `, so π[${v}] ← ${parent}` : ''}; the call DFS-VISIT(${v}) starts and ${v} turns GRAY, d[${v}] = ${st.d[v]}.`);
+        }
+        if (!disc.length && !fin.length) {
+          const top = st.stack.length ? st.stack[st.stack.length - 1] : null;
+          if (top === null) { curN.add(mode === 'scc' && st.phase === 2 ? 'if2' : 'outerif'); notes.push('Looking for the next WHITE vertex to start a new search from.'); }
+          else {
+            curN.add(mode === 'bridges' ? 'back' : 'white'); bind.adj = `u = ${top}`;
+            if (st.stack.length >= 2) ctxN.add('callv');
+            for (const r of rootNames()) ctxN.add(r);
+            notes.push(`Checking the next neighbour of vertex ${top}: nothing changes (it was already seen, or the scan moves on).`);
+          }
+        }
+        const state = [['search path (gray, top last)', st.stack.length ? st.stack.join(' → ') : 'empty'], ['time', st.time]];
+        if (mode === 'bridges') state.push(['bridges found', list(st.bridges)]);
+        if (mode === 'scc') state.push(st.phase === 1 ? ['finished so far (pass 1)', list(st.fin)] : ['components found', st.comps.length ? st.comps.map(c => '{' + c.join(',') + '}').join(' ') : 'none']);
+        // bridges has no separate call-site lines for the root test; keep only names that exist in this algorithm
+        const okN = nm => nm in tg;
+        out.push(S([...curN].filter(okN), disc.length || fin.length ? (disc.length ? 'Discover' : 'Finish') : 'Scan', notes.join(' '), state, nodes, { ctx: [...ctxN].filter(okN), bind: Object.fromEntries(Object.entries(bind).filter(([k]) => okN(k))) }));
+      }
+    }
+
+    // ---- relaxation algorithms
+    const reached = (row, v) => v === src || row[v] > EPS;
+    function explainFrom(u, ch, prev, weightOnly) {
+      return ch.every(c => edge(u, c.i) && Math.abs((weightOnly ? 0 : prev[u]) + A[u][c.i] - c.b) < 1e-4);
+    }
+    function relaxText(ch, u) { return ch.map(c => `d[${c.i}]: ${reached(R[0], c.i) && c.a <= EPS && c.i !== src ? '∞' : f2(c.a)} → ${f2(c.b)}`).join(';  ') + (u !== null ? `  (via vertex ${u})` : ''); }
+
+    function relax(kind) {
+      const marked = new Set(), par = {}, treeEdges = [];
+      for (let t = 0; t < T; t++) {
+        if (t === 0) { out.push(S(kind === 'dag' ? ['topo', 'init'] : ['init', 'src'], 'Start',
+          kind === 'bf' || kind === 'dag' || kind === 'dij' ? `Every distance is ∞ except d[${src}] = 0 (the source).` : `Every key is ∞ except key[${src}] = 0 (the start vertex).`, [], src !== null ? [src] : [], { bind: { [kind === 'dag' ? 'init' : 'src']: `s = ${src}` } })); continue; }
+        const ch = diff(t), prev = R[t - 1];
+        let u = null, silently = [];
+        if (kind === 'dij' || kind === 'prim') {
+          if (ch.length) {
+            const cand = []; for (let v = 0; v < n; v++) if (!marked.has(v) && reached(prev, v)) cand.push(v);
+            cand.sort((a, b) => (prev[a] - prev[b]) || (a - b));
+            for (const c of cand) { if (explainFrom(c, ch, prev, kind === 'prim')) { u = c; break; } silently.push(c); }
+            if (u === null) silently = [];
+            else { for (const c of silently) marked.add(c); marked.add(u); }
+          }
+        } else if (kind === 'dag' || kind === 'bf') {
+          if (ch.length) for (let c = 0; c < n && u === null; c++) if (reached(prev, c) && explainFrom(c, ch, prev, false)) u = c;
+        }
+        if (kind === 'prim' && ch.length) for (const c of ch) par[c.i] = u;
+        let state = [], cur, head, note, ctx = [], bind = {};
+        const ids = ch.map(c => c.i); const nodes = ids.slice(); if (u !== null) nodes.unshift(u);
+        const idList = ids.join(', ');
+        if (kind === 'bf') {
+          if (ch.length) { cur = ['upd', 'par']; head = `Round ${t}`; note = `Round ${t}: every edge is checked. Improved: ${relaxText(ch, u === null || ch.length > 1 ? null : u)}.`; bind.edge = u !== null && ch.length === 1 ? `(u, v) = (${u}, ${ids[0]})` : `improving v = ${idList}`; }
+          else { cur = ['cond']; head = `Round ${t}`; note = `Round ${t}: every edge is checked and the test d[v] > d[u] + w(u, v) never succeeds, so the distances are final.`; }
+          state = [['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n], ['improved this round', list(ids)]];
+        } else if (kind === 'dag') {
+          if (u !== null) bind.outer = `u = ${u}`;
+          if (ch.length) { cur = ['upd']; head = 'Relax'; note = `Next vertex in topological order${u !== null ? ' is ' + u : ''}: its outgoing edges improve ${relaxText(ch, null)}.`; bind.adj = `v = ${idList}`; }
+          else { cur = ['cond']; head = 'Next vertex'; note = 'Take the next vertex in topological order; none of its outgoing edges improves a distance.'; }
+          state = [['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n]];
+        } else if (kind === 'dij') {
+          if (u !== null) bind.while = `u = ${u}`;
+          if (ch.length) { cur = ['upd', 'par']; ctx = ['ext']; head = 'Extract & relax'; note = u !== null ? `Take the closest unfinished vertex, ${u} (d = ${f2(prev[u])}), and relax its edges: ${relaxText(ch, null)}.` : `Take the closest unfinished vertex and relax its edges: ${relaxText(ch, null)}.`; bind.adj = `v = ${idList}`; }
+          else { cur = ['cond']; ctx = ['ext']; head = 'Extract'; note = 'Take the closest unfinished vertex; the test d[v] > d[u] + w(u, v) fails for every neighbour, so nothing improves.'; }
+          state = [['finished (extracted)', list([...marked])], ['distances found', R[t].filter((x, i) => reached(R[t], i)).length + ' of ' + n]];
+        } else {
+          for (const c of [...silently, u].filter(x => x !== null && x !== undefined)) if (par[c] !== undefined && par[c] !== null) treeEdges.push(`${par[c]}–${c}`);
+          if (u !== null) bind.while = `u = ${u}`;
+          if (ch.length) { cur = ['par', 'upd']; ctx = ['ext']; head = 'Extract & update'; note = u !== null ? `Take the vertex with the smallest key, ${u}, into the tree and update its neighbours: ${ch.map(c => `key[${c.i}] ← ${f2(c.b)}`).join(', ')}.` : `Update neighbours' keys: ${ch.map(c => `key[${c.i}] ← ${f2(c.b)}`).join(', ')}.`; bind.adj = `v = ${idList}`; }
+          else { cur = ['cond']; ctx = ['ext']; head = 'Extract'; note = 'Take the vertex with the smallest key into the tree; no neighbour gets a smaller key, so the test w(u, v) < key[v] fails everywhere.'; }
+          state = [['tree edges so far', list(treeEdges)], ['in tree', list([...marked])]];
+        }
+        out.push(S(cur, head, note, state, nodes, { ctx, bind }));
+      }
+    }
+
+    function kruskal() {
+      // Rebuild the edge order from the weights. Rows are grouped into blocks that share the same start vertex u; the
+      // rebuilt order is used only for blocks where it agrees with the recorded trace (otherwise the plain text is shown).
+      const E = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (adj[i][j] > 0) E.push([A[i][j], i, j]);
+      E.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
+      const p = [...Array(n).keys()]; const find = x => { while (p[x] !== x) x = p[x]; return x; };
+      const sim = E.map(([w, i, j]) => { const a = find(i), b = find(j), acc = a !== b; if (acc) p[a] = b; return { w, u: i, v: j, acc }; });
+      const sb = []; for (const e of sim) { if (sb.length && sb[sb.length - 1].u === e.u) sb[sb.length - 1].edges.push(e); else sb.push({ u: e.u, edges: [e] }); }
+      const rb = []; for (let t = 1; t < T; t++) { const u = argmax(R[t]); if (rb.length && rb[rb.length - 1].u === u) rb[rb.length - 1].rows.push(t); else rb.push({ u, rows: [t] }); }
+      let ok = 0; while (ok < rb.length && ok < sb.length && rb[ok].u === sb[ok].u) ok++;
+      const name = e => `${e.u}–${e.v}`; const added = []; const rowBlock = {};
+      rb.forEach((b, k) => b.rows.forEach((t, q) => { rowBlock[t] = { k, q, len: b.rows.length }; }));
+      for (let t = 0; t < T; t++) {
+        if (t === 0) { out.push(S(['a', 'make', 'sort'], 'Start', 'The tree A is empty; every vertex is in its own set. The edges are sorted by weight.', [['edges in tree', 'none']], [])); continue; }
+        const u = argmax(R[t]), { k, q, len } = rowBlock[t];
+        if (k >= ok) { out.push(S(q === 0 ? ['edge'] : ['cond'], 'Edge', `Look at the next lightest edge: it starts at vertex ${u}.`, [['edges in tree', list(added)]], [u], { bind: { edge: `(u, v) starts at ${u}` } })); continue; }
+        const es = sb[k].edges;
+        if (es.length === 1) {
+          const e = es[0];
+          if (q === 0) out.push(S(['edge'], 'Next edge', `Next lightest edge: ${name(e)} (weight ${f2(e.w)}). Are its two ends already in the same set?`, [['edges in tree', list(added)]], [e.u, e.v], { bind: { edge: `(u, v) = (${e.u}, ${e.v}),  w = ${f2(e.w)}` } }));
+          else { if (e.acc && q === len - 1 && !added.includes(name(e))) added.push(name(e));
+            out.push(S(e.acc ? ['add', 'union'] : ['cond'], e.acc ? 'Add edge' : 'Skip edge', e.acc ? `Different sets, so edge ${name(e)} joins the tree and the two sets are merged.` : `Same set already, so edge ${name(e)} would close a cycle and is skipped.`, [['edges in tree', list(added)]], [e.u, e.v], { ctx: ['edge'], bind: e.acc ? { add: `(${e.u}, ${e.v})`, edge: `(u, v) = (${e.u}, ${e.v})` } : { cond: `FIND-SET(${e.u}) = FIND-SET(${e.v})`, edge: `(u, v) = (${e.u}, ${e.v})` } })); }
+        } else {
+          if (q === len - 1) for (const e of es) if (e.acc && !added.includes(name(e))) added.push(name(e));
+          out.push(S(['cond'], 'Edges', `The next lightest edges all start at vertex ${u}: ${es.map(e => `${name(e)} (${e.acc ? 'added' : 'skipped'})`).join(', ')}.`, [['edges in tree', list(added)]], [...new Set(es.flatMap(e => [e.u, e.v]))], { ctx: ['edge'], bind: { edge: `${es.length} edges from ${u}` } }));
+        }
+      }
+    }
+
+    function floyd() {
+      // the trace has one row per stop-over vertex k = 0, 1, 2, ... (row t belongs to k = t)
+      for (let t = 0; t < T; t++) {
+        const k = argmax(R[t]);
+        out.push(S(t === 0 ? ['init', 'upd'] : ['upd'], `k = ${k}`,
+          (t === 0 ? 'D starts as the table of direct edge weights. ' : '') + `Stop-over vertex ${k}: for every pair (i, j) keep the shorter of "direct" and "through ${k}".`,
+          [['stop-overs allowed so far', k === 0 ? 'vertex 0' : 'vertices 0 … ' + k]], [k],
+          { bind: { k: `k = ${k}` } }));
+      }
+    }
+
+    function topo() {
+      const order = [];
+      for (let t = 0; t < T; t++) {
+        if (t === 0) { out.push(S(['l'], 'Start', 'The list is empty. Depth-first search begins; vertices are added to the front of the list as they finish.', [['list (front → back)', 'empty']], [])); continue; }
+        const h = argmax(R[t]);
+        if (h !== argmax(R[t - 1])) {
+          order.unshift(h);
+          out.push(S(['ins'], 'Finish', `Vertex ${h} just finished, so it goes to the front of the list.`, [['list (front → back)', order.join(' → ')]], [h], { bind: { ins: `u = ${h}` } }));
+        } else out.push(S(t === T - 1 ? ['ret'] : ['white'], t === T - 1 ? 'Done' : 'Searching', t === T - 1 ? 'Every vertex has finished: the list is the topological order.' : 'The depth-first search is exploring (checking neighbours, going deeper); no vertex finished at this step.', [['list (front → back)', order.join(' → ')]], []));
+      }
+    }
+
+    function artic() {
+      // replay a DFS from vertex 0 (neighbours in index order) to learn why each vertex is a cut vertex; used only if the
+      // replay finds exactly the same vertices as the recorded trace
+      const kind = {}; { const d = Array(n).fill(-1), low = Array(n).fill(0); let time = 0;
+        const go = (u, p) => { d[u] = low[u] = ++time; let kids = 0, cut1 = false;
+          for (let v = 0; v < n; v++) if (edge(u, v) || edge(v, u)) { if (d[v] < 0) { kids++; go(v, u); low[u] = Math.min(low[u], low[v]); if (p >= 0 && low[v] >= d[u]) cut1 = true; } else if (v !== p) low[u] = Math.min(low[u], d[v]); }
+          if (cut1) kind[u] = 'found1'; if (p < 0 && kids >= 2) kind[u] = 'found2'; };
+        for (let u = 0; u < n; u++) if (d[u] < 0) go(u, -1); }
+      const last = R[T - 1], truth = []; for (let i = 0; i < n; i++) if (last[i] > 0) truth.push(i);
+      const known = truth.length === Object.keys(kind).length && truth.every(i => kind[i]);
+      const found = [];
+      for (let t = 0; t < T; t++) {
+        if (t === 0) { out.push(S(['init'], 'Start', 'No vertex is marked yet.', [['articulation points', 'none']], [])); continue; }
+        const nw = diff(t).filter(c => c.b > c.a).map(c => c.i);
+        if (nw.length) {
+          found.push(...nw);
+          const cur = known ? [...new Set(nw.map(v => kind[v]))] : ['found1', 'found2'];
+          const bind = {}; for (const v of nw) if (known) bind[kind[v]] = `u = ${v}`;
+          const why = known ? nw.map(v => kind[v] === 'found2' ? `${v} is the root of the search and has two or more DFS children` : `a child of ${v} cannot reach above ${v} (low[child] ≥ d[${v}])`).join('; ') : '';
+          out.push(S(cur, 'Found', `Vertex ${list(nw)} is an articulation point: removing it would split the graph into separate pieces${why ? ` (${why})` : ''}.`, [['articulation points', list(found)]], nw, { bind }));
+        } else out.push(S(['adj'], 'Searching', 'The depth-first search keeps computing discovery times d[u] and low values; no new articulation point yet.', [['articulation points', list(found)]], []));
+      }
+    }
+
+    function bfs() {
+      for (let t = 0; t < T; t++) {
+        const cur = R[t]; const cnt = cur.filter(v => v > 0).length;
+        if (t === 0) { out.push(S(['init', 'src'], 'Start', `Only the source ${src} is reached.`, [['reached', cnt + ' of ' + n]], src !== null ? [src] : [], { bind: { src: `s = ${src}` } })); continue; }
+        const nw = diff(t).filter(c => c.b > c.a).map(c => c.i);
+        if (nw.length) {
+          const pairs = nw.map(v => { for (let u = 0; u < n; u++) if (R[t - 1][u] > 0 && adj[u][v] > 0) return [u, v]; return [null, v]; });
+          const via = pairs.map(([u, v]) => u === null ? String(v) : `${v} (from ${u})`);
+          out.push(S(['par', 'mark'], 'Expand', `Every already-reached vertex passes on to its neighbours. Newly reached: ${via.join(', ')}.`, [['reached', cnt + ' of ' + n], ['new this step', list(nw)]], nw,
+            { ctx: ['prev'], bind: { edge: pairs.map(([u, v]) => `(${u === null ? '?' : u}, ${v})`).join(' '), mark: `v = ${nw.join(', ')}` } }));
+        } else out.push(S(['until'], 'Stop', 'Every edge was scanned and nothing new was reached, so reach equals prev and the loop stops.', [['reached', cnt + ' of ' + n]], [], { ctx: ['edge'] }));
+      }
+    }
+
+    if (!R || !T) return null;
+    switch (algo) {
+      case 'bfs': bfs(); break;
+      case 'dfs': colourWalk('dfs'); break;
+      case 'bridges': colourWalk('bridges'); break;
+      case 'strongly_connected_components': colourWalk('scc'); break;
+      case 'bellman_ford': relax('bf'); break;
+      case 'dijkstra': relax('dij'); break;
+      case 'dag_shortest_paths': relax('dag'); break;
+      case 'mst_prim': relax('prim'); break;
+      case 'mst_kruskal': kruskal(); break;
+      case 'topological_sort': topo(); break;
+      case 'articulation_points': artic(); break;
+      case 'floyd_warshall': floyd(); break;
+      default: return null;
+    }
+    return out;
+  }
+
+  const cache = new WeakMap();
+  function forStep(algo, inst, step) {
+    if (!inst || !CODE[algo]) return null;
+    let s = cache.get(inst);
+    if (!s || s.algo !== algo) { let arr = null; try { arr = steps(algo, inst); } catch (e) { arr = null; } s = { algo, arr }; cache.set(inst, s); }
+    return s.arr ? s.arr[Math.max(0, Math.min(step, s.arr.length - 1))] : null;
+  }
+  return { CODE, TAGS, forStep, steps };
+})();
+</script>
+<script>
+const svgNS = 'http://www.w3.org/2000/svg';
+const fmt = (x, d=3) => (x===null||x===undefined||Number.isNaN(x)) ? '-' : Number(x).toFixed(d);
+// Ground truth from summary_v3.json (the original training run's own output --
+// authoritative; cross-checked to agree with the per-algo checkpoints to 4
+// decimal places). gap<0.10=CLEAN, gap>0.40=SEVERE (bimodal split, confirmed:
+// max clean gap 0.074 mst_prim, min severe gap 0.460 mst_kruskal).
+const TRAIN_V3 = {"articulation_points":{"val":0.9852,"test":0.9487,"steps":10000,"min":67.2,"first":0.259,"at90":5300,"tail":0.9456,"tmin":0.775,"tmax":0.985},"bellman_ford":{"val":0.998,"test":0.9478,"steps":10000,"min":10.9,"first":0.383,"at90":300,"tail":0.9895,"tmin":0.975,"tmax":0.996},"bfs":{"val":1.0,"test":0.998,"steps":10000,"min":10.1,"first":0.415,"at90":100,"tail":0.9997,"tmin":0.998,"tmax":1.0},"bridges":{"val":0.994,"test":0.9676,"steps":10000,"min":69.3,"first":0.0,"at90":1100,"tail":0.9743,"tmin":0.958,"tmax":0.986},"dag_shortest_paths":{"val":1.0,"test":0.9844,"steps":10000,"min":32.1,"first":0.516,"at90":200,"tail":0.9952,"tmin":0.989,"tmax":1.0},"dfs":{"val":1.0,"test":0.4814,"steps":10000,"min":29.0,"first":0.261,"at90":500,"tail":0.9895,"tmin":0.964,"tmax":1.0},"dijkstra":{"val":1.0,"test":0.9771,"steps":10000,"min":11.9,"first":0.347,"at90":200,"tail":0.9913,"tmin":0.986,"tmax":1.0},"floyd_warshall":{"val":0.931,"test":0.3852,"steps":10000,"min":25.6,"first":0.063,"at90":4200,"tail":0.9115,"tmin":0.885,"tmax":0.931},"mst_kruskal":{"val":0.9055,"test":0.4454,"steps":10000,"min":53.2,"first":0.122,"at90":9200,"tail":0.863,"tmin":0.733,"tmax":0.905},"mst_prim":{"val":1.0,"test":0.9263,"steps":10000,"min":11.9,"first":0.268,"at90":400,"tail":0.9875,"tmin":0.974,"tmax":1.0},"strongly_connected_components":{"val":1.0,"test":0.2734,"steps":10000,"min":59.5,"first":0.255,"at90":600,"tail":0.9899,"tmin":0.978,"tmax":1.0},"topological_sort":{"val":1.0,"test":0.5168,"steps":10000,"min":27.5,"first":0.33,"at90":200,"tail":0.9924,"tmin":0.973,"tmax":1.0}};
+const SUMMARY_V3 = {
+  bfs: {val:1.0000, test:0.9980, gap:0.0020, cls:'CLEAN'},
+  dag_shortest_paths: {val:1.0000, test:0.9844, gap:0.0156, cls:'CLEAN'},
+  dijkstra: {val:1.0000, test:0.9771, gap:0.0229, cls:'CLEAN'},
+  bridges: {val:0.9940, test:0.9676, gap:0.0263, cls:'CLEAN'},
+  articulation_points: {val:0.9852, test:0.9487, gap:0.0364, cls:'CLEAN'},
+  bellman_ford: {val:0.9980, test:0.9478, gap:0.0503, cls:'CLEAN'},
+  mst_prim: {val:1.0000, test:0.9263, gap:0.0737, cls:'CLEAN'},
+  mst_kruskal: {val:0.9055, test:0.4454, gap:0.4600, cls:'SEVERE'},
+  topological_sort: {val:1.0000, test:0.5168, gap:0.4832, cls:'SEVERE'},
+  dfs: {val:1.0000, test:0.4814, gap:0.5186, cls:'SEVERE'},
+  floyd_warshall: {val:0.9310, test:0.3852, gap:0.5458, cls:'SEVERE'},
+  strongly_connected_components: {val:1.0000, test:0.2734, gap:0.7266, cls:'SEVERE'},
+};
+let W = null, FL = null, G = null, ALGOS = null, curAlgo = 'bfs', curStep = 0, playTimer = null, selected = null, CUR_ATTR = null;
+let pruneMode = 'pruned', minW = 0, viewMode = 'bynode';
+// which transcoder the attribution graph is built from: 'edge' = the new edge-site transcoders (latents on sender->receiver pairs), 'node' = the previous node-site transcoder
+const ATTR = { mode: 'node', summary: null };      // this page (/demo) is the previous version: node-site graphs only
+window.AV_EDGE_ON = () => ATTR.mode === 'edge';
+let NODE_PRED = {}, SHOWN_EDGES = [], LAST_IV = null;   // read by explain.js hover cards
+// Race-condition guards: every async load takes a generation number; a response is applied only
+// if it is still the newest request, and superseded fetches are aborted.
+let graphGen = 0, algoGen = 0, ctxGen = 0, graphAbort = null, algoAbort = null, ctxAbort = null;
+const GRAPH_CACHE = new Map();  // key -> {promise, ctl, spec, done}: every graph fetched, shared by user requests and prefetch
+const GRAPH_CACHE_MAX = 16;
+let NEXTQ = { algo: null, n: null, p: null, seeds: [] };   // seeds of the next random graphs, already prefetched
+let specGen = 0, paramTimer = null;
+let labelByFeat = {};
+function stopPlay() {
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  const b = document.getElementById('btnPlay'); if (b) b.textContent = '\u25B6 Play';
+}
+const BUILD = '__BUILD__';   // filled in by the server; versions every cached URL below
+const VQ = '?v=' + BUILD;
+const RES_CAP = 4;           // models kept ready in the background workers at any time
+const FALLBACK_MS = 10000;   // the model download made no progress for this long: show the server's graph instead
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const abortErr = () => new DOMException('aborted', 'AbortError');
+const isAbort = e => !!(e && e.name === 'AbortError');
+class StaleError extends Error {}
+const NET = { user: 0, lastInput: 0 };   // user-requested transfers in flight / last time the person touched the page
+['pointerdown', 'keydown', 'wheel', 'touchstart', 'input', 'change'].forEach(ev => addEventListener(ev, () => { NET.lastInput = performance.now(); }, { passive: true, capture: true }));
+function checkResp(r) { if (r.status === 409) throw new StaleError('stale'); if (!r.ok) throw new Error('HTTP ' + r.status); return r; }
+async function getJSON(url, signal) {
+  NET.user++;
+  try { const r = checkResp(await fetch(url, { signal })); return await r.json(); } finally { NET.user--; }
+}
+// Download a file in pieces so progress can be shown and a background download can pause while the person is busy.
+const takeEarly = k => { const E = window.__early; const p = E && E[k]; if (E) E[k] = null; return p || null; };   // each early download is used once
+async function fetchBytes(url, { signal, low, keep = true, onProgress, wait, early } = {}) {
+  if (!low) NET.user++;
+  try {
+    const r = checkResp(early ? await early : await fetch(url, { signal, priority: low ? 'low' : 'high' }));
+    const total = +r.headers.get('Content-Length') || 0;
+    if (!r.body || !r.body.getReader) { const b = await r.arrayBuffer(); if (onProgress) onProgress(1); return keep ? b : null; }
+    const rd = r.body.getReader(), parts = []; let got = 0;
+    if (signal) signal.addEventListener('abort', () => { rd.cancel().catch(() => {}); }, { once: true });   // a download started early by the page head is not tied to the signal by fetch itself
+    for (;;) {
+      if (wait) await wait();
+      const { done, value } = await rd.read();
+      if (done) { if (signal && signal.aborted) throw abortErr(); break; }
+      got += value.length; if (keep) parts.push(value);
+      if (onProgress && total) onProgress(Math.min(1, got / total));
+    }
+    if (!keep) return null;
+    const out = new Uint8Array(got); let o = 0; for (const c of parts) { out.set(c, o); o += c.length; }
+    return out.buffer;
+  } finally { if (!low) NET.user--; }
+}
+async function withRetry(fn, signal, tries = 4) {   // automatic retry with a growing pause; gives up at once if the page was updated or the work was cancelled
+  for (let a = 0; ; a++) {
+    try { return await fn(); }
+    catch (e) {
+      if (isAbort(e) || e instanceof StaleError || (signal && signal.aborted) || a >= tries - 1) throw e;
+      await new Promise(res => { const t = setTimeout(res, 800 * (a + 1)); if (signal) signal.addEventListener('abort', () => { clearTimeout(t); res(); }, { once: true }); });
+      if (signal && signal.aborted) throw abortErr();
+    }
+  }
+}
+// ---------- small helpers for what the person sees ----------
+const setStatus = t => { document.getElementById('status').textContent = t; };
+function showProblem(msg, retry, label) {
+  setStatus(msg);
+  const b = document.getElementById('btnRetry'); b.textContent = label || 'Retry'; b.hidden = false;
+  b.onclick = () => { b.hidden = true; retry(); };
+}
+function clearProblem() { const b = document.getElementById('btnRetry'); if (b) b.hidden = true; }
+function showStale() { showProblem('This page was just updated. Reload to continue.', () => location.reload(), 'Reload'); }
+function showSkeleton() {
+  const svg = document.getElementById('graphSvg'); let h = '';
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 10; h += `<circle class="sk" cx="${126 + 85 * Math.cos(a)}" cy="${105 + 85 * Math.sin(a)}" r="11"/>`; }
+  svg.innerHTML = h;
+  document.getElementById('nodeTableBody').innerHTML = '<tr><td colspan="4" class="small">Loading…</td></tr>';
+}
+let lastProg = 0;
+function progressText(algo) { const m = LOCAL.models[algo]; return m && m.state === 'loading' && m.progress > 0 ? `Loading ${algo}: ${Math.round(m.progress * 100)}%` : `Loading ${algo}…`; }
+function progressLine() {            // keeps the "Loading <algo>: n%" line fresh while the model is on its way
+  const now = performance.now(); if (now - lastProg < 120) return; lastProg = now;
+  if (G && !G._preview) return;
+  const t = progressText(curAlgo); setStatus(t);
+  if (!AV.data) { const gs = document.getElementById('gstat'); if (gs) gs.textContent = t.replace('Loading ', 'Loading the model for '); }
+}
+
+// ---------- per-algorithm data: small summary first, large weights only when needed ----------
+const HEAVY = {}, LABELS = {}, LABEL_REQ = {}, WT = {}, INST = new Map();
+function metaFor(a) { const m = ALGOS[a]; return { target: m.target, target_type: m.target_type, fvu: m.fvu, val_f1: m.val_f1, test_f1: m.test_f1, hidden: 128 }; }
+function weightsFor(a) { return HEAVY[a] || metaFor(a); }
+function ensureLabels(a) {
+  if (LABELS[a]) return Promise.resolve(LABELS[a]);
+  if (!LABEL_REQ[a]) LABEL_REQ[a] = withRetry(() => getJSON('/api/feature_labels?algo=' + a + '&v=' + BUILD)).then(fl => {
+    if (fl.error) throw new Error(fl.error);
+    LABELS[a] = fl; delete LABEL_REQ[a]; return fl;
+  }, e => { delete LABEL_REQ[a]; throw e; });
+  return LABEL_REQ[a];
+}
+function ensureWeights(a) {             // the large transcoder weights (about 0.5 MB): needed for the node table and the attribution graph
+  if (HEAVY[a]) return Promise.resolve(HEAVY[a]);
+  if (!WT[a]) {
+    const ctl = new AbortController();
+    const p = withRetry(() => getJSON('/api/weights?algo=' + a + '&v=' + BUILD, ctl.signal), ctl.signal).then(w => {
+      if (w.error) throw new Error(w.error);
+      HEAVY[a] = w; delete WT[a];
+      if (a === curAlgo) { W = w; if (G && !G._preview) renderNodeTable(); maybePrefetch(); }
+      return w;
+    }, e => { delete WT[a]; throw e; });
+    p.ctl = ctl; WT[a] = p;
+  }
+  return WT[a];
+}
+// ---------- edge-site transcoders (edge_tc/<algo>.bin + .json, 1.3 MB per algorithm, cached forever) and their measured quality ----------
+const ETCS = {}, ETC_REQ = {};
+function ensureEdgeTC(a) {
+  if (ETCS[a]) return Promise.resolve(ETCS[a]);
+  if (!ETC_REQ[a]) ETC_REQ[a] = withRetry(async () => { const [man, buf] = await Promise.all([getJSON('/edge_tc/' + a + '.json?v=' + BUILD), fetchBytes('/edge_tc/' + a + '.bin?v=' + BUILD)]); return { man, buf }; })
+    .then(x => { ETCS[a] = x; delete ETC_REQ[a]; return x; }, e => { delete ETC_REQ[a]; throw e; });
+  return ETC_REQ[a];
+}
+let ETC_SUM = null;
+function ensureEdgeSummary() {
+  if (!ETC_SUM) ETC_SUM = withRetry(() => getJSON('/edge_tc/clrs-edge-summary.json?v=' + BUILD)).then(j => { ATTR.summary = j.summary; renderEdgeNote(); return j; }, e => { ETC_SUM = null; throw e; });
+  return ETC_SUM;
+}
+const pc1 = x => (x * 100).toFixed(1) + '%';
+function renderEdgeNote() {                 // what the person is looking at, with the measured numbers behind it
+  const el = document.getElementById('edgeNote'); if (!el) return;
+  const edge = ATTR.mode === 'edge';
+  document.querySelectorAll('.prevnote').forEach(e => { e.hidden = !edge; });
+  if (!edge || !G || !curAlgo) { el.hidden = true; return; }
+  const sm = ATTR.summary && ATTR.summary[curAlgo];
+  if (!sm) { el.hidden = false; el.classList.remove('warn'); el.innerHTML = 'Edge-site transcoder: loading its measured quality\u2026'; return; }
+  const big = G.n > 16, low = sm.retention_val < 0.9 || (big && (sm.retention_n64 === null || sm.retention_n64 < 0.9));
+  let h = `<b>Edge-site transcoder</b> for ${curAlgo} (D = ${sm.D}, k = ${sm.k}). Each latent sits on one <b>sender \u2192 receiver</b> pair, so a node column shows what is written <i>to</i> that node. ` +
+    `Replacing the message MLP by it inside the real network keeps <b>${pc1(sm.retention_val)}</b> of the original F1 on 16-node validation graphs` +
+    (sm.retention_n64 === null ? ' (not measured on 64-node graphs)' : ` and <b>${pc1(sm.retention_n64)}</b> on 64-node graphs`) + `; reconstruction error (FVU) ${sm.nmse_val.toFixed(4)}. ` +
+    `The graph itself is exact for the real run: it uses the real winners and an error node per pair.`;
+  if (big) h += ` <b>This graph has ${G.n} nodes</b>: the transcoder was trained on 16-node graphs${sm.retention_n64 === null ? ' and was not validated at larger sizes for this algorithm' : ' and validated at 64 nodes only for the seven shortest-path / spanning-tree / cut-vertex algorithms'}.`;
+  if (sm.retention_val < 0.9) h += ' Its replacement fidelity is below 0.90: read the latents with care.';
+  el.hidden = false; el.classList.toggle('warn', low); el.innerHTML = h;
+}
+function setAttrMode(mode) {
+  if (mode === ATTR.mode) return;
+  ATTR.mode = mode; try { localStorage.setItem('clrs-attr-mode', mode); } catch (e) {}
+  document.querySelectorAll('#attrSeg button').forEach(b => b.classList.toggle('active', b.dataset.v === mode));
+  if (typeof avReset === 'function') avReset();
+  renderEdgeNote(); if (mode === 'edge') ensureEdgeSummary().catch(() => {});
+  if (G && !G._preview) { drawGraph(); drawAttribution(); }
+}
+function getInstance(a, n, p, seed) {   // tiny, deterministic for its query: shared by every caller and cached
+  const k = gkey(a, n, p, seed); let e = INST.get(k);
+  if (e) { INST.delete(k); INST.set(k, e); return e; }
+  let early = k === gkey('bfs', 16, 0.4, 42) ? takeEarly('inst') : null;     // started by the page head
+  e = withRetry(() => { const er = early; early = null; return er ? er.then(r => checkResp(r).json()) : getJSON(`/api/instance?algo=${a}&n=${n}&p=${p}&seed=${seed}&v=${BUILD}`); });
+  INST.set(k, e); e.catch(() => INST.delete(k));
+  while (INST.size > 60) INST.delete(INST.keys().next().value);
+  return e;
+}
+// ---------- in-browser model execution (Web Workers running mpnn.js on the real 128-hidden weights) ----------
+// The server only samples the graph (a few KB); the model forward pass runs here, so once an algorithm's
+// weight bundle (1-2 MB, cached forever) is loaded, a new graph needs no heavy download.
+const LOCAL = { workers: [], models: {}, queue: [], seq: 0 };
+function initWorkers() {
+  if (typeof Worker === 'undefined' || LOCAL.workers.length) return;
+  const hc = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2;
+  const count = Math.max(1, Math.min(2, hc - 2));
+  for (let i = 0; i < count; i++) {
+    try {
+      const st = { w: new Worker('mpnn_worker.js' + VQ), busy: null, loaded: new Set(), waiters: {} };
+      st.w.onmessage = ev => onWorkerMsg(st, ev.data);
+      st.w.onerror = () => { st.dead = true; };
+      LOCAL.workers.push(st);
+    } catch (e) { /* workers unavailable: server path is used */ }
+  }
+}
+function onWorkerMsg(st, m) {
+  if (m.type === 'loaded') { st.loaded.add(m.algo); const cb = st.waiters[m.algo]; if (cb) cb(); return; }
+  const job = st.busy; if (!job || job.id !== m.id) return;
+  if (m.type === 'chunk' && job.dead) return;
+  if (m.type === 'chunk') { if (job.onChunk && !job.dead) job.onChunk(m); return; }      // early steps of a run that is still going
+  st.busy = null;
+  if (m.type === 'result') { if (job.onChunk && !job.dead) job.onChunk(m); job.resolve(m); }
+  else if (m.type === 'cancelled') { /* the worker stopped an unwanted run; the promise was already rejected */ }
+  else job.reject(new Error(m.error));
+  pumpLocal();
+}
+function pumpLocal() {
+  for (const st of LOCAL.workers) {
+    if (st.busy || st.dead) continue;
+    let best = -1;
+    for (let i = 0; i < LOCAL.queue.length; i++) {
+      const j = LOCAL.queue[i];
+      if (!st.loaded.has(j.algo)) continue;
+      if (best < 0 || j.meta.prio < LOCAL.queue[best].meta.prio) best = i;   // user requests (prio 0) before prefetch (1), FIFO within
+    }
+    if (best < 0) continue;
+    const job = LOCAL.queue.splice(best, 1)[0];
+    st.busy = job;
+    st.w.postMessage({ type: 'run', id: job.id, algo: job.algo, inst: job.inst });
+  }
+}
+function runLocal(algo, inst, meta, signal, onChunk) {
+  return new Promise((resolve, reject) => {
+    const job = { id: ++LOCAL.seq, algo, inst, meta, resolve, reject, onChunk, dead: false };
+    const abort = () => {
+      job.dead = true;
+      const i = LOCAL.queue.indexOf(job);
+      if (i >= 0) LOCAL.queue.splice(i, 1);
+      const st = LOCAL.workers.find(s => s.busy === job);
+      if (st) st.w.postMessage({ type: 'cancel', id: job.id });       // stop a run that nobody wants any more
+      reject(new DOMException('aborted', 'AbortError'));
+    };
+    if (signal.aborted) return abort();
+    signal.addEventListener('abort', abort, { once: true });
+    LOCAL.queue.push(job);
+    if (meta.prio === 0 && !LOCAL.workers.some(s => !s.busy && !s.dead && s.loaded.has(algo))) {   // a person is waiting: background runs make way
+      const bg = LOCAL.workers.find(s => s.busy && s.busy.meta.prio !== 0 && !s.busy.dead);
+      if (bg) { bg.busy.dead = true; bg.busy.reject(new DOMException('aborted', 'AbortError')); bg.w.postMessage({ type: 'cancel', id: bg.busy.id }); }
+    }
+    pumpLocal();
+  });
+}
+function localReady(algo) { const m = LOCAL.models[algo]; return !!(m && m.state === 'ready'); }
+function ensureLocalModel(algo, opts) {
+  const quiet = !!(opts && opts.quiet);
+  initWorkers();
+  if (!LOCAL.workers.length) return;
+  const old = LOCAL.models[algo];
+  if (old && old.state !== 'failed') { if (!quiet) { old.quiet = false; old.used = Date.now(); } return; }
+  const ctl = new AbortController(), sig = ctl.signal;
+  const entry = LOCAL.models[algo] = { state: 'loading', ctl, downloading: true, quiet, progress: 0, used: quiet ? 0 : Date.now(), lastAt: Date.now() };
+  entry.promise = (async () => {
+    try {
+      let man, buf;
+      const pf = PF.cur && PF.cur.algo === algo ? PF.cur : null;     // already on its way as a background download: reuse it, never fetch twice
+      if (pf) { pf.adopted = true; try { [man, buf] = await pf.promise; } catch (e) { man = buf = null; } }
+      if (!buf) {
+        const eJ = algo === 'bfs' && !quiet ? takeEarly('json') : null, eB = eJ ? takeEarly('bin') : null;   // the page already started the default model's download
+        let first = true;
+        [man, buf] = await withRetry(() => { const useEarly = first && eJ && eB; first = false; return Promise.all([
+          fetchBytes('/models/' + algo + '.json' + VQ, { signal: sig, low: quiet, early: useEarly ? eJ : null }).then(b => JSON.parse(new TextDecoder().decode(b))),
+          fetchBytes('/models/' + algo + '.bin' + VQ, { signal: sig, low: quiet, early: useEarly ? eB : null, onProgress: pr => { if (pr !== entry.progress) entry.lastAt = Date.now(); entry.progress = pr; progressLine(); } })]); }, sig);
+      }
+      if (sig.aborted) throw abortErr();
+      entry.downloading = false;                     // fully downloaded: finishing the worker load costs no bandwidth, so it is kept
+      entry.man = man; entry.buf = buf;
+      await Promise.race([
+        Promise.all(LOCAL.workers.map(st => new Promise(res => {
+          st.waiters[algo] = res;
+          st.w.postMessage({ type: 'load', algo, manifest: man, buffer: buf.slice(0) });
+        }))),
+        sleep(20000).then(() => { throw new Error('model load timed out'); })]);
+      entry.state = 'ready'; entry.progress = 1;
+      residentTrim(algo);
+      pumpLocal();
+      if (algo === curAlgo && G && !G._preview) {     // re-fill the ready-queue with fast in-browser runs
+        for (const [k, e] of [...GRAPH_CACHE]) if (e.spec && k.startsWith(algo + '|')) { if (!e.done) e.ctl.abort(); GRAPH_CACHE.delete(k); }
+        NEXTQ = { algo: null, n: null, p: null, seeds: [] };
+        const P = readParams(); if (P) speculate(algo, P.n, P.p, P.seed);
+      }
+      maybePrefetch();
+    } catch (e) {
+      entry.downloading = false;
+      if (isAbort(e)) {                              // the user moved to another algorithm: forget this attempt entirely, so coming back restarts cleanly
+        entry.state = 'aborted';
+        if (LOCAL.models[algo] === entry) delete LOCAL.models[algo];
+      } else { entry.state = 'failed'; entry.stale = e instanceof StaleError; }
+    }
+  })();
+}
+// Keep at most RES_CAP algorithms ready inside the workers (the least recently used one is released) so small laptops stay healthy.
+function residentTrim(keep) {
+  const ready = Object.keys(LOCAL.models).filter(a => LOCAL.models[a].state === 'ready');
+  while (ready.length > RES_CAP) {
+    let victim = null;
+    for (const a of ready) if (a !== curAlgo && a !== keep && (!victim || LOCAL.models[a].used < LOCAL.models[victim].used)) victim = a;
+    if (!victim) break;
+    unloadAlgo(victim); ready.splice(ready.indexOf(victim), 1);
+  }
+}
+function unloadAlgo(a) {
+  delete LOCAL.models[a];
+  for (const st of LOCAL.workers) { st.loaded.delete(a); delete st.waiters[a]; st.w.postMessage({ type: 'unload', algo: a }); }
+  if (AV.worker) AV.worker.postMessage({ type: 'unload', algo: a });
+  delete AV.ready['loaded:' + a]; delete AV.ready['tcloaded:' + a]; delete AV['sent:' + a]; delete AV['tcsent:' + a];
+  delete AV.ready['edgetcloaded:' + a]; delete AV['etcsent:' + a]; delete ETCS[a];          // the worker dropped the edge-site transcoder too: load it again when needed
+  delete HEAVY[a];
+  for (const [k, e] of [...GRAPH_CACHE]) if (k.startsWith(a + '|')) { if (!e.done) e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+// Stop all network work that belongs to algorithms other than `keep`: unfinished bundle downloads the person asked for and every
+// unfinished graph request (user-level or speculative). Quiet background downloads are never cancelled; they just wait their turn.
+// Finished downloads/graphs stay cached, so switching back to them is instant.
+function abortOtherAlgos(keep) {
+  for (const a of Object.keys(WT)) if (a !== keep && WT[a].ctl) WT[a].ctl.abort();     // the large weights of the algorithm just left are not needed any more
+  for (const a of Object.keys(LOCAL.models)) {
+    const m = LOCAL.models[a];
+    if (a !== keep && m.downloading && m.ctl && !m.quiet) m.ctl.abort();
+  }
+  for (const [k, e] of [...GRAPH_CACHE]) {
+    if (!e.done && !k.startsWith(keep + '|')) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+  }
+}
+// ---------- quiet background download of the other algorithms ----------
+const PF = { cur: null, running: false, done: new Set(), tries: {}, ifail: 0, stale: false };
+const userIdle = () => performance.now() - NET.lastInput > 1200 && NET.user === 0 && !document.hidden;
+const pfWait = (pf, sig) => async () => { while (!pf.adopted && !userIdle()) { if (sig.aborted) throw abortErr(); await sleep(150); } };
+const pfReady = () => !!(ALGOS && G && !G._preview && localReady(curAlgo) && HEAVY[curAlgo]);
+function pfOrder() { const keys = Object.keys(ALGOS), i = keys.indexOf(curAlgo); return keys.slice(i + 1).concat(keys.slice(0, Math.max(0, i))); }
+function maybePrefetch() {
+  if (PF.running || PF.stale || !pfReady()) return;
+  PF.running = true;
+  pfLoop().catch(() => {}).finally(() => { PF.running = false; if (pfReady() && pfOrder().some(a => !PF.done.has(a) && (PF.tries[a] || 0) < 3)) setTimeout(maybePrefetch, 2000); });
+}
+async function pfLoop() {
+  while (pfReady()) {
+    const P = readParams();
+    const next = pfOrder().find(a => !PF.done.has(a) && (PF.tries[a] || 0) < 3);
+    const need = P && [...PF.done].find(a => a !== curAlgo && !INST.has(gkey(a, P.n, P.p, P.seed)));
+    if (!next && !need) return;
+    while (!userIdle()) await sleep(200);
+    if (!pfReady()) return;
+    if (need) { try { await getInstance(need, P.n, P.p, P.seed); } catch (e) { if (e instanceof StaleError || ++PF.ifail > 5) return; } continue; }
+    try { await prefetchOne(next); PF.done.add(next); warmLoad(next); }
+    catch (e) { if (e instanceof StaleError) { PF.stale = true; return; } PF.tries[next] = (PF.tries[next] || 0) + 1; await sleep(3000); }
+  }
+}
+async function prefetchOne(a) {
+  const ctl = new AbortController(), pf = { algo: a, adopted: false };
+  const wait = pfWait(pf, ctl.signal);
+  pf.promise = Promise.all([
+    fetchBytes('/models/' + a + '.json' + VQ, { signal: ctl.signal, low: true, wait }).then(b => JSON.parse(new TextDecoder().decode(b))),
+    fetchBytes('/models/' + a + '.bin' + VQ, { signal: ctl.signal, low: true, wait })]);
+  pf.promise.catch(() => {});
+  PF.cur = pf;
+  try {
+    await pf.promise;
+    await fetchBytes('/api/weights?algo=' + a + '&v=' + BUILD, { signal: ctl.signal, low: true, keep: false, wait });
+    await fetchBytes('/api/feature_labels?algo=' + a + '&v=' + BUILD, { signal: ctl.signal, low: true, keep: false, wait });
+  } finally { if (PF.cur === pf) PF.cur = null; }
+}
+function warmLoad(a) {                 // while idle, get the most likely next algorithms ready inside the workers (from the browser cache)
+  const live = Object.keys(LOCAL.models).filter(k => LOCAL.models[k].state !== 'failed').length;
+  if (live < RES_CAP && pfOrder().slice(0, 3).includes(a)) ensureLocalModel(a, { quiet: true });
+}
+function rowsOf(flat, T, N, dim) {
+  const out = new Array(T);
+  for (let t = 0; t < T; t++) { const r = new Array(N); for (let i = 0; i < N; i++) { const o = (t * N + i) * dim; r[i] = flat.subarray(o, o + dim); } out[t] = r; }
+  return out;
+}
+async function fetchGraphLocal(algo, n, p, seed, signal, meta) {
+  const inst = await getInstance(algo, n, p, seed);
+  if (signal.aborted) throw abortErr();
+  if (inst.error) return { error: inst.error, trace: inst.trace };
+  // The model hands back its first steps within milliseconds; the graph is shown from them while the later steps keep arriving.
+  const g = { n: inst.n, length: inst.length, adj: inst.adj, source: inst.source, target_true: inst.target_true,
+              seed: inst.seed, z: [], msgs: [], node_fts: [], _local: true, _inst: inst, _computing: true, _broken: false };
+  let gotFirst; const first = new Promise(res => { gotFirst = res; });
+  const grow = m => {
+    const N = m.N, zf = m.z, sf = m.msgs;
+    for (let t = 0; t < m.steps; t++) {
+      const zr = new Array(N), sr = new Array(N);
+      for (let i = 0; i < N; i++) { const o = (t * N + i); zr[i] = zf.subarray(o * 256, (o + 1) * 256); sr[i] = sf.subarray(o * 128, (o + 1) * 128); }
+      g.z.push(zr); g.msgs.push(sr); g.node_fts.push(zr.map(row => row.subarray(0, 128)));
+    }
+    if (m.type === 'result') g._computing = false;
+    gotFirst({ g, seed: inst.seed });
+    onGraphGrow(g);
+  };
+  const done = runLocal(algo, inst, meta, signal, grow);
+  done.then(() => { g._computing = false; gotFirst({ g, seed: inst.seed }); onGraphGrow(g); },
+            e => { g._broken = true; g._computing = false; });
+  return Promise.race([first, done.then(() => first)]);
+}
+function onGraphGrow(g) {            // later steps arrived: refresh whatever was waiting for them
+  if (G === g && G._need) { G._need = false; renderNodeTable(); drawStepLabel(); }
+}
+function cancelComputing(exceptKey) {  // a run for some other graph is still going: stop it, the person has moved on
+  for (const [k, e] of [...GRAPH_CACHE]) if (k !== exceptKey && e.done && e.res && e.res.g && e.res.g._computing) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+async function fetchGraph(algo, n, p, seed, signal, meta) {
+  meta = meta || { prio: 0 };
+  if (localReady(algo)) {
+    try { return await fetchGraphLocal(algo, n, p, seed, signal, meta); }
+    catch (e) { if (isAbort(e)) throw e; /* local path failed: fall back to the server model */ }
+    return fetchGraphServer(algo, n, p, seed, signal);
+  }
+  if (meta.prio !== 0) throw abortErr();                  // background work only ever uses the in-browser model
+  ensureLocalModel(algo);
+  const ent = LOCAL.models[algo];
+  if (!ent) return fetchGraphServer(algo, n, p, seed, signal);   // no workers in this browser
+  // Wait for the in-browser model. A slow link is fine (the page shows progress); only a download that has made no progress for
+  // FALLBACK_MS, or one that failed, switches to the server's graph.
+  const cancelled = new Promise((_, rej) => signal.addEventListener('abort', () => rej(abortErr()), { once: true }));
+  const finished = ent.promise.then(() => ent.state === 'ready');
+  let state;
+  while (state === undefined) {
+    const tick = new Promise(r => setTimeout(() => r('tick'), 1000));
+    const r = await Promise.race([finished, tick, cancelled]);
+    if (r === 'tick') { if (Date.now() - ent.lastAt > FALLBACK_MS) state = 'stalled'; } else state = r;
+  }
+  if (signal.aborted) throw abortErr();
+  if (state === true) {
+    try { return await fetchGraphLocal(algo, n, p, seed, signal, meta); }
+    catch (e) { if (isAbort(e)) throw e; }
+  }
+  return fetchGraphServer(algo, n, p, seed, signal);       // the model failed to load, or the link is very slow: use the server's graph
+}
+async function fetchGraphServer(algo, n, p, seed, signal) {
+  let g = null;
+  for (let tries = 0; tries < 8; tries++) {
+    g = await getJSON(`/api/graph?algo=${algo}&n=${n}&p=${p}&seed=${seed}`, signal);
+    if (g.error) return { error: g.error, trace: g.trace };
+    if (g.seed !== undefined) seed = g.seed;          // server may have resampled a degenerate graph
+    if (g.length >= 3) break;
+    seed = seed + 1000 + tries;
+  }
+  g.node_fts = g.z.map(st => st.map(row => row.slice(0, 128)));   // node_fts is the first 128 dims of z (not sent over the wire)
+  return { g, seed };
+}
+const gkey = (a, n, p, sd) => `${a}|${+n}|${+p}|${+sd}`;
+function graphFor(algo, n, p, seed, spec) {
+  const k = gkey(algo, n, p, seed);
+  let e = GRAPH_CACHE.get(k);
+  if (e && e.res && e.res.g && e.res.g._broken) { GRAPH_CACHE.delete(k); e = null; }
+  if (e) { if (!spec) { e.spec = false; e.meta.prio = 0; } GRAPH_CACHE.delete(k); GRAPH_CACHE.set(k, e); return e.promise; }
+  const ctl = new AbortController();
+  e = { promise: null, ctl, spec: !!spec, done: false, meta: { prio: spec ? 1 : 0 } };
+  e.promise = fetchGraph(algo, +n, +p, +seed, ctl.signal, e.meta);
+  e.promise.then(r => { if (r.error) GRAPH_CACHE.delete(k); else { e.done = true; e.res = r; } }, () => { GRAPH_CACHE.delete(k); });
+  GRAPH_CACHE.set(k, e);
+  while (GRAPH_CACHE.size > GRAPH_CACHE_MAX) {
+    const [ok, oe] = GRAPH_CACHE.entries().next().value;
+    if (!oe.done) oe.ctl.abort();
+    GRAPH_CACHE.delete(ok);
+  }
+  return e.promise;
+}
+function isCached(algo, n, p, seed) { const e = GRAPH_CACHE.get(gkey(algo, n, p, seed)); return !!(e && e.done && !(e.res && e.res.g && e.res.g._broken)); }
+function dropStale(exceptKey) {        // abort user-level requests that the user has already moved past
+  for (const [k, e] of [...GRAPH_CACHE]) if (k !== exceptKey && !e.done && !e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+function cancelSpec() {                // stop background prefetching (e.g. algorithm changed)
+  ++specGen;
+  for (const [k, e] of [...GRAPH_CACHE]) if (!e.done && e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+}
+function speculate(algo, n, p, seed) {
+  // Background-fetch, one at a time, what the user is most likely to ask for next: the next random graphs,
+  // the neighbouring seeds (spinner arrows), and neighbouring n / p values.
+  const gen = ++specGen;
+  for (const [k, e] of [...GRAPH_CACHE]) if (!e.done && e.spec) { e.ctl.abort(); GRAPH_CACHE.delete(k); }
+  // Background graphs only use the in-browser model, so nothing is requested until it is ready. The load handler above
+  // calls speculate() again once the model is ready.
+  if (!localReady(algo)) return;
+  n = +n; p = +p; seed = +seed;
+  if (NEXTQ.algo !== algo || NEXTQ.n !== n || NEXTQ.p !== p) NEXTQ = { algo, n, p, seeds: [] };
+  const rnd = () => { let s = Math.floor(Math.random() * 1e6); NEXTQ.seeds.push(s); return s; };
+  const nm = [4, 32], pm = [0.1, 0.95], r2 = x => +x.toFixed(2);
+  const seedAt = i => () => { while (NEXTQ.seeds.length <= i) rnd(); return [n, p, NEXTQ.seeds[i]]; };
+  const plan = [seedAt(0), () => [n, p, seed + 1], seedAt(1), () => [n, p, seed - 1]];
+  if (n + 1 <= nm[1]) plan.push(() => [n + 1, p, seed]);
+  if (n - 1 >= nm[0]) plan.push(() => [n - 1, p, seed]);
+  if (p + 0.05 <= pm[1]) plan.push(() => [n, r2(p + 0.05), seed]);
+  if (p - 0.05 >= pm[0]) plan.push(() => [n, r2(p - 0.05), seed]);
+  plan.push(seedAt(2));
+  let next = 0;
+  const worker = async () => {                      // two lanes
+    while (gen === specGen && next < plan.length) {
+      const [nn, pp, sd] = plan[next++]();
+      try { await graphFor(algo, nn, pp, sd, true); } catch (e) { /* aborted/failed: skip */ }
+    }
+  };
+  worker(); worker();
+}
+function readParams() {
+  const n = parseInt(document.getElementById('inN').value), p = parseFloat(document.getElementById('inP').value),
+        seed = parseInt(document.getElementById('inSeed').value);
+  if (!(n >= 4 && n <= 32) || !(p >= 0.1 && p <= 0.95) || !Number.isFinite(seed)) return null;   // mid-typing / invalid: ignore
+  return { n, p, seed };
+}
+function onParamChange(force) {
+  clearTimeout(paramTimer);
+  if (!W) return;
+  const P = readParams(); if (!P) return;
+  const go = () => loadGraph(P.seed);
+  // apply immediately when it is already in hand or forced (spinner click / Enter / blur); debounce only free typing
+  if (force || isCached(curAlgo, P.n, P.p, P.seed)) go(); else { setPending(true); paramTimer = setTimeout(go, 150); }
+}
+function setPending(on) {
+  const svg = document.getElementById('graphSvg'); if (svg) svg.style.opacity = on ? '0.45' : '';
+  if (on) setStatus('updating…');
+}
+
+async function boot() {
+  try {
+    try { ALGOS = JSON.parse(document.getElementById('algosData').textContent); } catch (e) { ALGOS = null; }   // the server puts the list into the page itself
+    if (!ALGOS || !ALGOS.bfs) ALGOS = await withRetry(() => getJSON('/api/algos?v=' + BUILD), null, 5);
+  } catch (e) {
+    if (e instanceof StaleError) return showStale();
+    return showProblem('Could not reach the server. Check your connection, then press Retry.', boot);
+  }
+  clearProblem();
+  const sel = document.getElementById('inAlgo');
+  sel.innerHTML = '';
+  Object.keys(ALGOS).forEach(a => {
+    const o = document.createElement('option'); o.value = a;
+    const gt = SUMMARY_V3[a];
+    o.textContent = algoLabel(a);
+    sel.appendChild(o);
+  });
+  sel.value = 'bfs';
+  renderAlgoInfo();
+  if (!bootWired) {
+    bootWired = true;
+    sel.addEventListener('change', () => { curAlgo = sel.value; renderAlgoInfo(); loadAlgo(); });
+    document.getElementById('btnNew').addEventListener('click', () => {
+      const P = readParams() || { n: +document.getElementById('inN').value, p: +document.getElementById('inP').value };
+      let seed;
+      if (NEXTQ.algo === curAlgo && NEXTQ.n === P.n && NEXTQ.p === P.p && NEXTQ.seeds.length) seed = NEXTQ.seeds.shift();
+      else seed = Math.floor(Math.random() * 1e6);
+      document.getElementById('inSeed').value = seed;
+      loadGraph(seed);
+    });
+    ['inN', 'inP', 'inSeed'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => onParamChange(false));
+      el.addEventListener('change', () => onParamChange(true));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') onParamChange(true); });
+    });
+    document.getElementById('stepRange').addEventListener('input', e => {
+      if (!G) return;
+      curStep = +e.target.value;
+      if (selected) selected = { node: selected.node, step: Math.min(curStep, G.length - 2) };
+      drawGraph(); drawAttribution();
+    });
+    document.querySelectorAll('#attrSeg button').forEach(b => { b.classList.toggle('active', b.dataset.v === ATTR.mode); b.addEventListener('click', () => setAttrMode(b.dataset.v)); });
+    document.querySelectorAll('#pruneSeg button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#pruneSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); pruneMode = b.dataset.v;
+      if (pruneMode === 'all' && minW === 0) { minW = 0.5; document.getElementById('minW').value = '0.5'; document.getElementById('minWVal').textContent = '0.50'; }
+      if (G) { drawAttribution(); drawGraph(); }
+    }));
+    document.querySelectorAll('#viewSeg button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#viewSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); viewMode = b.dataset.v; if (G) drawAttribution();
+    }));
+    document.getElementById('minW').addEventListener('input', e => {
+      minW = +e.target.value; document.getElementById('minWVal').textContent = minW.toFixed(2); if (G) drawAttribution();
+    });
+    document.getElementById('btnPlay').addEventListener('click', () => {
+      if (playTimer) { stopPlay(); return; }
+      if (!G || G._preview) return;
+      if (!selected) selected = { node: G.source !== null ? G.source : 0, step: 0 };
+      document.getElementById('btnPlay').textContent = '⏸ Pause';
+      const gen = graphGen;
+      const tick = () => {
+        if (gen !== graphGen || !G) { stopPlay(); return; }   // graph was replaced: stop instantly
+        curStep = (curStep + 1) % G.length;
+        document.getElementById('stepRange').value = curStep;
+        selected = { node: selected ? selected.node : 0, step: Math.min(curStep, G.length - 2) };
+        drawGraph(); drawAttribution();
+        if (curStep === G.length - 1) { stopPlay(); return; }
+        playTimer = setTimeout(tick, 1600);  // next tick only after this frame finished (no overlap)
+      };
+      playTimer = setTimeout(tick, 1600);
+    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) maybePrefetch(); });
+  }
+  initWorkers();
+  await loadAlgo();
+}
+let bootWired = false;
+
+function fillHeader(algo) {
+  const m = weightsFor(algo);
+  document.getElementById('targetName').textContent = `${m.target} (${m.target_type})`;
+  document.getElementById('fvu').textContent = fmt(m.fvu, 4);
+  const gt = SUMMARY_V3[algo];
+  document.getElementById('f1s').textContent = gt
+    ? `${fmt(gt.val)} / ${fmt(gt.test)}  [${gt.cls}, gap=${fmt(gt.gap)}] (summary_v3.json)`
+    : `${fmt(m.val_f1)} / ${fmt(m.test_f1)}`;
+}
+function renderLabels(algo) {
+  const fl = LABELS[algo]; if (!fl || algo !== curAlgo) return;
+  FL = fl;
+  const tbody = document.querySelector('#featTable tbody'); tbody.innerHTML = '';
+  FL.rows.slice(0, 15).forEach(r => {
+    const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'fl:' + r.feature);
+    tr.innerHTML = `<td>f${r.feature}</td><td>${r.label}</td><td>${fmt(r.precision)}</td><td>${fmt(r.recall)}</td><td>${fmt(r.f1)}</td><td>${r.n_fire}/${FL.total_sites}</td>`;
+    tbody.appendChild(tr);
+  });
+  labelByFeat = {}; FL.rows.forEach(r => labelByFeat[r.feature] = r);
+}
+
+async function loadAlgo() {
+  const gen = ++algoGen, algo = curAlgo;
+  ++graphGen; ++ctxGen;
+  if (algoAbort) algoAbort.abort(); if (graphAbort) graphAbort.abort(); if (ctxAbort) ctxAbort.abort();
+  cancelSpec(); abortOtherAlgos(algo); stopPlay(); clearProblem();
+  G = null; selected = null; W = weightsFor(algo);
+  const me = LOCAL.models[algo]; if (me) { if (me.state === 'failed') delete LOCAL.models[algo]; else me.used = Date.now(); }
+  if (typeof drawAttribution === 'function') drawAttribution();
+  showSkeleton();
+  setStatus('Loading ' + algo + '…');
+  fillHeader(algo);                                 // target, FVU and scores come from the small summary: instant
+  ensureLocalModel(algo);                           // start the model download straight away, in parallel with everything else
+  if (LABELS[algo]) renderLabels(algo);
+  else ensureLabels(algo).then(() => renderLabels(algo), e => { if (!(e instanceof StaleError)) console.warn('labels', e && e.message); });
+  if (gen !== algoGen) return;
+  await loadGraph();
+}
+
+async function loadGraph(seedOverride, attempt = 0) {
+  const gen = ++graphGen, algo = curAlgo;
+  ++ctxGen; if (ctxAbort) ctxAbort.abort();
+  if (graphAbort) graphAbort.abort();
+  clearTimeout(paramTimer);
+  stopPlay();                                       // a running simulation ends the instant new parameters are requested
+  clearProblem();
+  const P = readParams();
+  if (!P) return;                                   // invalid/incomplete input: keep what is on screen
+  const seed0 = seedOverride !== undefined ? seedOverride : P.seed;
+  dropStale(gkey(algo, P.n, P.p, seed0));
+  cancelComputing(gkey(algo, P.n, P.p, seed0));
+  const wasCached = isCached(algo, P.n, P.p, seed0);
+  const pr = graphFor(algo, P.n, P.p, seed0, false);   // marks an in-flight prefetch of this graph as user-requested
+  if (!wasCached) cancelSpec();                        // user request outranks background prefetch
+  setPending(!wasCached);
+  if (!wasCached) {
+    setStatus(progressText(algo));
+    // early look: the shape of the graph is one tiny request, so show it long before the model has arrived
+    getInstance(algo, P.n, P.p, seed0).then(inst => {
+      if (gen !== graphGen || algo !== curAlgo || G || !inst || inst.error) return;
+      G = { n: inst.n, length: inst.length, adj: inst.adj, source: inst.source, target_true: inst.target_true, seed: inst.seed,
+            z: null, msgs: null, node_fts: null, _preview: true, _inst: inst };
+      document.getElementById('stepRange').max = Math.max(0, G.length - 1); document.getElementById('stepRange').value = 0; curStep = 0;
+      setPending(false); setStatus(progressText(algo));
+      drawGraph();
+    }, () => {});
+  } else setStatus('loading…');
+  let res;
+  try { res = await pr; }
+  catch (e) {
+    if (isAbort(e) || gen !== graphGen || algo !== curAlgo) return;
+    if (e instanceof StaleError) return showStale();
+    if (attempt < 2) {
+      setStatus('The connection is slow. Trying again…');
+      await sleep(1500 * (attempt + 1));
+      if (gen === graphGen && algo === curAlgo) return loadGraph(seedOverride, attempt + 1);
+      return;
+    }
+    setPending(false);
+    return showProblem('Could not load this graph just now. Check your connection, then press Retry.', () => loadGraph(seedOverride));
+  }
+  if (gen !== graphGen || algo !== curAlgo) return; // a newer request superseded this one
+  if (res.error) { console.warn(res.trace); setPending(false); setStatus('This graph could not be built. Try “New random graph”.'); return; }
+  G = res.g;
+  const seed = res.seed;
+  document.getElementById('inSeed').value = seed;
+  setStatus(`${curAlgo}: n=${G.n}, length=${G.length}, seed=${seed}` + (G._local ? ' · in-browser model' : ' · server model'));
+  curStep = 0;
+  document.getElementById('stepRange').max = Math.max(0, G.length - 1);
+  document.getElementById('stepRange').value = 0;
+  selected = null;
+  setPending(false);
+  drawGraph(); drawAttribution();
+  ensureWeights(algo).catch(e => { if (e instanceof StaleError) showStale(); });   // the large weights follow right after the graph is on screen
+  speculate(algo, P.n, P.p, seed);                  // warm the likely next changes in the background
+  maybePrefetch();
+}
+
+// ---------- pseudo-code pane ----------
+const PC = { algo: null };
+const PC_KW = /\b(for|each|if|else|while|repeat|until|return|then|and|or|is|not|in|to|do|run|take|call)\b/g;
+const PC_LV = ['#64748b', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777', '#0891b2'];       // colour = nesting depth of the line
+const PC_BG = ['#f1f5f9', '#dbeafe', '#d1fae5', '#fef3c7', '#ede9fe', '#fce7f3', '#cffafe'];
+const escHtml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function pseudoNow() {
+  if (!G || !G.target_true) return null;
+  const inst = G._inst || G._pinst || (G._pinst = { n: G.n, adj: G.adj, source: G.source, target_true: G.target_true });
+  return PSEUDO.forStep(curAlgo, inst, curStep);
+}
+function renderPseudo(P) {
+  const box = document.getElementById('pcCode'); if (!box) return;
+  const code = PSEUDO.CODE[curAlgo];
+  if (PC.algo !== curAlgo) {
+    PC.algo = curAlgo;
+    document.getElementById('pcName').textContent = curAlgo;
+    box.innerHTML = code ? code.map(([ind, txt], i) => { const lv = Math.min(ind, 6);
+      return `<div class="pl${ind === 0 ? ' proc' : ''}" data-i="${i}" role="listitem" style="--lc:${PC_LV[lv]};--lb:${PC_BG[lv]}"><span class="ln">${i + 1}</span><span class="tx" style="padding-left:${ind * 1.4}em">${escHtml(txt).replace(PC_KW, '<span class="kw">$1</span>')}</span><span class="bd" hidden></span></div>`; }).join('') : '';
+    box.scrollTop = 0;
+  }
+  const head = document.getElementById('pcHead'), note = document.getElementById('pcNote'), st = document.getElementById('pcState');
+  if (!code) { head.textContent = ''; note.textContent = 'No pseudo-code is available for this algorithm.'; st.innerHTML = ''; return; }
+  const cur = new Set(P ? P.cur : []), ctx = new Set(P ? P.ctx : []), bind = P ? P.bind : {};
+  let first = null;
+  box.querySelectorAll('.pl').forEach(el => {
+    const i = +el.dataset.i, on = cur.has(i), cx = !on && ctx.has(i), b = bind[i];
+    el.classList.toggle('on', on); el.classList.toggle('cx', cx);
+    const bd = el.querySelector('.bd'); if (b && (on || cx)) { bd.textContent = b; bd.hidden = false; } else bd.hidden = true;
+    if (on && first === null) first = el;
+  });
+  if (first) { const top = first.offsetTop - box.offsetTop; if (top < box.scrollTop + 4 || top + first.offsetHeight > box.scrollTop + box.clientHeight - 4) box.scrollTop = Math.max(0, top - 60); }
+  head.textContent = P ? `Step ${curStep}: ${P.head}` : '';
+  note.textContent = P ? P.note : 'Waiting for the first steps…';
+  st.innerHTML = P ? P.state.map(([k, v]) => `<dt>${escHtml(String(k))}</dt><dd>${escHtml(String(v))}</dd>`).join('') : '';
+}
+
+// ---------- algorithm info card: training scores + why each target type / CLEAN / SEVERE ----------
+const TYPE_INFO = {
+  mask: ['mask', 'one true/false answer per node (any number of nodes can be true)'],
+  mask_one: ['mask_one', 'one true/false answer per node, but exactly one node is true at a time (the model picks one node)'],
+  categorical: ['categorical', 'one class per node, chosen from a small fixed set of labels'],
+  scalar: ['scalar', 'one number per node (a distance or a cost, not a yes/no)']
+};
+const ALGO_WHY = {
+  bfs: 'Output is "has the search reached this node?", a yes/no per node, and many nodes can be reached, so it is a mask.',
+  dfs: 'Each node is in one of three states while the search runs (not seen yet, being explored, finished). That is a class per node, so it is categorical.',
+  bellman_ford: 'The answer is the shortest distance from the source to each node: a number, so scalar.',
+  dijkstra: 'Same as Bellman-Ford: the shortest distance to each node is a number, so scalar.',
+  dag_shortest_paths: 'Also a shortest distance per node, a number, so scalar.',
+  mst_prim: 'The tracked quantity is each node’s cheapest connecting edge weight (its key), a number, so scalar.',
+  mst_kruskal: 'Each round the algorithm looks at exactly one edge, so one node is marked at a time (the start of that edge): mask_one.',
+  topological_sort: 'Each round exactly one node is placed next in the order (the head of the order so far): mask_one.',
+  articulation_points: 'Each node is either a cut vertex (removing it splits the graph) or it is not. Several can be cut vertices at once, so it is a mask.',
+  bridges: 'The search keeps a state per node while it looks for edges whose removal disconnects the graph. A class per node, so categorical.',
+  strongly_connected_components: 'The search keeps a state per node while it groups nodes into components. A class per node, so categorical.',
+  floyd_warshall: 'Each round one intermediate node k is tried for all pairs, so exactly one node is marked at a time: mask_one.'
+};
+const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
+function algoLabel(a) {
+  const gt = SUMMARY_V3[a]; return gt ? `${a} (${ALGOS[a].target_type}) · test ${pct(gt.test)} [${gt.cls}]` : a;
+}
+function renderAlgoInfo() {
+  const box = document.getElementById('algoInfoBody'); if (!box || !ALGOS || !ALGOS[curAlgo]) return;
+  const a = curAlgo, gt = SUMMARY_V3[a], tr = TRAIN_V3[a], ty = ALGOS[a].target_type, ti = TYPE_INFO[ty];
+  const clean = gt && gt.cls === 'CLEAN';
+  let h = `<div class="aiHead"><b>${escHtml(a)}</b> <span class="aiTag ${clean ? 'ok' : 'bad'}">${gt ? gt.cls : ''}</span></div>`;
+  if (gt && tr) {
+    h += `<div class="aiGrid">
+      <div><span>Best validation (16-node graphs)</span><b>${pct(gt.val)}</b></div>
+      <div><span>Test (64-node graphs, never seen)</span><b>${pct(gt.test)}</b></div>
+      <div><span>Drop from validation to test</span><b>${(gt.gap * 100).toFixed(1)} pp</b></div>
+      <div><span>Training</span><b>${tr.steps.toLocaleString()} steps, ${tr.min} min</b></div>
+      <div><span>Reached 90% on validation at</span><b>${tr.at90 === null ? 'never' : 'step ' + tr.at90.toLocaleString()}</b></div>
+      <div><span>Validation, last 1,000 steps</span><b>${pct(tr.tmin, 0)}–${pct(tr.tmax, 0)} (avg ${pct(tr.tail)})</b></div>
+    </div>`;
+    h += `<p><b>${clean ? 'CLEAN' : 'SEVERE'}:</b> ` + (clean
+      ? `the test score stays close to the validation score (drop ${(gt.gap * 100).toFixed(1)} pp, below the 10 pp line), so what the model learned still works on graphs four times bigger than the ones it trained on.`
+      : `it does very well on the 16-node graphs it trained on, but on 64-node graphs the score falls by ${(gt.gap * 100).toFixed(1)} pp (above the 40 pp line). The model learned something tied to the training size instead of the general procedure. This site runs it on small graphs, where its score is high.`) + '</p>';
+  }
+  h += `<p><b>Why ${ty}:</b> ${escHtml(ALGO_WHY[a] || '')} A <i>${ti[0]}</i> target means ${ti[1]}.</p>`;
+  box.innerHTML = h;
+  const rows = document.getElementById('algoInfoTable');
+  if (rows && !rows.dataset.done) {
+    rows.dataset.done = 1;
+    rows.innerHTML = '<tr><th>algorithm</th><th>target type</th><th>validation</th><th>test</th><th>drop</th><th></th></tr>' + Object.keys(ALGOS).map(k => {
+      const g = SUMMARY_V3[k]; return `<tr data-a="${k}"><td>${k}</td><td>${ALGOS[k].target_type}</td><td>${g ? pct(g.val) : '-'}</td><td>${g ? pct(g.test) : '-'}</td><td>${g ? (g.gap * 100).toFixed(1) + ' pp' : '-'}</td><td><span class="aiTag ${g && g.cls === 'CLEAN' ? 'ok' : 'bad'}">${g ? g.cls : ''}</span></td></tr>`;
+    }).join('');
+    rows.addEventListener('click', e => { const tr = e.target.closest('tr[data-a]'); if (!tr) return; const sel = document.getElementById('inAlgo'); sel.value = tr.dataset.a; sel.dispatchEvent(new Event('change')); });
+  }
+  if (!renderAlgoInfo.seen) { renderAlgoInfo.seen = 1; document.getElementById('algoInfo').open = innerWidth >= 1181 && innerHeight >= 860; }   // small or short screens start collapsed so the three views stay in sight
+  document.querySelectorAll('#algoInfoTable tr[data-a]').forEach(r => r.classList.toggle('cur', r.dataset.a === a));
+}
+
+function nodePositions(n) {
+  const cx=126, cy=105, R=85, pos=[];
+  for (let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; pos.push([cx+R*Math.cos(a), cy+R*Math.sin(a)]); }
+  return pos;
+}
+const CAT_PALETTE = ['#e5e7eb', '#f59e0b', '#111827', '#60a5fa', '#34d399', '#a78bfa'];
+
+function colorForNode(i, step) {
+  if (!G.target_true) return '#e5e7eb';
+  const row = step < G.target_true.length ? G.target_true[step] : G.target_true[G.target_true.length-1];
+  const v = row[i];
+  if (W.target_type === 'categorical') return CAT_PALETTE[(v|0) % CAT_PALETTE.length];
+  if (W.target_type === 'mask' || W.target_type === 'mask_one') return v ? '#34d399' : '#e5e7eb';
+  // scalar: heat by magnitude relative to the row's own range
+  const finite = row.filter(x => Number.isFinite(x));
+  const mx = Math.max(...finite.map(Math.abs), 1e-6);
+  const t = Math.min(1, Math.abs(v) / mx);
+  return `rgba(96,165,250,${0.15 + 0.75*t})`;
+}
+
+function drawGraph() {
+  if (!G || !W) return;
+  const svg = document.getElementById('graphSvg'); svg.innerHTML = '';
+  const n = G.n, pos = nodePositions(n);
+  for (let i=0;i<n;i++) for (let j=i+1;j<n;j++) if (G.adj[i][j] > 0) {
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1',pos[i][0]); l.setAttribute('y1',pos[i][1]);
+    l.setAttribute('x2',pos[j][0]); l.setAttribute('y2',pos[j][1]);
+    l.setAttribute('stroke','#d1d5db'); svg.appendChild(l);
+  }
+  for (let i=0;i<n;i++) {
+    const c = document.createElementNS(svgNS,'circle');
+    c.setAttribute('cx',pos[i][0]); c.setAttribute('cy',pos[i][1]); c.setAttribute('r', i===G.source?13:11);
+    c.setAttribute('fill', i===G.source ? '#f59e0b' : colorForNode(i, curStep));
+    c.setAttribute('stroke', selected && selected.node===i ? '#111827' : '#374151');
+    c.setAttribute('stroke-width', selected && selected.node===i ? 3 : 1);
+    c.style.cursor = 'pointer'; c.setAttribute('data-tip', 'node:' + i);
+    c.addEventListener('click', () => selectTarget(i));
+    svg.appendChild(c);
+    const t = document.createElementNS(svgNS,'text');
+    t.setAttribute('x',pos[i][0]); t.setAttribute('y',pos[i][1]+4); t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size','9'); t.style.pointerEvents = 'none'; t.textContent = i;
+    svg.appendChild(t);
+  }
+  const PN = pseudoNow();
+  if (PN) for (const i of PN.nodes) { if (i < 0 || i >= n) continue; const rg = document.createElementNS(svgNS, 'circle');
+    rg.setAttribute('cx', pos[i][0]); rg.setAttribute('cy', pos[i][1]); rg.setAttribute('r', i === G.source ? 17 : 15); rg.setAttribute('fill', 'none');
+    rg.setAttribute('stroke', '#2563eb'); rg.setAttribute('stroke-width', 2); rg.setAttribute('stroke-dasharray', '3 2'); rg.style.pointerEvents = 'none'; svg.appendChild(rg); }
+  const dots = typeof avDotsFor === 'function' ? avDotsFor(Math.min(curStep, G.length - 2)) : null;
+  if (dots) for (const [i, list] of Object.entries(dots)) {
+    const fs = list.slice(0, 5), w = fs.length * 7.5;
+    fs.forEach((nd, q) => { const d = document.createElementNS(svgNS, 'circle');
+      d.setAttribute('cx', pos[i][0] - w / 2 + 3.75 + q * 7.5); d.setAttribute('cy', pos[i][1] + 17); d.setAttribute('r', 2.9);
+      d.setAttribute('fill', `var(${AV_GROUP[nd.group][0]})`); d.setAttribute('stroke', AV.pinned === nd.id ? '#111827' : 'none'); d.setAttribute('stroke-width', 1.2);
+      d.setAttribute('data-tip', 'an:' + nd.id); d.style.cursor = 'pointer';
+      d.addEventListener('click', ev => { ev.stopPropagation(); AV.pinned = nd.id; avHighlight(); avInspect(AV.data.nodesById[nd.id]); drawGraph(); });
+      svg.appendChild(d); });
+  }
+  drawStepLabel();
+  let legend = G.source !== null ? `<span style="color:#f59e0b">&#9679;</span> source &nbsp;` : '';
+  legend += W.target_type === 'categorical' ? 'colors = classes' :
+            (W.target_type === 'scalar' ? 'blue intensity = magnitude' : '<span style="color:#34d399">&#9679;</span> true &nbsp; <span style="color:#9ca3af">&#9679;</span> false');
+  if (PN && PN.nodes.length) legend += ' &nbsp; <span style="color:#2563eb">&#9676;</span> active in this step';
+  document.getElementById('graphLegend').innerHTML = legend;
+  if (window.HoverCard) HoverCard.refresh();
+  document.getElementById('clickHint').textContent = `Click a node to explain the model's ${W.target} prediction for it at the current step.`;
+  renderNodeTable();
+  renderPseudo(PN);
+}
+
+function drawStepLabel() {
+  if (!G) return;
+  const wait = !G._preview && G._computing && Math.min(curStep, G.length - 2) >= G.z.length;
+  document.getElementById('stepLbl').textContent = `step ${curStep} of ${G.length-1}` + (wait ? ' (computing\u2026)' : '');
+}
+
+function renderNodeTable() {
+  const step = Math.min(curStep, G.length - 2);
+  const head = document.getElementById('nodeTableHead'), body = document.getElementById('nodeTableBody');
+  const catCols = W.target_type === 'categorical';
+  head.innerHTML = `<th><span class="tt" data-tip="cell:0:node">node</span></th><th><span class="tt" data-tip="cell:0:prev">${W.target}(${step})</span></th>${step>=0?`<th><span class="tt" data-tip="cell:0:pred">pred ${W.target}(${step+1})</span></th>`:''}<th><span class="tt" data-tip="cell:0:true">true(${step+1})</span></th>`;
+  NODE_PRED = {};
+  body.innerHTML = '';
+  if (step < 0) return;
+  const prevRow = G.target_true ? G.target_true[step] : null;
+  const trueRow = G.target_true ? G.target_true[step+1] : null;
+  const haveStep = !G._preview && G.z && step < G.z.length;
+  const haveW = haveStep && !!W.w_enc;      // predictions need the large weights and the model's steps; until they arrive the table shows the truth only
+  G._need = !haveW;
+  for (let node = 0; node < G.n; node++) {
+    if (!haveW) {
+      const tv = trueRow ? trueRow[node] : null, pv = prevRow ? prevRow[node] : null;
+      NODE_PRED[node] = '\u2026';
+      const tr0 = document.createElement('tr'); tr0.setAttribute('data-tip', 'node:' + node);
+      tr0.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(pv,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="color:var(--muted)">\u2026</td><td data-tip="cell:${node}:true">${fmt(tv,catCols?0:2)}</td>`;
+      body.appendChild(tr0);
+      continue;
+    }
+    const featsCur = encode([...G.z[step][node], ...G.msgs[step][node]]);
+    const featsPrev = step > 0 ? encode([...G.z[step-1][node], ...G.msgs[step-1][node]]) : new Array(W.F).fill(0);
+    const H = W.hidden;
+    const hiddenIn = step > 0 ? reconstruct(featsPrev) : new Array(H).fill(0);
+    const nxt = reconstruct(featsCur);
+    const h_t = [...G.node_fts[step][node], ...hiddenIn, ...nxt];
+    const logits = decodeAllClasses(h_t);
+    let predStr;
+    if (catCols) { const c = logits.indexOf(Math.max(...logits)); predStr = 'class ' + c; }
+    else if (W.target_type === 'scalar') predStr = fmt(logits[0], 2);
+    else predStr = fmt(1/(1+Math.exp(-logits[0])), 2);
+    const realP = typeof avRealPred === 'function' ? avRealPred(step, node) : null;
+    const approx = realP === null; if (!approx) predStr = realP;
+    const trueVal = trueRow ? trueRow[node] : null;
+    const prevVal = prevRow ? prevRow[node] : null;
+    NODE_PRED[node] = predStr;
+    const tr = document.createElement('tr'); tr.setAttribute('data-tip', 'node:' + node);
+    if (node === selected?.node) tr.style.background = '#f3f4f6';
+    tr.innerHTML = `<td>${node}${node===G.source?' (src)':''}</td><td data-tip="cell:${node}:prev">${fmt(prevVal,catCols?0:2)}</td><td data-tip="cell:${node}:pred" style="color:var(--pos)${approx ? ';font-style:italic;opacity:.55' : ''}">${predStr}</td><td data-tip="cell:${node}:true">${fmt(trueVal,catCols?0:2)}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+function selectTarget(node) {
+  if (!G) return;
+  if (G._preview) { setStatus(progressText(curAlgo)); return; }   // the model is still on its way
+  const step = Math.min(curStep, G.length - 2);
+  if (step < 0) {
+    document.getElementById('question').textContent = 'This graph has no explainable step (length=' + G.length + '). Click "New random graph".';
+    return;
+  }
+  selected = { node, step };
+  drawGraph(); drawAttribution();
+}
+
+// ---------------- linear-algebra engine (generic over target type) ----------------
+function dot(a, b) { let s=0; for (let i=0;i<a.length;i++) s+=a[i]*b[i]; return s; }
+function matvec(Wm, x) { const out = new Array(Wm[0].length).fill(0); for (let i=0;i<x.length;i++) for (let j=0;j<Wm[i].length;j++) out[j]+=Wm[i][j]*x[i]; return out; }
+function encode(x) {
+  const xn = x.map((v,i)=>(v-W.mu_x[i])/W.sd_x[i]);
+  const pre = matvec(W.w_enc, xn).map((v,i)=>v+W.b_enc[i]);
+  const act = pre.map(v=>Math.max(0,v));
+  const idx = act.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).slice(0, W.K).map(p=>p[1]);
+  const feats = new Array(W.F).fill(0);
+  idx.forEach(i => feats[i] = act[i]);
+  return feats;
+}
+function reconstruct(feats) { const h = matvec(W.w_dec, feats); return h.map((v,i)=>v+W.b_dec[i]); }
+function decodeAllClasses(hT) { return matvec(W.W_dec, hT).map((v,i)=>v+W.b_dec_target[i]); } // C logits
+function featureInputGrad(f) { return W.w_enc.map((row,i)=>row[f]/W.sd_x[i]); }
+
+async function loadContexts(f) {
+  const gen = ++ctxGen, algo = curAlgo;
+  if (ctxAbort) ctxAbort.abort();
+  ctxAbort = new AbortController();
+  const n = document.getElementById('inN').value, p = document.getElementById('inP').value;
+  const box = document.getElementById('ctxBox');
+  try {
+    const ctxs = await getJSON(`/api/contexts?algo=${algo}&feature=${f}&n=${n}&p=${p}`, ctxAbort.signal);
+    if (gen !== ctxGen || algo !== curAlgo) return;   // stale: user moved to another feature/graph/algo
+    if (ctxs.error) { box.textContent = 'context lookup failed: ' + ctxs.error; return; }
+    if (!ctxs.length) { box.textContent = 'no firing examples found in a fresh 200-episode sample.'; return; }
+    box.innerHTML = ctxs.map(c => renderCtxThumb(c)).join('') +
+      '<div class="small" style="margin-top:4px;">Filled = true; ring = source; dashed = the node the feature fired on. Sampled live from 200 fresh episodes (not the fixed labeling set).</div>';
+  } catch (e) { if (e.name !== 'AbortError') box.textContent = 'context lookup failed: ' + e.message; }
+}
+
+function renderCtxThumb(c) {
+  const N = c.adj.length, pos = nodePositions(N);
+  let svg = `<svg width="110" height="110" viewBox="-10 -10 272 240">`;
+  for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) if (c.adj[i][j]>0)
+    svg += `<line x1="${pos[i][0]}" y1="${pos[i][1]}" x2="${pos[j][0]}" y2="${pos[j][1]}" stroke="#d1d5db"/>`;
+  const row = c.target_true ? c.target_true[Math.min(c.step, c.target_true.length-1)] : null;
+  for (let i=0;i<N;i++) {
+    let fill = '#e5e7eb';
+    if (row) {
+      const v = row[i];
+      fill = W.target_type==='categorical' ? CAT_PALETTE[(v|0)%CAT_PALETTE.length] : (W.target_type==='scalar' ? '#93c5fd' : (v?'#34d399':'#e5e7eb'));
+    }
+    svg += `<circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="10" fill="${fill}" stroke="${i===c.source?'#f59e0b':'#374151'}" stroke-width="${i===c.source?3:1}"/>`;
+    if (i===c.node) svg += `<circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="15" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="3,2"/>`;
+  }
+  svg += '</svg>';
+  return `<div class="ctxThumb">${svg}<div>step ${c.step} &middot; node ${c.node}<br>act ${fmt(c.activation,2)}</div></div>`;
+}
+
+boot();
+</script>
+</body>
+</html>

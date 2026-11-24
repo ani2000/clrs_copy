@@ -262,7 +262,7 @@ def _etag(data):
 
 STATIC_FILES = {'viewer3.html': 'text/html; charset=utf-8', 'mpnn.js': 'application/javascript',
                 'mpnn_worker.js': 'application/javascript', 'explain.js': 'application/javascript', 'attrib.js': 'application/javascript', 'attrview.js': 'application/javascript',
-                'clrs-edge-attrib.js': 'application/javascript'}
+                'clrs-edge-attrib.js': 'application/javascript', 'demo.html': 'text/html; charset=utf-8'}
 def _build_id():
     """Cache key for every versioned URL: changes whenever any served page, script or model file changes."""
     try:
@@ -285,6 +285,7 @@ ALGOS_JSON = json.dumps({a: dict(target=META[a]['target'], target_type=META[a]['
 
 
 GZ_STATIC = {}        # (file, content hash) -> gzip bytes, compressed once
+PAGES = ('viewer3.html', 'demo.html')       # pages with the build id and the algorithm list filled in; /demo is the previous version (node-site transcoder)
 MODEL_RE = re.compile(r'^models/([a-z_]+)\.(json|bin)$')
 EDGE_RE = re.compile(r'^edge_tc/(?:([a-z_]+)\.(json|bin)|clrs-edge-summary\.json)$')    # edge-site transcoder files; the algorithm must be one we serve
 
@@ -391,7 +392,9 @@ class Handler(BaseHTTPRequestHandler):
                 inst, _ = build_instance(algo, n, p, seed, META[algo])   # sampler only: cheap, no model run
                 self._send(json.dumps(inst).encode(), cache=versioned)   # deterministic for its query: cacheable when versioned
             else:
-                path = u.path.lstrip('/') or 'viewer3.html'
+                if u.path == '/demo/':                               # relative script paths need /demo without the trailing slash
+                    self.send_response(301); self.send_header('Location', '/demo' + ('?' + u.query if u.query else '')); self.send_header('Content-Length', '0'); self.end_headers(); return
+                path = 'demo.html' if u.path == '/demo' else (u.path.lstrip('/') or 'viewer3.html')
                 m = MODEL_RE.match(path)
                 me = EDGE_RE.match(path)
                 if me and (me.group(1) is None or me.group(1) in META):
@@ -408,13 +411,13 @@ class Handler(BaseHTTPRequestHandler):
                     data = open(path, 'rb').read()
                 except OSError:
                     self.send_error(404, 'not found'); return
-                if path == 'viewer3.html':
+                if path in PAGES:
                     data = data.replace(b'__BUILD__', BUILD.encode())
                     data = data.replace(b'__ALGOS_JSON__', ALGOS_JSON.replace(b'<', b'\\u003c'))
                 # pages and scripts are text: send them gzip-compressed (about 3x smaller; model bundles are floats and barely shrink)
                 gz = path in STATIC_FILES and 'gzip' in self.headers.get('Accept-Encoding', '')
                 tag = None
-                if m or me or path == 'viewer3.html':
+                if m or me or path in PAGES:
                     tag = '"' + hashlib.sha1(data).hexdigest()[:20] + ('-gz' if gz else '') + '"'
                     if self.headers.get('If-None-Match') == tag:
                         self.send_response(304); self.send_header('ETag', tag); self.send_header('Cache-Control', cache)
