@@ -261,7 +261,8 @@ def _etag(data):
 
 
 STATIC_FILES = {'viewer3.html': 'text/html; charset=utf-8', 'mpnn.js': 'application/javascript',
-                'mpnn_worker.js': 'application/javascript', 'explain.js': 'application/javascript', 'attrib.js': 'application/javascript', 'attrview.js': 'application/javascript'}
+                'mpnn_worker.js': 'application/javascript', 'explain.js': 'application/javascript', 'attrib.js': 'application/javascript', 'attrview.js': 'application/javascript',
+                'clrs-edge-attrib.js': 'application/javascript'}
 def _build_id():
     """Cache key for every versioned URL: changes whenever any served page, script or model file changes."""
     try:
