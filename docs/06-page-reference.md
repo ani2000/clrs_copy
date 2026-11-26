@@ -38,7 +38,6 @@ A collapsible card (open by default on screens at least 1181 px wide and 860 px 
 - **Click a node** to explain the model's prediction for that node at the current step (this is what builds the attribution graph).
 - **Step slider and Play.** The slider goes over the algorithm's steps; the label says "step 1 of 5". Play moves through the steps automatically and traces the graph at each. The explained node stays the same; the step changes.
 - **Legend.** source, true, false (or "colors = classes", "blue intensity = magnitude"), "active in this step".
-- **Message map.** A sender-by-receiver grid for the explained graph. Shade = the summed influence of the pruned latents of that message at one step; outlined cells are real edges; hovering a cell shows the number; clicking a cell pins its most influential latent. The step buttons above it switch between the steps of the window. See `02-glossary.md`, "Message map".
 
 ## 5. The attribution graph panel
 
@@ -87,6 +86,12 @@ Example: "Attribution graph (edge-site transcoder): 2,633 nodes / 58,740 edges a
 
 When a trace is running the status reads `tracing the circuit...`, `tracing...` or `loading the model into your browser...`; if something goes wrong: "Could not trace this prediction just now. Click the node again to retry." or "Could not load what is needed for this view. Retrying...".
 
+### 5.6 Message map (below the graph)
+The **message map** sits in the attribution panel, under the status line (it used to be in the simulation panel; it was moved so that the simulation panel is short and the graph starts higher on the page). A sender-by-receiver grid for the explained graph. Shade = the summed influence of the pruned latents of that message at one step; outlined cells are real edges; hovering a cell shows the number; clicking a cell pins its most influential latent. The step buttons above it switch between the steps of the window. See `02-glossary.md`, "Message map".
+
+### 5.7 How to read the attribution graph (guide)
+The nine-bullet guide for reading the drawing (latent circles, colours, error nodes, leaves and bias, edges, exactness, Pruned / All, Supernodes, Clamp) is a collapsible block at the bottom of the attribution panel, closed by default. See also section 7.5.
+
 ## 6. The pseudo-code panel
 
 - Header: the algorithm name, then the code, one line per row with its number. The language is plain pseudo-code (`for each`, `if`, `while`, `repeat ... until`, assignments with an arrow).
@@ -112,7 +117,7 @@ The named latents of the algorithm (up to 20, best F1 first) with the condition,
 `hidden_dim 128`, the target, "val / test score (OOD)" from `summary_v3.json`, and the facts of this algorithm's transcoder: size, tier, FVU (validation, train, 64 nodes), the error by step with a small curve, dead latents, active latents per pair, replacement fidelity, winner flips, hidden-state error, training size and time. All from `edge_tc/clrs-edge-summary.json`; the test compares them with `report.json`.
 
 ### 7.5 How to read the attribution graph
-A short guide (nine bullets) inside the page.
+The short guide (nine bullets) is no longer in the lower part; it is inside the attribution graph panel (section 5.7).
 
 ### 7.6 Inspector
 Shows the pinned node, or the hovered one while nothing is pinned. For a **latent** the sections are: header (latent, step, pair, pair kind), activation, influence, where it fires in this graph; **What it means** (name and tier or "Unnamed", effect, firing rate, kinds of pair); **Best-matching conditions (held-out graphs)**; **Strongest activations** with "show" buttons (these load the graph of that example and explain that receiver at that step); **Total effect on the targets**; **Incoming edges**; **Outgoing edges** (top ten by absolute weight, bars with signed values). For an **error node** the norm of the error; for a **leaf** its value and meaning; for the **bias** its role; for a **logit** its logit and probability; for a **supernode** its members.
@@ -124,9 +129,9 @@ Three buttons: "Clamp to -1x", "Ablate (x0)", "Amplify (x2)". The result table l
 
 | width | layout |
 |---|---|
-| at least 1181 px | three columns in the top row (simulation, graph, pseudo-code); two columns below; the right column of the lower part (inspector, intervention) stays in view while scrolling |
-| 761 to 1180 px | two columns in the top row (the graph spans the full width below); one column below |
-| 760 px and below | one column everywhere; code text and tables are scrollable instead of overflowing |
+| at least 1181 px | the top row has two panels (simulation on the left, pseudo-code on the right); the attribution graph has its own row below and spans the full width of the page; the lower part has two columns |
+| 761 to 1180 px | the same arrangement with narrower panels; the lower part has one column |
+| 760 px and below | one column everywhere (simulation, pseudo-code, graph in that order); code text and tables are scrollable instead of overflowing |
 
 The layout tests check that there is no horizontal overflow at 1440, 1024 and 390 px.
 

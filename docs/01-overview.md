@@ -4,7 +4,7 @@
 
 The CLRS-30 Circuit Tracer is a web site and the code, data and infrastructure behind it. It lets a visitor look inside small neural networks that were trained to execute twelve classic graph algorithms (from the CLRS-30 benchmark: breadth-first search, depth-first search, Bellman-Ford, Dijkstra, DAG shortest paths, Prim, Kruskal, topological sort, articulation points, bridges, strongly connected components, Floyd-Warshall).
 
-For one chosen algorithm and one small random graph the page shows three things side by side:
+For one chosen algorithm and one small random graph the page shows three things (the simulation and the pseudo-code side by side, with the attribution graph below them at full width):
 
 1. a **simulation** of the algorithm, step by step (what the algorithm's own state is);
 2. an **attribution graph** for the prediction the network makes at a chosen node and step: which internal features, carried on which edges, produced the answer, and how much each contributed;

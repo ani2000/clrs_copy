@@ -131,8 +131,9 @@ window.__early = {};
     .kv { gap:10px; } .kv span:last-child { text-align:right; }
   }
 
-  /* ---------- three views side by side: simulation | attribution graph | pseudo-code ---------- */
-  .stage { display:grid; grid-template-columns: minmax(270px, 1fr) minmax(0, 1.7fr) minmax(260px, 1fr); gap:14px; padding:14px 14px 0; align-items:start; }
+  /* ---------- simulation | pseudo-code on top, the attribution graph below at full width ---------- */
+  .stage { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 1.4fr); gap:14px; padding:14px 14px 0; align-items:start; }
+  #pnlAttr { grid-column:1 / -1; }
   .stage > .panel { min-width:0; }
   .pcname { font-family:var(--mono); font-size:12px; color:var(--ink-3); margin:-4px 0 6px; }
   .pccode { font-family:var(--mono); font-size:12px; line-height:1.55; border:1px solid var(--line); border-radius:6px; background:var(--surface); max-height:430px; overflow:auto; padding:4px 0; -webkit-overflow-scrolling:touch; }
@@ -156,11 +157,6 @@ window.__early = {};
   #pcState { margin-top:8px; }
   #pcState dd { overflow-wrap:anywhere; }
   .pcfoot { margin-top:8px; }
-  @media (min-width: 1181px) and (min-height: 720px) { #pnlSim, #pnlCode { position:sticky; top:8px; } #pnlCode { max-height:calc(100vh - 16px); overflow:auto; } }
-  @media (max-width: 1180px) {
-    .stage { grid-template-columns: minmax(260px, 1fr) minmax(0, 1fr); }
-    #pnlCode { order:2; } #pnlAttr { order:3; grid-column:1 / -1; }
-  }
   @media (max-width: 760px) {
     .stage { grid-template-columns: minmax(0, 1fr); padding:10px 10px 0; gap:10px; }
     #pnlAttr { grid-column:auto; }
@@ -287,22 +283,6 @@ window.__early = {};
     </div>
     <div class="small" id="clickHint">Click a node to explain the model's prediction for it at the current step.</div>
     <div class="small" id="graphLegend" style="margin-top:6px;"></div>
-    <div id="msgMap" class="msgmap"></div>
-  </div>
-
-  <div class="panel" id="pnlAttr">
-    <h2><span class="tt" data-tip="g:attrgraph">Attribution graph</span></h2>
-    <div id="question" class="question">Click a node in the simulation to trace the model's prediction for it.</div>
-    <div id="outprobs" class="outprobs"></div>
-    <div id="edgeNote" class="edgenote" hidden></div>
-    <div class="toolbar">
-      <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
-      <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button><button data-v="meaning" data-tip="g:bymeaning">By meaning</button></div>
-      <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
-    </div>
-    <div id="attribScroll" class="gscroll"><svg id="attribSvg" role="img" aria-label="Attribution graph"></svg></div>
-    <div id="avLegend" class="avlegend"></div>
-    <div id="gstat"></div>
   </div>
 
   <div class="panel" id="pnlCode">
@@ -318,6 +298,38 @@ window.__early = {};
       <span class="pclegend"><span><i style="background:#2563eb"></i>level 1</span><span><i style="background:#059669"></i>level 2</span><span><i style="background:#d97706"></i>level 3</span><span><i style="background:#7c3aed"></i>level 4</span><span><i style="background:#db2777"></i>level 5</span></span>
       Some algorithms record several steps for one line, so a line can stay highlighted for a few steps.</div>
   </div>
+
+  <div class="panel" id="pnlAttr">
+    <h2><span class="tt" data-tip="g:attrgraph">Attribution graph</span></h2>
+    <div id="question" class="question">Click a node in the simulation to trace the model's prediction for it.</div>
+    <div id="outprobs" class="outprobs"></div>
+    <div id="edgeNote" class="edgenote" hidden></div>
+    <div class="toolbar">
+      <div class="seg" id="pruneSeg"><button class="active" data-v="pruned" data-tip="g:pruned">Pruned</button><button data-v="all" data-tip="g:all">All</button></div>
+      <div class="seg" id="viewSeg"><button class="active" data-v="bynode" data-tip="g:bynode">By node</button><button data-v="supernodes" data-tip="g:supernodes">Supernodes</button><button data-v="meaning" data-tip="g:bymeaning">By meaning</button></div>
+      <span class="tt" data-tip="g:minw">min |w|</span><input data-tip="g:minw" id="minW" type="range" min="0" max="3" step="0.05" value="0"><span id="minWVal" style="width:32px;">0.00</span>
+    </div>
+    <div id="attribScroll" class="gscroll"><svg id="attribSvg" role="img" aria-label="Attribution graph"></svg></div>
+    <div id="avLegend" class="avlegend"></div>
+    <div id="gstat"></div>
+    <div id="msgMap" class="msgmap"></div>
+  
+    <details class="sec" id="secRead">
+      <summary>How to read the attribution graph</summary>
+      <div class="secbody"><ul class="readlist">
+      <li><b>Latent (circle).</b> One of the 8 active entries of a sparse code (out of 1,280) that rebuilds the <i>message</i> one node sends to another at one step. It sits in the column of the receiver; its label is <i>sender : latent</i>. Size grows with the activation.</li>
+      <li><b>Colour.</b> What the pair is in the input graph: a real edge, a non-edge or a self pair. It is not a meaning of the latent (the latents have no names yet). The MPNN computes a message for every ordered pair, so every pair has latents.</li>
+      <li><b>Error node (hatched).</b> What the latents of a pair did not rebuild. It is added back, so the graph is exact for the real run.</li>
+      <li><b>Leaves (squares) and bias (diamond).</b> The encoded inputs and the hints the model fed back, the hidden state from before the three-step window, and the constant terms.</li>
+      <li><b>Edges.</b> Blue pushes the destination up, red down. Weight = source activation &times; its effect on the destination, with the max-routing winners, the LayerNorm &sigma; and the node update&rsquo;s ReLU pattern frozen at their real values. A sender that wins no channel at a receiver has no outgoing edges there. Hidden state also reaches later steps directly, so some edges skip a step.</li>
+      <li><b>Exactness.</b> The line under the graph reports the largest difference, over every node shown, between its value and the sum of its incoming edges plus the bias.</li>
+      <li><b>Pruned / All.</b> Pruned keeps the nodes carrying 80% of the influence on the predictions and the edges carrying 98% of it among them. All shows the strongest 6,000 edges.</li>
+      <li><b>Supernodes.</b> All latents of one sender &rarr; receiver pair at one step are merged into one box; their edges are summed.</li>
+      <li><b>Clamp.</b> Pin a latent and clamp it. The real model is re-run and compared with the graph&rsquo;s first-order prediction; the graph freezes &sigma;, winners and TopK sets, so it is a guide, not a guarantee.</li>
+    </ul></div>
+    </details>
+  </div>
+
 </div>
 
 <div class="lower">
@@ -340,20 +352,6 @@ window.__early = {};
     <div class="kv"><span class="tt" data-tip="dyn:target">target</span><span id="targetName" data-tip="dyn:target">-</span></div>
     <div class="kv"><span class="tt" data-tip="dyn:f1">val / test score (OOD)</span><span id="f1s" data-tip="dyn:f1">-</span></div>
     <div id="etcFacts" class="etcfacts"></div></div>
-    </details>
-    <details class="sec" id="secRead">
-      <summary>How to read the attribution graph</summary>
-      <div class="secbody"><ul class="readlist">
-      <li><b>Latent (circle).</b> One of the 8 active entries of a sparse code (out of 1,280) that rebuilds the <i>message</i> one node sends to another at one step. It sits in the column of the receiver; its label is <i>sender : latent</i>. Size grows with the activation.</li>
-      <li><b>Colour.</b> What the pair is in the input graph: a real edge, a non-edge or a self pair. It is not a meaning of the latent (the latents have no names yet). The MPNN computes a message for every ordered pair, so every pair has latents.</li>
-      <li><b>Error node (hatched).</b> What the latents of a pair did not rebuild. It is added back, so the graph is exact for the real run.</li>
-      <li><b>Leaves (squares) and bias (diamond).</b> The encoded inputs and the hints the model fed back, the hidden state from before the three-step window, and the constant terms.</li>
-      <li><b>Edges.</b> Blue pushes the destination up, red down. Weight = source activation &times; its effect on the destination, with the max-routing winners, the LayerNorm &sigma; and the node update&rsquo;s ReLU pattern frozen at their real values. A sender that wins no channel at a receiver has no outgoing edges there. Hidden state also reaches later steps directly, so some edges skip a step.</li>
-      <li><b>Exactness.</b> The line under the graph reports the largest difference, over every node shown, between its value and the sum of its incoming edges plus the bias.</li>
-      <li><b>Pruned / All.</b> Pruned keeps the nodes carrying 80% of the influence on the predictions and the edges carrying 98% of it among them. All shows the strongest 6,000 edges.</li>
-      <li><b>Supernodes.</b> All latents of one sender &rarr; receiver pair at one step are merged into one box; their edges are summed.</li>
-      <li><b>Clamp.</b> Pin a latent and clamp it. The real model is re-run and compared with the graph&rsquo;s first-order prediction; the graph freezes &sigma;, winners and TopK sets, so it is a guide, not a guarantee.</li>
-    </ul></div>
     </details>
   </div>
   <div class="lcol side">

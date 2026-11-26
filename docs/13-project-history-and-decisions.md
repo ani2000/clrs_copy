@@ -94,6 +94,10 @@ Every workflow looks up resources by the project's tags and refuses to continue 
 
 The lower part of the page grew long; the sections were regrouped and made collapsible with the same arrow control as "About this algorithm". Collapsed by default where the content is secondary. The layout test checks that open sections do not overflow.
 
+### 2.11 Attribution graph at full width
+
+The graph used to share the top row with the simulation and the pseudo-code and had about one third of the page. It now has its own row and the full width (a panel 1,412 px wide at a 1,440 px window, measured by the layout test, where the three-column grid gave it about 640 px by the column ratios), so all 16 receiver columns and the step bands are visible without sideways scrolling. To keep the graph high on the page the message map moved from the simulation panel into the attribution panel, and the "How to read the attribution graph" guide moved into the same panel (collapsed by default). The pseudo-code and simulation panels are no longer sticky, because they no longer share a row with the graph.
+
 ## 3. Things that were tried and changed
 
 | item | what happened |

@@ -1,4 +1,4 @@
-// Layout and pseudo-code pane in a real browser: three panels side by side, one highlighted line per step for every algorithm, rings on the graph match the engine,
+// Layout and pseudo-code pane in a real browser: simulation and pseudo-code side by side, the attribution graph below them at full width, one highlighted line per step for every algorithm, rings on the graph match the engine,
 // the page shows what the engine says, node click, Play, tablet and phone layouts.   env: URL, ALGOS, CHROME_FLAGS, SHOTS
 // Drives headless Chrome (DevTools protocol, no dependencies) through the new layout + pseudo-code pane.
 import { spawn } from 'node:child_process';
@@ -36,11 +36,11 @@ await S('Page.navigate', { url: URL });
 const t1 = await waitFor(`typeof G !== 'undefined' && G && !G._preview && curAlgo === 'bfs' && document.querySelectorAll('#pcCode .pl').length > 0`);
 console.log('first graph + pseudo-code pane:', t1 === null ? 'NOT REACHED' : t1 + ' ms'); if (t1 === null) fail('first graph');
 await sleep(400);
-// layout: three panels side by side in the order simulation | attribution | pseudo-code
+// layout: simulation | pseudo-code on the first row, the attribution graph on its own row below, spanning the full width
 const lay = await ev(`(() => { const r = id => document.getElementById(id).getBoundingClientRect(); const a = r('pnlSim'), b = r('pnlAttr'), c = r('pnlCode');
   return { sim: [a.left, a.top, a.width].map(Math.round), attr: [b.left, b.top, b.width].map(Math.round), code: [c.left, c.top, c.width].map(Math.round), overflowX: document.documentElement.scrollWidth - innerWidth }; })()`);
 console.log('desktop 1440 layout (left, top, width):', JSON.stringify(lay));
-if (!(lay.sim[0] < lay.attr[0] && lay.attr[0] < lay.code[0])) fail('panel order'); if (Math.abs(lay.sim[1] - lay.attr[1]) > 4 || Math.abs(lay.attr[1] - lay.code[1]) > 4) fail('panels not on one row'); if (lay.overflowX > 0) fail('horizontal overflow');
+if (!(lay.sim[0] < lay.code[0])) fail('simulation must be left of the pseudo-code'); if (Math.abs(lay.sim[1] - lay.code[1]) > 4) fail('simulation and pseudo-code not on one row'); if (lay.attr[1] < lay.sim[1] + 100 || lay.attr[1] < lay.code[1] + 100) fail('attribution graph is not below'); if (lay.attr[2] < lay.code[0] + lay.code[2] - lay.sim[0] - 4) fail('attribution graph is not full width: ' + lay.attr[2]); if (lay.overflowX > 0) fail('horizontal overflow');
 await shot('desktop_bfs');
 
 const list = only.length ? only : ALL; const rowsOut = [];
@@ -75,6 +75,9 @@ await ev(`(() => { const r = document.getElementById('stepRange'); r.value = 2; 
 await ev(`(() => { const c = document.querySelectorAll('#graphSvg circle[data-tip^="node:"]')[3]; c.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`);
 const at = await waitFor(`!!(AV && AV.data && AV.data.key.startsWith('bfs|')) && document.querySelectorAll('#attribSvg circle, #attribSvg rect').length > 0`, 20000);
 console.log('node click -> attribution graph:', at === null ? 'NOT SHOWN' : at + ' ms'); if (at === null) fail('attribution after click');
+await sleep(500); await ev(`document.getElementById('pnlAttr').scrollIntoView()`); await sleep(300); await shot('desktop_attribution_after_click');
+const aw = await ev(`(() => { const p = document.getElementById('pnlAttr').getBoundingClientRect(), g = document.getElementById('attribSvg').getBoundingClientRect(), h = document.getElementById('attribScroll').getBoundingClientRect(); return { panel: Math.round(p.width), svg: Math.round(g.width), host: Math.round(h.width), svgH: Math.round(g.height) }; })()`);
+console.log('attribution graph widths:', JSON.stringify(aw)); if (aw.host < 1000) fail('attribution graph host narrower than 1000px at 1440: ' + aw.host);
 await ev(`(() => { const r = document.getElementById('stepRange'); r.value = 3; r.dispatchEvent(new Event('input')); })()`); await sleep(300);
 const still = await ev(`document.querySelectorAll('#pcCode .pl.on').length > 0 && document.querySelectorAll('#attribSvg *').length > 5`); if (!still) fail('pseudo-code or attribution lost after click');
 await shot('desktop_attribution');
