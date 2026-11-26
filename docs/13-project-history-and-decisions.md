@@ -98,6 +98,10 @@ The lower part of the page grew long; the sections were regrouped and made colla
 
 The graph used to share the top row with the simulation and the pseudo-code and had about one third of the page. It now has its own row and the full width (a panel 1,412 px wide at a 1,440 px window, measured by the layout test, where the three-column grid gave it about 640 px by the column ratios), so all 16 receiver columns and the step bands are visible without sideways scrolling. To keep the graph high on the page the message map moved from the simulation panel into the attribution panel, and the "How to read the attribution graph" guide moved into the same panel (collapsed by default). The pseudo-code and simulation panels are no longer sticky, because they no longer share a row with the graph.
 
+### 2.12 Faster first load (26 November)
+
+Measured with `verification/ui/latency_test.mjs`: a cold cache, a local copy of the page, and an emulated link with 250 ms extra round trip (medians of 3 runs; emulated conditions, not live measurements). The page now (a) requests the edge-site transcoder from the HTML head once about 75 percent of the model has arrived, so its round trip overlaps with the model's transfer (starting it together with the model delayed the real model by about 2.6 s on the slow link, so it is deliberately not that early); (b) receives the float32 weight files gzip-compressed (lossless, about 7 percent smaller); (c) runs the attribution engine's encoder step and backward step with the same floating-point operations in the same order but fewer loads and no per-row sort. Time to the first attribution graph went from 6.7 s to 6.0 s at 450 KB/s and from 1.8 s to 1.6 s at 3,000 KB/s. The packed output of 108 explanations (all 12 algorithms, 3 graphs each, 3 positions each, plus two interventions per position) is bit for bit identical before and after, and the compute for one click on bfs went from about 325 ms to about 285 ms. The remaining cost for a far-away visitor is round trips; a CDN or HTTPS with HTTP/2 (both prepared, neither applied) would address that.
+
 ## 3. Things that were tried and changed
 
 | item | what happened |

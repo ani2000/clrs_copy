@@ -140,7 +140,8 @@ The documentation folder is not part of the id (it is also excluded from the ima
 | pages (`viewer3.html`, `demo.html`) | gzip level 9, computed once per file content and kept in memory (`GZ_STATIC`) | `no-cache` | `ETag` = first 20 hex characters of the SHA-1 of the served bytes, with `-gz` appended for the compressed form; `Vary: Accept-Encoding` |
 | scripts | gzip level 9 (cached) | immutable when versioned, `no-cache` otherwise | no ETag |
 | `<algo>.latents.json` | gzip level 9 (cached) | immutable | ETag |
-| other `edge_tc` files, model bundles | not compressed (float data compresses by only about 8%) | immutable | ETag |
+| `models/<algo>.bin`, `edge_tc/<algo>.bin` (float32 weights) | gzip level 6 (cached; lossless; about 7% smaller: for example `models/bfs.bin` 1,194,504 to 1,103,236 bytes, `edge_tc/bfs.bin` 1,317,896 to 1,225,303 bytes). The header `X-Raw-Length` carries the size after decompression, which the page uses for its download progress | immutable | ETag with a `-gz` suffix |
+| other small `edge_tc` and `models` JSON files | not compressed | immutable | ETag |
 | JSON API answers | gzip level 3 on the fly (or a precomputed gzip for `/api/weights`) | immutable only when versioned (`/api/instance`, `/api/weights`, `/api/feature_labels`) | ETag for weights and labels |
 
 Examples measured on the live site: the page 95 KB uncompressed, 36 KB over the wire; `bfs.latents.json` 201 KB, 49 KB over the wire.

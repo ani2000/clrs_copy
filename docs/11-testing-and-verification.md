@@ -87,6 +87,7 @@ Seven collapsible sections: defaults (Top latents, Inspector, Intervention open;
 
 | file | what it checks |
 |---|---|
+| `latency_test.mjs` | not a pass/fail test: cold-load timeline under an emulated slow, far-away link (env `LAT` extra round trip in ms, `KBPS` download speed, `WATERFALL=1` prints every request). Run one process per measurement (a second run in the same browser process is not throttled) against `testsrv.mjs` |
 | `testsrv.mjs` | not a test: a local server that serves this repository's page, scripts and `edge_tc/` and proxies models and the API to the live site (cached on disk). Start with `PORT=8792 REPO=<repo> node verification/ui/testsrv.mjs` |
 | `edge_ui_test.mjs` | the main page for each algorithm: edge-site graph appears, the old pieces (toggle, label table, node-site downloads) are gone, the inspector shows a latent, a clamp returns a result, supernodes and By meaning views render, the example loader loads a measured graph, no console error or failed request. `PANELS_ALL=1` runs the full panel checks for every algorithm |
 | `demo_ui_test.mjs` | `/demo` is still the previous version: node-site graph, labelled features, label table, no edge-site elements, link to the main page |
