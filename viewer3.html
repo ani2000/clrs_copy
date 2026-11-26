@@ -7,10 +7,19 @@
 <script>
 /* Start the default algorithm's downloads right away, before the page scripts have even loaded (saves several round trips on a first visit). */
 window.__early = {};
-(function () { try { var B = '__BUILD__', q = '?v=' + B, E = window.__early;
+(function () { try { var B = '__BUILD__', q = '?v=' + B, E = window.__early, TC_AT = 0.75;
   E.json = fetch('/models/bfs.json' + q); E.bin = fetch('/models/bfs.bin' + q);
   E.inst = fetch('/api/instance?algo=bfs&n=16&p=0.4&seed=42&v=' + B);
-  ['json', 'bin', 'inst'].forEach(function (k) { E[k].catch(function () {}); }); } catch (e) {} })();
+  // The edge-site transcoder is needed for the first attribution graph. It is requested while the model is still arriving (about halfway), so its round trip overlaps
+  // with the model's transfer, but it does not compete with the model for the whole download (the simulation needs the model first).
+  var rj, rb, started = false; E.tcj = new Promise(function (r) { rj = r; }); E.tcb = new Promise(function (r) { rb = r; });
+  E.startTC = function () { if (started) return; started = true; rj(fetch('/edge_tc/bfs.json' + q)); rb(fetch('/edge_tc/bfs.bin' + q)); };
+  E.bin.then(function (r) {
+    var len = +r.headers.get('X-Raw-Length') || +r.headers.get('Content-Length') || 0; if (!r.body || !len) return E.startTC();
+    var rd = r.clone().body.getReader(), got = 0;
+    (function pump() { rd.read().then(function (x) { if (x.done) { E.startTC(); return; } got += x.value.length; if (got >= TC_AT * len) E.startTC(); pump(); }, E.startTC); })();
+  }).catch(function () { E.startTC(); });
+  ['json', 'bin', 'inst', 'tcj', 'tcb'].forEach(function (k) { E[k].catch(function () {}); }); } catch (e) {} })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='4' cy='4' r='3' fill='%236366f1'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23f59e0b'/%3E%3Cpath d='M4 4L12 12' stroke='%231f2328' stroke-width='1.5'/%3E%3C/svg%3E">
 <style>
@@ -878,7 +887,7 @@ async function fetchBytes(url, { signal, low, keep = true, onProgress, wait, ear
   if (!low) NET.user++;
   try {
     const r = checkResp(early ? await early : await fetch(url, { signal, priority: low ? 'low' : 'high' }));
-    const total = +r.headers.get('Content-Length') || 0;
+    const total = +r.headers.get('X-Raw-Length') || +r.headers.get('Content-Length') || 0;   // size after decompression when the server compresses the file
     if (!r.body || !r.body.getReader) { const b = await r.arrayBuffer(); if (onProgress) onProgress(1); return keep ? b : null; }
     const rd = r.body.getReader(), parts = []; let got = 0;
     if (signal) signal.addEventListener('abort', () => { rd.cancel().catch(() => {}); }, { once: true });   // a download started early by the page head is not tied to the signal by fetch itself
@@ -940,7 +949,10 @@ function ensureWeights(a) {             // this page has no node-site weights to
 const ETCS = {}, ETC_REQ = {};
 function ensureEdgeTC(a) {
   if (ETCS[a]) return Promise.resolve(ETCS[a]);
-  if (!ETC_REQ[a]) ETC_REQ[a] = withRetry(async () => { const [man, buf] = await Promise.all([getJSON('/edge_tc/' + a + '.json?v=' + BUILD), fetchBytes('/edge_tc/' + a + '.bin?v=' + BUILD)]); return { man, buf }; })
+  if (a === 'bfs' && window.__early && window.__early.startTC) window.__early.startTC();      // whoever needs the transcoder first starts its download if the head has not yet
+  const eJ = a === 'bfs' ? takeEarly('tcj') : null, eB = eJ ? takeEarly('tcb') : null;      // started by the page head (used once; a retry fetches again)
+  let used = false;
+  if (!ETC_REQ[a]) ETC_REQ[a] = withRetry(async () => { const j = eJ && !used ? eJ : null; used = true; const [man, buf] = await Promise.all([j ? j.then(r => checkResp(r).json()) : getJSON('/edge_tc/' + a + '.json?v=' + BUILD), fetchBytes('/edge_tc/' + a + '.bin?v=' + BUILD, { early: j ? eB : null })]); return { man, buf }; })
     .then(x => { ETCS[a] = x; delete ETC_REQ[a]; return x; }, e => { delete ETC_REQ[a]; throw e; });
   return ETC_REQ[a];
 }

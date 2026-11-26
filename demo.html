@@ -819,7 +819,7 @@ async function fetchBytes(url, { signal, low, keep = true, onProgress, wait, ear
   if (!low) NET.user++;
   try {
     const r = checkResp(early ? await early : await fetch(url, { signal, priority: low ? 'low' : 'high' }));
-    const total = +r.headers.get('Content-Length') || 0;
+    const total = +r.headers.get('X-Raw-Length') || +r.headers.get('Content-Length') || 0;   // size after decompression when the server compresses the file
     if (!r.body || !r.body.getReader) { const b = await r.arrayBuffer(); if (onProgress) onProgress(1); return keep ? b : null; }
     const rd = r.body.getReader(), parts = []; let got = 0;
     if (signal) signal.addEventListener('abort', () => { rd.cancel().catch(() => {}); }, { once: true });   // a download started early by the page head is not tied to the signal by fetch itself

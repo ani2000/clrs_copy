@@ -414,8 +414,9 @@ class Handler(BaseHTTPRequestHandler):
                 if path in PAGES:
                     data = data.replace(b'__BUILD__', BUILD.encode())
                     data = data.replace(b'__ALGOS_JSON__', ALGOS_JSON.replace(b'<', b'\\u003c'))
-                # pages and scripts are text: send them gzip-compressed (about 3x smaller; model bundles are floats and barely shrink)
-                comp = path in STATIC_FILES or (me is not None and path.endswith('.latents.json'))      # pages, scripts and the latent tables are text
+                # pages and scripts are text: send them gzip-compressed (about 3x smaller; weights are floats and shrink by only about 7%, but that is still seconds on a slow link)
+                is_bin = path.endswith('.bin') and (m is not None or me is not None)           # weights: float32, shrink by about 7% (lossless), worth it on slow links
+                comp = path in STATIC_FILES or (me is not None and path.endswith('.latents.json')) or is_bin      # pages, scripts, the latent tables and the weight files
                 gz = comp and 'gzip' in self.headers.get('Accept-Encoding', '')
                 tag = None
                 if m or me or path in PAGES:
@@ -428,13 +429,16 @@ class Handler(BaseHTTPRequestHandler):
                     key = (path, hashlib.sha1(data).digest())
                     if key not in GZ_STATIC:
                         GZ_STATIC.clear() if len(GZ_STATIC) > 64 else None     # the page changes only per build; keep the cache tiny
-                        GZ_STATIC[key] = gzip.compress(data, compresslevel=9)
-                    data = GZ_STATIC[key]
+                        GZ_STATIC[key] = gzip.compress(data, compresslevel=6 if is_bin else 9)      # level 6 for weights: same size as 9 on floats, much quicker
+                    raw_len = len(data); data = GZ_STATIC[key]
+                else:
+                    raw_len = len(data)
                 self.send_response(200); self.send_header('Content-Type', ctype)
                 self.send_header('Cache-Control', cache)
                 if tag: self.send_header('ETag', tag)
                 if comp: self.send_header('Vary', 'Accept-Encoding')
                 if gz: self.send_header('Content-Encoding', 'gzip')
+                if is_bin: self.send_header('X-Raw-Length', str(raw_len))        # size after decompression: the page shows download progress against it
                 self.send_header('Content-Length', str(len(data))); self.end_headers()
                 self._write(data)
         except OSError:

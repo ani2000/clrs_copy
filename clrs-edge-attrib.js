@@ -36,11 +36,23 @@
   function encodeRow(T, s, sOff, pre, tmp) {
     const { H, D, W_enc, b_enc, b_pre, s_mu, s_scale, k } = T;
     pre.set(b_enc);
-    for (let c = 0; c < H; c++) {
-      const u = (s[sOff + c] - s_mu[c]) / s_scale - b_pre[c]; if (u === 0) continue;
-      const r = c * D; for (let d = 0; d < D; d++) pre[d] += u * W_enc[r + d];
+    // Same additions in the same order as a plain loop over c (so every number is unchanged); four input rows are handled per pass over pre[], which saves loads and stores.
+    const us = T._us || (T._us = new Float64Array(H)), cs = T._cs || (T._cs = new Int32Array(H)); let m = 0;
+    for (let c = 0; c < H; c++) { const u = (s[sOff + c] - s_mu[c]) / s_scale - b_pre[c]; if (u !== 0) { us[m] = u; cs[m] = c; m++; } }
+    let q = 0;
+    for (; q + 4 <= m; q += 4) {
+      const u0 = us[q], u1 = us[q + 1], u2 = us[q + 2], u3 = us[q + 3], r0 = cs[q] * D, r1 = cs[q + 1] * D, r2 = cs[q + 2] * D, r3 = cs[q + 3] * D;
+      for (let d = 0; d < D; d++) pre[d] = (((pre[d] + u0 * W_enc[r0 + d]) + u1 * W_enc[r1 + d]) + u2 * W_enc[r2 + d]) + u3 * W_enc[r3 + d];
     }
-    tmp.set(pre); tmp.sort(); const thr = tmp[D - k], idx = [];
+    for (; q < m; q++) { const u = us[q], r = cs[q] * D; for (let d = 0; d < D; d++) pre[d] += u * W_enc[r + d]; }
+    // k-th largest value (the old code sorted all D values and read tmp[D - k]); a scan that keeps the k largest gives the same value
+    const top = T._top || (T._top = new Float64Array(k)); let cnt = 0, mn = Infinity;
+    for (let d = 0; d < D; d++) {
+      const v = pre[d];
+      if (cnt < k) { top[cnt++] = v; if (cnt === k) { mn = top[0]; for (let j = 1; j < k; j++) if (top[j] < mn) mn = top[j]; } }
+      else if (v > mn) { let j = 0; while (top[j] !== mn) j++; top[j] = v; mn = top[0]; for (let i2 = 1; i2 < k; i2++) if (top[i2] < mn) mn = top[i2]; }
+    }
+    const thr = cnt === k ? mn : (tmp.set(pre), tmp.sort(), tmp[D - k]), idx = [];
     for (let d = 0; d < D; d++) if (pre[d] >= thr && pre[d] > 0) idx.push(d);
     return idx;                                                             // activation of latent d is pre[d] (relu(topk(pre)))
   }
@@ -64,7 +76,8 @@
   function linTz(p, g) {                    // same as linT; zero entries of g are skipped
     const { din, dout, w } = p, out = zeros(din), nz = []; for (let o = 0; o < dout; o++) if (g[o] !== 0) nz.push(o);
     if (nz.length === dout) return linT(p, g);
-    for (let i = 0; i < din; i++) { let s = 0; const r = i * dout; for (let q = 0; q < nz.length; q++) s += w[r + nz[q]] * g[nz[q]]; out[i] = s; }
+    const n = nz.length, gz = new Float64Array(n); for (let q = 0; q < n; q++) gz[q] = g[nz[q]];      // the non-zero entries, gathered once
+    for (let i = 0; i < din; i++) { let s = 0; const r = i * dout; for (let q = 0; q < n; q++) s += w[r + nz[q]] * gz[q]; out[i] = s; }
     return out;
   }
   const EPS = 1e-12;
